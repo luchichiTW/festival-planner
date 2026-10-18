@@ -24,12 +24,16 @@ node scripts/icons.mjs <slug>           # 從 assets/icon.html 重畫主畫面�
 | `core/index.html` | 頁面骨架，`{{…}}` 由 build 填入 |
 | `core/app.js` | 時間表、我的團序、撞團與備選、抽籤、長按卡片、搜尋、下一團、備份連結 |
 | `core/styles.css` | 版面。顏色與字型不寫在這裡，由 build 從 `event.json` 產生 CSS 變數 |
+| `core/i18n.js` | 英文介面字串：鍵是 `core/` 裡寫的中文（含 `{變數}`），`t()` 在英文模式回傳英文 |
+| `core/embed.js` | 卡片內試聽（Spotify、Apple Music、YouTube、Podcast、街聲），打開卡片才載入、離線不顯示 |
+| `core/map.js` | 場地圖與官方圖：縮放、拖曳、舞台熱區（接下來的演出、步行導航） |
 | `core/pwa.js` | 只在網站版：service worker 註冊、安靜更新、iPhone 加入主畫面提示 |
 | `core/sw.template.js` | service worker 樣板，build 填入版本與檔案清單 |
 | `core/cloud.js` | 只在 artifact 版：用 Claude 帳號同步團序（db＋user 能力） |
 | `events/<slug>/event.json` | 名稱、日期、時區、舞台與顏色、主題 tokens、字型、圖示、網址 |
 | `events/<slug>/data/schedule.json` | 一筆一場演出 |
-| `events/<slug>/data/artists.json` | 以演出者名稱為鍵：簡介、來源、平台連結 |
+| `events/<slug>/data/artists.json` | 以演出者名稱為鍵：簡介、來源、平台連結、試聽 ID、多位演出者 |
+| `events/<slug>/data/venue.json` | 選用：地圖熱區（圖的百分比）、舞台座標、官方圖清單 |
 | `events/<slug>/artifact/` | 單檔版本與發佈說明，跟著 git tag 走 |
 | `events/<slug>/CLAUDE.md` | 這個活動的來源、限制、資料規則、待辦 |
 | `scripts/` | validate、build、serve、fonts、icons；`lib/chrome.mjs` 是不用套件的無頭 Chrome 驅動 |
@@ -57,6 +61,10 @@ node scripts/icons.mjs <slug>           # 從 assets/icon.html 重畫主畫面�
 { "ano": { "bio": "…", "sources": ["https://…", "https://…"], "links": { "spotify": "…", "apple": "…", "youtube": "…" } } }
 ```
 
+其他選用欄位：`embeds`（試聽 ID：`spotify`、`appleMusic`、`youtube`、`spotifyPodcast`、`streetvoice`，事件要開 `features.embeds`）、`members`（一個演出底下的演出者，各自是 `artists.json` 的鍵）。
+
+`event.json` 的選用設定：`languages`（`["zh", "en"]` 時出現 EN／中 切換，英文名放 `nameEn`、`subtitleEn`、`sourceNoteEn`、舞台 `en`、演出 `en`）、`features`（`embeds`、`map`）、`lottery`（抽籤彩蛋：`favorite` 那一場一定抽中）、`rules`（`minBioSources`、`minBioChars`，預設 2 與 40）、`css`（活動專屬的少量樣式，例如字標漸層）。
+
 `validate.mjs` 會擋：ID／seq 重複、時間格式、同舞台時間重疊、超出當天時段、未知舞台、簡介少於兩個不同網站的來源（Last.fm 不算）、不是藝人頁格式的平台連結、活動代號開頭和別的活動相同。
 
 每個活動的 `CLAUDE.md` 都要寫進資料規則（時間表轉檔、簡介兩個來源、沒有就留空、平台連結只放驗證過的藝人頁、不寫的內容、要記錄的事），範例見 `events/vagabond2026/CLAUDE.md`。
@@ -68,7 +76,7 @@ node scripts/icons.mjs <slug>           # 從 assets/icon.html 重畫主畫面�
 3. 照活動 `CLAUDE.md` 的資料規則轉時間表與藝人資料。
 4. `node scripts/fonts.mjs <slug>`、`node scripts/icons.mjs <slug>`。
 5. `node scripts/validate.mjs <slug>`、`node scripts/build.mjs <slug>`、`node scripts/serve.mjs` 實際看過、`npm test`。
-6. 加一份 `events/<slug>/wrangler.jsonc`（照 vagabond2026 的改名稱與路徑），再部署。
+6. 加一份 `events/<slug>/wrangler.jsonc`（照 vagabond2026 的改名稱與路徑），並在 `.github/workflows/deploy.yml` 的選單加上這個活動，再部署。
 
 ## 網站與更新（PWA）
 

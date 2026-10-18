@@ -12,7 +12,7 @@
   const KEY_BUILD = key('build');
   const last = store.get(KEY_BUILD);
   store.set(KEY_BUILD, EVT.build);
-  if (last && last !== EVT.build) setTimeout(() => FP.toast(`已更新到 ${FP.mmdd(EVT.dataDate)} 的時間表`, 4000), 500);
+  if (last && last !== EVT.build) setTimeout(() => FP.toast(FP.t('已更新到 {date} 的時間表', { date: FP.mmdd(EVT.dataDate) }), 4000), 500);
 
   /* ---------- iPhone: add to home screen first ---------- */
   const KEY_INSTALL = key('install-hint');

@@ -12,8 +12,9 @@
 <!-- fp:body -->
 <div class="app">
   <header class="top" id="top">
-    <h1 class="wordmark">{{wordmark}}<small>{{wordmarkSub}}</small></h1>
-    <p class="top-sub">{{subtitle}}</p>
+    <h1 class="wordmark"><span id="wordmarkText">{{wordmark}}</span><small>{{wordmarkSub}}</small></h1>
+    <p class="top-sub" id="topSub">{{subtitle}}</p>
+{{langBtn}}
     <button type="button" class="hdr-btn" id="themeBtn" aria-label="切換成淺色模式">
       <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
       <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none"/></svg>
@@ -21,14 +22,14 @@
   </header>
 
   <main class="view">
-    <section class="pick" id="pickView" aria-label="時間表">
+    <section class="pick" id="pickView" aria-label="時間表" data-i18n-attr="aria-label">
       <div class="board" id="board"><div class="grid" id="grid"></div></div>
       <div class="coach" id="coach" hidden>
-        <p>點一下把表演加進團序，再點一次取消。長按可以看藝人介紹和試聽；變淡的是跟已選時段重疊的團。</p>
-        <button type="button" id="coachOk">知道了</button>
+        <p data-i18n>點一下把表演加進團序，再點一次取消。長按可以看藝人介紹和試聽；變淡的是跟已選時段重疊的團。</p>
+        <button type="button" id="coachOk" data-i18n>知道了</button>
       </div>
     </section>
-    <section class="mine" id="mineView" aria-label="我的團序" hidden>
+    <section class="mine" id="mineView" aria-label="我的團序" data-i18n-attr="aria-label" hidden>
       <div class="mine-in" id="mineIn"></div>
     </section>
   </main>
@@ -37,17 +38,18 @@
   <div class="dock" id="dock">
     <!-- fp:web -->
     <div class="hint-bar" id="installHint" hidden>
-      <p><b>先加入主畫面再排團</b>：點 Safari 的「分享」→「加入主畫面」。主畫面版和 Safari 的團序是分開的，沒網路也能開。</p>
-      <button type="button" id="installOk">知道了</button>
+      <p><b data-i18n>先加入主畫面再排團</b><span data-i18n>：點 Safari 的「分享」→「加入主畫面」。主畫面版和 Safari 的團序是分開的，沒網路也能開。</span></p>
+      <button type="button" id="installOk" data-i18n>知道了</button>
     </div>
     <!-- /fp:web -->
     <div class="next" id="nextBar" aria-live="polite" hidden></div>
-    <nav class="dock-row" aria-label="頁面">
+    <nav class="dock-row" aria-label="頁面" data-i18n-attr="aria-label">
       <div class="tabbar">
 {{dayTabs}}
-        <button type="button" class="tab" id="tabMine" aria-pressed="false"><b>我的團序</b><span class="tab-sub" id="mineSub">0 團</span></button>
+        <button type="button" class="tab" id="tabMine" aria-pressed="false"><b data-i18n>我的團序</b><span class="tab-sub" id="mineSub">0 團</span></button>
       </div>
-      <button type="button" class="dock-btn" id="searchBtn" aria-label="搜尋藝人">
+{{mapBtn}}
+      <button type="button" class="dock-btn" id="searchBtn" aria-label="搜尋藝人" data-i18n-attr="aria-label">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none"/><path d="M20 20l-4.2-4.2"/></svg>
       </button>
     </nav>
@@ -57,14 +59,14 @@
 <div class="scrim" id="scrim" hidden></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden></div>
 <div class="sp-scrim" id="spScrim" hidden></div>
-<div class="sp" id="sp" role="dialog" aria-modal="true" aria-label="搜尋藝人" hidden>
+<div class="sp" id="sp" role="dialog" aria-modal="true" aria-label="搜尋藝人" data-i18n-attr="aria-label" hidden>
   <div class="sp-res" id="spRes"></div>
   <div class="sp-bar">
     <label class="sp-field">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none"/><path d="M20 20l-4.2-4.2"/></svg>
-      <input id="spInput" type="search" placeholder="團名，中英文都可以" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" aria-label="搜尋團名">
+      <input id="spInput" type="search" placeholder="團名，中英文都可以" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" aria-label="搜尋團名" data-i18n-attr="placeholder aria-label">
     </label>
-    <button type="button" class="sp-x" id="spClose">取消</button>
+    <button type="button" class="sp-x" id="spClose" data-i18n>取消</button>
   </div>
 </div>
 <div class="lp-backdrop" id="lpBackdrop" hidden></div>

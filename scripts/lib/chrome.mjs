@@ -163,7 +163,8 @@ export async function launch({ args = [], userDataDir } = {}) {
   return {
     conn,
     // safeArea: { top, bottom, left, right } in CSS px, like an iPhone's notch and home indicator.
-    async newPage({ width = 390, height = 844, scale = 3, mobile = true, touch = true, timezone, safeArea } = {}) {
+    // locale: what navigator.language reports (default zh-TW, like the phones these pages are made for).
+    async newPage({ width = 390, height = 844, scale = 3, mobile = true, touch = true, timezone, safeArea, locale = 'zh-TW' } = {}) {
       const { targetId } = await conn.send('Target.createTarget', { url: 'about:blank' });
       const { sessionId } = await conn.send('Target.attachToTarget', { targetId, flatten: true });
       const page = new Page(conn, sessionId, targetId);
@@ -173,6 +174,7 @@ export async function launch({ args = [], userDataDir } = {}) {
       await page.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: scale, mobile });
       if (touch) await page.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
       if (timezone) await page.send('Emulation.setTimezoneOverride', { timezoneId: timezone });
+      if (locale) await page.send('Emulation.setLocaleOverride', { locale });
       if (safeArea) await page.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 0, bottom: 0, left: 0, right: 0, ...safeArea } });
       return page;
     },

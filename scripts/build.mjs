@@ -79,10 +79,11 @@ ${stageVars('light')}
 // What the page needs at run time: event.json minus the build-only parts, plus the build id.
 function clientConfig(ev, build, mode) {
   return {
-    slug: ev.slug, name: ev.name, shortName: ev.shortName, lang: ev.lang, timezone: ev.timezone,
-    subtitle: ev.subtitle || '', dataDate: ev.dataDate, sourceNote: ev.sourceNote,
-    days: ev.days, stages: ev.stages.map(({ id, name, short, long }) => ({ id, name, short, long })),
-    urls: ev.urls, build, mode,
+    slug: ev.slug, name: ev.name, nameEn: ev.nameEn, shortName: ev.shortName, lang: ev.lang, timezone: ev.timezone,
+    languages: ev.languages || ['zh'], wordmark: ev.wordmark,
+    subtitle: ev.subtitle || '', subtitleEn: ev.subtitleEn, dataDate: ev.dataDate, sourceNote: ev.sourceNote, sourceNoteEn: ev.sourceNoteEn,
+    days: ev.days, stages: ev.stages.map(({ id, name, short, en, shortEn, long }) => ({ id, name, short, en, shortEn, long })),
+    features: ev.features || {}, lottery: ev.lottery, urls: ev.urls || {}, build, mode,
   };
 }
 
@@ -102,7 +103,7 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
     e.report = report;
     throw e;
   }
-  const { event: ev, schedule, artists, dir } = loaded;
+  const { event: ev, schedule, artists, venue, dir } = loaded;
   const build = buildId();
   const template = read(path.join(CORE, 'index.html'));
   const styles = read(path.join(CORE, 'styles.css'));
@@ -111,13 +112,28 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
     lang: ev.lang, title: esc(ev.name), description: esc(ev.description || ev.name), build: esc(build),
     wordmark: esc(ev.wordmark?.text || ev.shortName), wordmarkSub: esc(ev.wordmark?.sub || ''), subtitle: esc(ev.subtitle || ''), dayTabs: dayTabs(ev),
   };
-  const dataJS = (mode) => `window.FP_EVENT = ${inlineJSON(clientConfig(ev, build, mode))};\nwindow.FP_DATA = ${inlineJSON({ schedule, artists })};\n`;
+  // Venue images: on the website they're files next to the page (img/…); in the single file, data: URIs of the
+  // Chinese versions only (the English ones would double the size).
+  const venueFor = (src, keepEn) => venue && {
+    ...venue,
+    map: venue.map && { ...venue.map, image: src(venue.map.image), imageEn: keepEn && venue.map.imageEn ? src(venue.map.imageEn) : undefined },
+    images: (venue.images || []).map((im) => ({ ...im, src: src(im.src), srcEn: keepEn && im.srcEn ? src(im.srcEn) : undefined })),
+  };
+  const dataJS = (mode, venueSrc) => `window.FP_EVENT = ${inlineJSON(clientConfig(ev, build, mode))};\nwindow.FP_DATA = ${inlineJSON({ schedule, artists })};\n`
+    + (venue ? `window.FP_VENUE = ${inlineJSON(venueFor(venueSrc, mode !== 'artifact'))};\n` : '');
+  const eventCSS = ev.css ? '\n/* ---------- event.css ---------- */\n' + read(path.join(dir, ev.css)) : '';
+  const hasMap = !!(venue && venue.images && venue.images.length);
+  const langBtn = (ev.languages || []).includes('en') ? '    <button type="button" class="hdr-btn hdr-lang" id="langBtn">EN</button>' : '';
+  common.langBtn = langBtn;
+  const mapBtn = hasMap ? '      <button type="button" class="dock-btn" id="mapBtn" aria-label="場地圖與官方時間表" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4z"/><path d="M9 4v14M15 6v14"/></svg></button>' : '';
+  common.mapBtn = mapBtn;
 
   /* ---------- website: dist/<slug>/ ---------- */
   const site = path.join(out, slug);
   fs.rmSync(site, { recursive: true, force: true });
   fs.mkdirSync(site, { recursive: true });
-  const files = ['./', 'styles.css', 'data.js', 'app.js', 'pwa.js', 'manifest.webmanifest'];
+  const CORE_JS = ['i18n.js', 'app.js', 'embed.js', 'map.js', 'pwa.js'];
+  const files = ['./', 'styles.css', 'data.js', ...CORE_JS, 'manifest.webmanifest'];
   const copy = (rel, name) => {
     fs.mkdirSync(path.dirname(path.join(site, name)), { recursive: true });
     fs.copyFileSync(path.join(dir, rel), path.join(site, name));
@@ -146,12 +162,18 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
     ev.fonts?.display?.file && `<link rel="preload" href="${fontName(ev.fonts.display.file)}" as="font" type="font/woff2" crossorigin>`,
     '<link rel="stylesheet" href="styles.css">',
   ].filter(Boolean).join('\n');
-  const scripts = ['data.js', 'app.js', 'pwa.js'].map((f) => `<script src="${f}"></script>`).join('\n');
+  // Venue images ship with the site and go into the offline cache.
+  const imgName = (rel) => `img/${path.basename(rel)}`;
+  if (venue) {
+    const rels = new Set([venue.map?.image, venue.map?.imageEn, ...(venue.images || []).flatMap((im) => [im.src, im.srcEn])].filter(Boolean));
+    for (const rel of rels) copy(rel, imgName(rel));
+  }
+  const scripts = ['data.js', ...CORE_JS].map((f) => `<script src="${f}"></script>`).join('\n');
   fs.writeFileSync(path.join(site, 'index.html'), fill(template, { ...common, head, scripts }).replace(/ *<!-- \/?fp:(web|body) -->\n/g, ''));
-  fs.writeFileSync(path.join(site, 'styles.css'), themeCSS(ev, fontName) + '\n' + styles);
-  fs.writeFileSync(path.join(site, 'data.js'), dataJS('web'));
+  fs.writeFileSync(path.join(site, 'styles.css'), themeCSS(ev, fontName) + '\n' + styles + eventCSS);
+  fs.writeFileSync(path.join(site, 'data.js'), dataJS('web', imgName));
   fs.writeFileSync(path.join(site, 'app.js'), app);
-  fs.copyFileSync(path.join(CORE, 'pwa.js'), path.join(site, 'pwa.js'));
+  for (const f of CORE_JS) if (f !== 'app.js') fs.copyFileSync(path.join(CORE, f), path.join(site, f));
   fs.writeFileSync(path.join(site, 'manifest.webmanifest'), JSON.stringify({
     name: ev.name, short_name: ev.shortName, description: ev.description || ev.name, lang: ev.lang,
     id: './', start_url: './', scope: './', display: 'standalone',
@@ -176,15 +198,23 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
 
   /* ---------- single-file artifact ---------- */
   const dataURI = (rel) => `data:font/woff2;base64,${fs.readFileSync(path.join(dir, rel)).toString('base64')}`;
+  const MIME = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp' };
+  const imgURIs = new Map();
+  const imgURI = (rel) => {
+    if (!imgURIs.has(rel)) imgURIs.set(rel, `data:${MIME[path.extname(rel).toLowerCase()] || 'application/octet-stream'};base64,${fs.readFileSync(path.join(dir, rel)).toString('base64')}`);
+    return imgURIs.get(rel);
+  };
   const body = /<!-- fp:body -->\n([\s\S]*?)<!-- \/fp:body -->/.exec(fill(template, { ...common, head: '', scripts: '' }))[1]
     .replace(/ *<!-- fp:web -->[\s\S]*?<!-- \/fp:web -->\n/g, '');
   const single = [
     `<title>${esc(ev.name)}</title>`,
     '<meta name="claude:viewport-fit-sides" content="cover">',
-    `<style>\n${themeCSS(ev, dataURI)}\n${styles}</style>`,
+    `<style>\n${themeCSS(ev, dataURI)}\n${styles}${eventCSS}</style>`,
     body.trimEnd(),
-    `<script>\n${dataJS('artifact')}</script>`,
+    `<script>\n${dataJS('artifact', imgURI)}</script>`,
+    `<script>\n${read(path.join(CORE, 'i18n.js'))}</script>`,
     `<script>\n${app}</script>`,
+    hasMap ? `<script>\n${read(path.join(CORE, 'map.js'))}</script>` : '',
     `<script>\n${read(path.join(CORE, 'cloud.js'))}</script>`,
   ].join('\n') + '\n';
   const artDir = path.join(artifactOut, slug);

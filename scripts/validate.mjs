@@ -17,6 +17,14 @@ const LINK_PATTERNS = {
   apple: /^https:\/\/music\.apple\.com\/[a-z]{2}\/artist\/([^/?#]+\/)?\d+$/,
   youtube: /^https:\/\/www\.youtube\.com\/(channel\/UC[\w-]{22}|@[^/?#\s]+)$/,
 };
+// Streaming IDs for the in-card player (features.embeds): what each platform's ID looks like.
+const EMBED_PATTERNS = {
+  spotify: /^[A-Za-z0-9]{22}$/,
+  spotifyPodcast: /^[A-Za-z0-9]{22}$/,
+  appleMusic: /^\d+$/,
+  youtube: /^[A-Za-z0-9_-]{11}$/,
+  streetvoice: /^\d+$/,
+};
 // Hosts that never count as a source for a bio (see CLAUDE.md).
 const NOT_A_SOURCE = /(^|\.)last\.fm$/;
 
@@ -27,7 +35,8 @@ export const splitArtists = (name) => name.split(/\s+(?:ft\.|×)\s+/).map((a) =>
 export function loadEvent(slug) {
   const dir = path.join(ROOT, 'events', slug);
   const read = (f) => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
-  return { slug, dir, event: read('event.json'), schedule: read('data/schedule.json'), artists: read('data/artists.json') };
+  const venue = fs.existsSync(path.join(dir, 'data/venue.json')) ? read('data/venue.json') : null;
+  return { slug, dir, event: read('event.json'), schedule: read('data/schedule.json'), artists: read('data/artists.json'), venue };
 }
 
 export function listEvents() {
@@ -38,7 +47,7 @@ export function listEvents() {
 
 const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; } };
 
-export function validate({ slug, dir, event: ev, schedule, artists }) {
+export function validate({ slug, dir, event: ev, schedule, artists, venue }) {
   const errors = [];
   const warnings = [];
   const notes = [];
@@ -83,7 +92,13 @@ export function validate({ slug, dir, event: ev, schedule, artists }) {
   if (!/^https:\/\/[^/]+\/.+\/$/.test(site)) err('event.json: urls.site 要是 https 開頭、斜線結尾的網址');
   else if (!site.endsWith(`/${slug}/`)) err(`event.json: urls.site 要以 /${slug}/ 結尾`);
   if (ev.urls?.artifact && !/^https:\/\/claude\.ai\//.test(ev.urls.artifact)) warn('event.json: urls.artifact 看起來不是 claude.ai 的網址');
-  for (const f of [ev.fonts?.display?.file, ev.fonts?.mono?.file, ev.icons?.svg, ev.icons?.maskable, ...Object.values(ev.icons?.png || {})]) {
+  const langs = ev.languages || ['zh'];
+  if (langs.some((l) => !['zh', 'en'].includes(l))) err('event.json: languages 只支援 "zh"、"en"');
+  if (langs.includes('en')) {
+    for (const k of ['subtitleEn', 'sourceNoteEn']) if (!ev[k]) warn(`event.json: 有英文介面但缺少 ${k}`);
+    (ev.stages || []).forEach((st) => { if (!st.en) warn(`event.json: 舞台 ${st.id} 缺少英文名 en`); });
+  }
+  for (const f of [ev.css, ev.fonts?.display?.file, ev.fonts?.mono?.file, ev.icons?.svg, ev.icons?.maskable, ...Object.values(ev.icons?.png || {})]) {
     if (f && !fs.existsSync(path.join(dir, f))) err(`event.json: 找不到檔案 ${f}`);
   }
 
@@ -127,9 +142,11 @@ export function validate({ slug, dir, event: ev, schedule, artists }) {
   /* ---------- artists.json ---------- */
   const performers = new Set();
   for (const s of schedule) {
-    if (s.note) performers.add(s.name); // talks: the whole billing is one entry
-    else splitArtists(s.name).forEach((a) => performers.add(a));
+    performers.add(s.name);
+    if (!s.note) splitArtists(s.name).forEach((a) => performers.add(a));
+    (artists?.[s.name]?.members || []).forEach((m) => performers.add(m));
   }
+  const minSources = ev.rules?.minBioSources ?? 2;
   for (const [name, a] of Object.entries(artists || {})) {
     const at = `artists.json "${name}"`;
     if (typeof a.bio !== 'string') err(`${at}: bio 要是字串（沒有就寫 ""）`);
@@ -139,18 +156,41 @@ export function validate({ slug, dir, event: ev, schedule, artists }) {
     const counted = new Set(sources.map(host).filter((h) => h && !NOT_A_SOURCE.test(h)));
     if (sources.some((u) => NOT_A_SOURCE.test(host(u)))) warn(`${at}: Last.fm 不算來源，只當參考`);
     if (a.bio) {
-      if (counted.size < 2) err(`${at}: 簡介至少要兩個不同網站的來源（現在 ${counted.size} 個）`);
-      if ([...a.bio].length < 40) warn(`${at}: 簡介不到 40 字，規則是改成留空`);
+      if (counted.size < minSources) err(`${at}: 簡介至少要 ${minSources} 個不同網站的來源（現在 ${counted.size} 個）`);
+      const minChars = ev.rules?.minBioChars ?? 40;
+      if ([...a.bio].length < minChars) warn(`${at}: 簡介不到 ${minChars} 字，規則是改成留空`);
     }
     for (const [k, u] of Object.entries(a.links || {})) {
       if (!LINK_PATTERNS[k]) err(`${at}: 不支援的平台 "${k}"（只收 ${Object.keys(LINK_PATTERNS).join('、')}）`);
       else if (!LINK_PATTERNS[k].test(u)) err(`${at}: ${k} 連結 ${u} 不是藝人頁格式`);
     }
+    for (const [k, id] of Object.entries(a.embeds || {})) {
+      if (!EMBED_PATTERNS[k]) err(`${at}: 不支援的內嵌平台 "${k}"（只收 ${Object.keys(EMBED_PATTERNS).join('、')}）`);
+      else if (!EMBED_PATTERNS[k].test(id)) err(`${at}: ${k} 的 ID "${id}" 格式不對`);
+    }
+    for (const m of a.members || []) if (!artists[m]) err(`${at}: members 裡的 "${m}" 在 artists.json 找不到`);
     if (!performers.has(name)) warn(`${at}: 沒有對應的演出，可能是名字拼法不一致`);
   }
-  const missing = [...performers].filter((p) => !artists?.[p]?.bio);
+  if (ev.lottery?.favorite && !schedule.some((s) => s.name === ev.lottery.favorite)) err(`event.json: lottery.favorite "${ev.lottery.favorite}" 不是任何一場演出的名稱`);
+
+  /* ---------- venue.json (map hotspots, coordinates, official images) ---------- */
+  if (venue) {
+    const files = [venue.map?.image, venue.map?.imageEn, ...(venue.images || []).flatMap((i) => [i.src, i.srcEn])].filter(Boolean);
+    for (const f of files) if (!fs.existsSync(path.join(dir, f))) err(`venue.json: 找不到圖片 ${f}`);
+    for (const [id, r] of Object.entries(venue.map?.regions || {})) {
+      if (!stageIds.has(id)) err(`venue.json: 熱區 "${id}" 不是 event.json 裡的舞台`);
+      if (![r.x, r.y, r.w, r.h].every((v) => typeof v === 'number' && v >= 0 && v <= 100)) err(`venue.json: 熱區 ${id} 的 x／y／w／h 要是 0–100 的百分比`);
+    }
+    for (const [id, c] of Object.entries(venue.map?.locations || {})) {
+      if (!stageIds.has(id)) err(`venue.json: 座標 "${id}" 不是 event.json 裡的舞台`);
+      if (!(Math.abs(c.lat) <= 90 && Math.abs(c.lng) <= 180)) err(`venue.json: 座標 ${id} 的 lat／lng 不對`);
+    }
+    const noSpot = [...stageIds].filter((id) => !venue.map?.regions?.[id]);
+    if (venue.map && noSpot.length) notes.push(`地圖上沒有熱區的舞台：${noSpot.join('、')}`);
+  }
+  const missing = [...performers].filter((p) => !artists?.[p]?.bio && !artists?.[p]?.members);
   if (missing.length) notes.push(`沒有簡介（畫面會顯示「目前沒有找到可靠的介紹資料」）：${missing.join('、')}`);
-  notes.push(`${schedule.length} 場演出、${Object.keys(artists || {}).length} 位藝人資料、${Object.values(artists || {}).reduce((n, a) => n + Object.keys(a.links || {}).length, 0)} 個平台連結`);
+  notes.push(`${schedule.length} 場演出、${Object.keys(artists || {}).length} 位藝人資料、${Object.values(artists || {}).reduce((n, a) => n + Object.keys(a.links || {}).length, 0)} 個平台連結、${Object.values(artists || {}).reduce((n, a) => n + Object.keys(a.embeds || {}).length, 0)} 個試聽 ID`);
   return { errors, warnings, notes };
 }
 

@@ -21,7 +21,25 @@
   const fmt = (m) => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const el = (tag, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; return e; };
-  const dur = (m) => m >= 60 ? `${Math.floor(m / 60)} 小時${m % 60 ? ` ${m % 60} 分` : ''}` : `${m} 分`;
+  // Language: Chinese, or English when the event offers it (event.json "languages"). Switching reloads the page.
+  const LANGS = EVT.languages || ['zh'];
+  const KEY_LANG = key('lang');
+  const lang = (() => {
+    let saved = null;
+    try { saved = localStorage.getItem(KEY_LANG); } catch (e) { /* storage unavailable: pick from the browser */ }
+    if (LANGS.includes(saved)) return saved;
+    return LANGS.includes('en') && !/^zh/i.test(navigator.language || '') ? 'en' : 'zh';
+  })();
+  const DICT = lang === 'zh' ? null : (window.FP_I18N && window.FP_I18N[lang]) || null;
+  // t('中文 {n}', { n }) → the UI string in the current language. Values are inserted as given (escape first for HTML).
+  function t(zh, vars) {
+    const s = (DICT && DICT[zh]) || zh;
+    return vars ? s.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? '')) : s;
+  }
+  const listSep = lang === 'zh' ? '、' : ', ';
+  const subtitle = (lang === 'en' && EVT.subtitleEn) || EVT.subtitle || '';
+  const sourceNote = (lang === 'en' && EVT.sourceNoteEn) || EVT.sourceNote || '';
+  const dur = (m) => m >= 60 ? (m % 60 ? t('{h} 小時 {m} 分', { h: Math.floor(m / 60), m: m % 60 }) : t('{h} 小時', { h: m / 60 })) : t('{n} 分', { n: m });
   const reduceMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const hasBigInt = typeof BigInt === 'function';
   const mmdd = (iso) => { const [, m, d] = iso.split('-').map(Number); return `${m}/${d}`; };
@@ -33,11 +51,15 @@
     const [y, m, dd] = d.date.split('-').map(Number);
     DAYS[n] = {
       label: d.label, date: `${m}/${dd}`, iso: d.date, start: toMin(d.start), end: toMin(d.end),
-      dow: '日一二三四五六'[new Date(Date.UTC(y, m - 1, dd)).getUTCDay()],
+      dow: (lang === 'en' ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] : [...'日一二三四五六'])[new Date(Date.UTC(y, m - 1, dd)).getUTCDay()],
     };
     DAY_NUMS.push(n);
   });
-  const STAGES = EVT.stages.map((s) => ({ id: s.id, name: s.name, short: s.short || s.name, c: `var(--stage-${s.id})`, long: !!s.long }));
+  const STAGES = EVT.stages.map((s) => {
+    const name = lang === 'en' && s.en ? s.en : s.name;
+    const short = lang === 'en' && s.en ? (s.shortEn || s.en) : (s.short || s.name);
+    return { id: s.id, name, short, c: `var(--stage-${s.id})`, long: !!s.long || [...name].length > (lang === 'en' ? 10 : 6) };
+  });
   const STAGE_AT = new Map(STAGES.map((s, i) => [s.id, i]));
   const ARTISTS = DATA.artists || {};
 
@@ -45,6 +67,7 @@
   const SHOWS = DATA.schedule.map((r) => ({
     id: r.id, seq: r.seq, day: r.day, stage: STAGES[STAGE_AT.get(r.stage)], si: STAGE_AT.get(r.stage),
     start: toMin(r.start), end: toMin(r.end), name: r.name, note: r.note || '', en: r.en || '', alias: r.alias || '',
+    label: lang === 'en' && r.en ? r.en : r.name, // what the page shows; name stays the data key
   })).sort((a, b) => a.day - b.day || a.si - b.si || a.start - b.start);
   const BYID = new Map(SHOWS.map((s) => [s.id, s]));
   const overlap = (a, b) => a.day === b.day && a.start < b.end && b.start < a.end;
@@ -67,6 +90,7 @@
   }
 
   /* ---------- theme: follow the system unless 關於 sets light or dark ---------- */
+  const tr = t;
   const themeMode = () => { const t = root.getAttribute('data-theme'); return t === 'light' || t === 'dark' ? t : 'system'; };
   function setTheme(mode) {
     if (mode === 'light' || mode === 'dark') { root.setAttribute('data-theme', mode); store.set(KEY_THEME, mode); }
@@ -84,7 +108,7 @@
   function syncThemeBtn() {
     const t = effectiveTheme();
     themeBtn.dataset.mode = t;
-    themeBtn.setAttribute('aria-label', t === 'dark' ? '切換成淺色模式' : '切換成深色模式');
+    themeBtn.setAttribute('aria-label', t === 'dark' ? tr('切換成淺色模式') : tr('切換成深色模式'));
   }
   themeBtn.addEventListener('click', () => { setTheme(effectiveTheme() === 'dark' ? 'light' : 'dark'); syncThemeBtn(); });
   try { matchMedia('(prefers-color-scheme: light)').addEventListener('change', syncThemeBtn); } catch (e) { /* old Safari: the button still works */ }
@@ -172,7 +196,7 @@
   }
   const sameSet = (a, b) => a.size === b.size && [...a].every((x) => b.has(x));
   // On the website the link points back to this page; inside a Claude artifact, to the artifact.
-  const backupBase = () => EVT.mode === 'artifact' ? EVT.urls.artifact : location.origin + location.pathname;
+  const backupBase = () => EVT.mode === 'artifact' ? (EVT.urls.artifact || EVT.urls.site) : location.origin + location.pathname;
 
   /* ---------- board ---------- */
   const grid = $('grid');
@@ -218,11 +242,11 @@
         b.dataset.id = s.id;
         b.style.top = (s.start - d.start) * PX + 2 + 'px';
         b.style.height = (s.end - s.start) * PX - 4 + 'px';
-        b.title = `${s.note ? s.note + '｜' : ''}${s.name}　${fmt(s.start)}–${fmt(s.end)}`;
-        b.setAttribute('aria-label', `${s.name}，${st.short}，${fmt(s.start)} 到 ${fmt(s.end)}`);
+        b.title = `${s.note ? s.note + '｜' : ''}${s.label}　${fmt(s.start)}–${fmt(s.end)}`;
+        b.setAttribute('aria-label', t('{name}，{stage}，{start} 到 {end}', { name: s.label, stage: st.short, start: fmt(s.start), end: fmt(s.end) }));
         b.innerHTML =
           (s.note ? `<span class="nt">${esc(s.note)}</span>` : '') +
-          `<span class="nm${s.name.length > 18 ? ' sm' : ''}">${esc(s.name)}</span>` +
+          `<span class="nm${s.label.length > 18 ? ' sm' : ''}">${esc(s.label)}</span>` +
           `<span class="tm">${fmt(s.start)}–${fmt(s.end)}</span>`;
         col.append(b);
         blockEls.set(s.id, b);
@@ -240,13 +264,13 @@
   // Shrink a block's text step by step (fit1…fit4) until it fits — never cut it off. Runs after layout.
   function fitBlocks() {
     for (const b of blockEls.values()) {
-      b.classList.remove('fit1', 'fit2', 'fit3', 'fit4');
+      b.classList.remove('fit1', 'fit2', 'fit3', 'fit4', 'fit5', 'fit6');
       const fits = () => {
         const kids = [...b.children].filter((c) => !c.classList.contains('hit-tag') && !c.classList.contains('bprog'));
         const used = kids.reduce((n, c) => n + c.getBoundingClientRect().height, 0) + 2 * Math.max(0, kids.length - 1);
         return used <= b.clientHeight - 6 && kids.every((c) => c.scrollWidth <= c.clientWidth + 1);
       };
-      for (let step = 1; step <= 4 && !fits(); step++) b.classList.add(`fit${step}`);
+      for (let step = 1; step <= 6 && !fits(); step++) b.classList.add(`fit${step}`);
     }
   }
   try { document.fonts.ready.then(fitBlocks); } catch (e) { /* no font loading API: fitted after the first render */ }
@@ -294,7 +318,7 @@
     }
     if (!tag) {
       tag = el('span', 'nowtag');
-      tag.textContent = '現在';
+      tag.textContent = t('現在');
       const times = grid.querySelector('.times');
       if (times) times.append(tag);
     }
@@ -317,7 +341,7 @@
       b.classList.toggle('alt', alt);
       b.classList.toggle('clash', !on && touches);
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
-      const label = alt ? '備選' : on && touches ? '撞' : '';
+      const label = alt ? t('備選') : on && touches ? t('撞') : '';
       let tag = b.querySelector('.hit-tag');
       if (label) {
         if (!tag) { tag = el('span', 'hit-tag'); tag.setAttribute('aria-hidden', 'true'); b.append(tag); }
@@ -346,8 +370,8 @@
   const sync = {
     state: 'local',
     text: EVT.mode === 'artifact'
-      ? '團序存在這個瀏覽器裡，換裝置或清除瀏覽資料就會不見。建議複製一份備份連結存著。'
-      : '團序存在這台裝置裡，換手機或清除瀏覽資料就會不見。建議複製一份備份連結存著。',
+      ? t('團序存在這個瀏覽器裡，換裝置或清除瀏覽資料就會不見。建議複製一份備份連結存著。')
+      : t('團序存在這台裝置裡，換手機或清除瀏覽資料就會不見。建議複製一份備份連結存著。'),
   };
   function setSync(s, text) {
     sync.state = s;
@@ -375,13 +399,13 @@
 
   function itemHTML(s, opt = {}) {
     const extra = opt.choosable
-      ? `<button type="button" class="choose" data-choose="${s.id}">去這團</button>`
-      : opt.chosen ? '<span class="go-tag">要去</span>' : '';
+      ? `<button type="button" class="choose" data-choose="${s.id}">${t('去這團')}</button>`
+      : opt.chosen ? `<span class="go-tag">${t('要去')}</span>` : '';
     return `<article class="item${opt.choosable ? ' choosable' : ''}" data-id="${s.id}"${opt.choosable ? ` data-choose="${s.id}"` : ''} style="--c:${s.stage.c}">
       <div class="it"><b>${fmt(s.start)}</b><span>${fmt(s.end)}</span></div>
       <div class="im">
-        <div class="imeta"><span class="pill">${esc(s.stage.short)}</span><span class="dur">${s.end - s.start} 分</span>${extra}</div>
-        <h3>${esc(s.name)}</h3>
+        <div class="imeta"><span class="pill">${esc(s.stage.short)}</span><span class="dur">${t('{n} 分', { n: s.end - s.start })}</span>${extra}</div>
+        <h3>${esc(s.label)}</h3>
         ${s.note ? `<p class="note">${esc(s.note)}</p>` : ''}
       </div>
     </article>`;
@@ -389,32 +413,32 @@
 
   function altHTML(s) {
     return `<div class="alt-row" data-id="${s.id}" style="--c:${s.stage.c}">
-      <button type="button" class="alt-main" data-choose="${s.id}" aria-label="改去 ${esc(s.name)}">
-        <span class="alt-label">備選</span>
+      <button type="button" class="alt-main" data-choose="${s.id}" aria-label="${esc(t('改去 {name}', { name: s.label }))}">
+        <span class="alt-label">${t('備選')}</span>
         <span class="alt-time">${fmt(s.start)}–${fmt(s.end)}</span>
-        <span class="alt-name">${esc(s.name)}</span>
-        <span class="alt-act">改去這團</span>
+        <span class="alt-name">${esc(s.label)}</span>
+        <span class="alt-act">${t('改去這團')}</span>
       </button>
     </div>`;
   }
 
   function gapHTML(gap) {
-    if (gap <= 0) return `<div class="gap tight">無縫接下一團</div>`;
-    if (gap <= 10) return `<div class="gap tight">${gap} 分鐘換場，提早移動</div>`;
-    return `<div class="gap">空檔 ${dur(gap)}</div>`;
+    if (gap <= 0) return `<div class="gap tight">${t('無縫接下一團')}</div>`;
+    if (gap <= 10) return `<div class="gap tight">${t('{n} 分鐘換場，提早移動', { n: gap })}</div>`;
+    return `<div class="gap">${t('空檔 {d}', { d: dur(gap) })}</div>`;
   }
 
   function renderMine() {
     const out = [];
     const perDay = DAY_NUMS.map((n) => `${DAYS[n].label} ${[...picks].filter((id) => BYID.get(id).day === n).length}`).join('・');
     const k = conflictCount();
-    out.push(`<div class="mine-head"><div class="mine-sum"><b>我的團序</b><span>已選 ${picks.size} 團（${perDay}）${k ? ` · <button type="button" class="warn">${k} 處撞團</button>` : ''}</span><span>${esc(EVT.subtitle || '')}</span></div></div>`);
+    out.push(`<div class="mine-head"><div class="mine-sum"><b>${t('我的團序')}</b><span>${t('已選 {n} 團（{days}）', { n: picks.size, days: perDay })}${k ? ` · <button type="button" class="warn">${t('{n} 處撞團', { n: k })}</button>` : ''}</span><span>${esc(subtitle)}</span></div></div>`);
     for (const day of DAY_NUMS) {
       const d = DAYS[day];
       const cl = clusters(day);
       const n = cl.reduce((a, c) => a + c.length, 0);
-      out.push(`<section class="mday" id="mday${day}"><h2><span class="dl">${d.label}</span><span class="dd">${d.date}（${d.dow}）</span><span class="dn">${n} 團</span></h2>`);
-      if (!n) out.push(`<p class="empty">這天還沒選。點下方的「${d.label}」，在時間表上點表演就會加進來。</p>`);
+      out.push(`<section class="mday" id="mday${day}"><h2><span class="dl">${d.label}</span><span class="dd">${lang === 'en' ? `${d.dow} ${d.date}` : `${d.date}（${d.dow}）`}</span><span class="dn">${t('{n} 團', { n })}</span></h2>`);
+      if (!n) out.push(`<p class="empty">${t('這天還沒選。點下方的「{day}」，在時間表上點表演就會加進來。', { day: d.label })}</p>`);
       let prevEnd = null;
       for (const c of cl) {
         const info = clusterInfo(c);
@@ -423,8 +447,8 @@
         if (c.length > 1) {
           const open = info.clashing.length > 0;
           const head = open
-            ? `<div class="ch"><span><b>撞團</b>點一團要去的，其他會變成備選</span><button type="button" class="draw" data-ids="${info.clashing.map((s) => s.id).join(',')}">抽籤</button></div>`
-            : `<div class="ch done"><span><b>已決定</b>撞團 ${c.length} 選 ${info.going.length}</span><button type="button" class="redo" data-ids="${c.map((s) => s.id).join(',')}">重新選擇</button></div>`;
+            ? `<div class="ch"><span><b>${t('撞團')}</b>${t('點一團要去的，其他會變成備選')}</span><button type="button" class="draw" data-ids="${info.clashing.map((s) => s.id).join(',')}">${t('抽籤')}</button></div>`
+            : `<div class="ch done"><span><b>${t('已決定')}</b>${t('撞團 {all} 選 {going}', { all: c.length, going: info.going.length })}</span><button type="button" class="redo" data-ids="${c.map((s) => s.id).join(',')}">${t('重新選擇')}</button></div>`;
           const cards = info.going.map((s) => itemHTML(s, { choosable: info.clashing.includes(s), chosen: prefs.has(s.id) })).join('');
           out.push(`<div class="cluster${open ? '' : ' done'}">${head}${cards}${info.alts.map(altHTML).join('')}</div>`);
         } else {
@@ -435,12 +459,12 @@
       out.push('</section>');
     }
     const actions = [];
-    if (picks.size && hasBigInt) actions.push(`<button type="button" class="pill-btn" id="backupBtn">複製備份連結</button>`);
-    if (hasBigInt) actions.push(`<button type="button" class="pill-btn quiet" id="importBtn">從備份連結還原</button>`);
-    if (picks.size) actions.push(`<button type="button" class="pill-btn quiet" id="clearBtn">清除全部</button>`);
+    if (picks.size && hasBigInt) actions.push(`<button type="button" class="pill-btn" id="backupBtn">${t('複製備份連結')}</button>`);
+    if (hasBigInt) actions.push(`<button type="button" class="pill-btn quiet" id="importBtn">${t('從備份連結還原')}</button>`);
+    if (picks.size) actions.push(`<button type="button" class="pill-btn quiet" id="clearBtn">${t('清除全部')}</button>`);
     out.push(`<div class="keep"><p class="sync" id="syncNote" data-state="${sync.state}">${esc(sync.text)}</p>${actions.length ? `<div class="keep-actions">${actions.join('')}</div>` : ''}</div>`);
-    out.push(`<p class="src">${esc(EVT.sourceNote)}</p>`);
-    out.push(`<p class="src"><button type="button" class="about-link" id="aboutBtn">關於・自己做一個</button></p>`);
+    out.push(`<p class="src">${esc(sourceNote)}</p>`);
+    out.push(`<p class="src"><button type="button" class="about-link" id="aboutBtn">${t('關於・自己做一個')}</button></p>`);
     mineIn.innerHTML = out.join('');
     refreshStatus();
   }
@@ -464,7 +488,7 @@
       if (st) {
         if (!tag) { tag = el('span', 'st'); it.querySelector('.imeta').append(tag); }
         tag.className = 'st ' + (st === 'playing' ? 'live' : 'done');
-        tag.textContent = st === 'playing' ? '演出中' : '已結束';
+        tag.textContent = st === 'playing' ? t('演出中') : t('已結束');
       } else if (tag) tag.remove();
       let bar = it.querySelector('.prog');
       if (st === 'playing') {
@@ -490,7 +514,7 @@
     if (rd) {
       rd.dataset.ids.split(',').forEach((id) => prefs.delete(id));
       commit();
-      toast('已重新打開，點一團要去的');
+      toast(t('已重新打開，點一團要去的'));
       return;
     }
     const plain = e.target.closest('.item[data-id]:not([data-choose])');
@@ -500,12 +524,12 @@
       const s = BYID.get(ch.dataset.choose);
       choose(s.id);
       commit();
-      toast(`要去 ${s.name}，撞到的改成備選`);
+      toast(t('要去 {name}，撞到的改成備選', { name: s.label }));
       return;
     }
     const bk = e.target.closest('#backupBtn');
     if (bk) {
-      copyText(`${backupBase()}#${encodePicks(picks)}`, bk, '已複製備份連結，貼到備忘錄存著', '複製備份連結', '打開這個連結就能還原目前的團序。');
+      copyText(`${backupBase()}#${encodePicks(picks)}`, bk, t('已複製備份連結，貼到備忘錄存著'), t('複製備份連結'), t('打開這個連結就能還原目前的團序。'));
       return;
     }
     const im = e.target.closest('#importBtn');
@@ -518,11 +542,11 @@
         clearTimeout(clearTimer);
         picks.clear();
         commit();
-        toast('已清除全部');
+        toast(t('已清除全部'));
       } else {
         cb.classList.add('armed');
-        cb.textContent = '再按一次確認清除';
-        clearTimer = setTimeout(() => { cb.classList.remove('armed'); cb.textContent = '清除全部'; }, 3000);
+        cb.textContent = t('再按一次確認清除');
+        clearTimer = setTimeout(() => { cb.classList.remove('armed'); cb.textContent = t('清除全部'); }, 3000);
       }
     }
   });
@@ -561,8 +585,8 @@
   // Count and clashes are the 我的團序 tab's second line: plain text that always fits, never a floating badge.
   function updateCounts() {
     const k = conflictCount();
-    $('mineSub').innerHTML = `${picks.size} 團${k ? ` · <span class="clash">撞 ${k}</span>` : ''}`;
-    $('tabMine').setAttribute('aria-label', `我的團序，已選 ${picks.size} 團${k ? `，${k} 處撞團` : ''}`);
+    $('mineSub').innerHTML = `${t('{n} 團', { n: picks.size })}${k ? ` · <span class="clash">${t('撞 {n}', { n: k })}</span>` : ''}`;
+    $('tabMine').setAttribute('aria-label', t('我的團序，已選 {n} 團', { n: picks.size }) + (k ? t('，{n} 處撞團', { n: k }) : ''));
   }
 
   const commitHooks = [];
@@ -640,9 +664,9 @@
       const s = live[0];
       const pct = ((now.min - s.start) / (s.end - s.start)) * 100;
       rows.push(`<button type="button" class="nx live" data-go="${s.id}" style="--c:${s.stage.c}">
-        <span class="nx-lb">演出中</span><span class="pill">${esc(s.stage.short)}</span><span class="nx-name">${esc(s.name)}</span>
-        ${live.length > 1 ? `<span class="nx-more">+${live.length - 1} 撞</span>` : ''}
-        <span class="nx-left">剩 ${s.end - now.min} 分</span>
+        <span class="nx-lb">${t('演出中')}</span><span class="pill">${esc(s.stage.short)}</span><span class="nx-name">${esc(s.label)}</span>
+        ${live.length > 1 ? `<span class="nx-more">${t('+{n} 撞', { n: live.length - 1 })}</span>` : ''}
+        <span class="nx-left">${t('剩 {n} 分', { n: s.end - now.min })}</span>
         <span class="nx-prog" aria-hidden="true"><i style="width:${pct.toFixed(1)}%"></i></span></button>`);
     }
     if (next) {
@@ -651,9 +675,9 @@
       const tight = left <= 10 || (liveEnd !== null && next.start - liveEnd <= 10);
       const nextClash = list.filter((o) => o !== next && o.start > now.min && overlap(o, next)).length;
       rows.push(`<button type="button" class="nx${tight ? ' tight' : ''}" data-go="${next.id}" style="--c:${next.stage.c}">
-        <span class="nx-lb">下一團</span><span class="pill">${esc(next.stage.short)}</span>
-        <span class="nx-stack"><span class="nx-name">${esc(next.name)}</span>
-        <span class="nx-sub"><span class="nx-t">${fmt(next.start)} · 還有 ${dur(left)}</span>${nextClash ? `<span class="nx-warn">撞 ${nextClash} 團還沒決定</span>` : ''}</span></span></button>`);
+        <span class="nx-lb">${t('下一團')}</span><span class="pill">${esc(next.stage.short)}</span>
+        <span class="nx-stack"><span class="nx-name">${esc(next.label)}</span>
+        <span class="nx-sub"><span class="nx-t">${t('{time} · 還有 {d}', { time: fmt(next.start), d: dur(left) })}</span>${nextClash ? `<span class="nx-warn">${t('撞 {n} 團還沒決定', { n: nextClash })}</span>` : ''}</span></span></button>`);
     }
     nextBar.innerHTML = rows.join('');
     nextBar.hidden = false;
@@ -695,7 +719,7 @@
   }
   function spItem(s, raw) {
     const d = DAYS[s.day];
-    const tag = !picks.has(s.id) ? '' : isAlt(s.id) ? '<span class="sp-tag">備選</span>' : '<span class="sp-tag on">已選</span>';
+    const tag = !picks.has(s.id) ? '' : isAlt(s.id) ? `<span class="sp-tag">${t('備選')}</span>` : `<span class="sp-tag on">${t('已選')}</span>`;
     const en = s.en && !s.name.toLowerCase().includes(s.en.toLowerCase()) ? `<span class="sp-en">${mark(s.en, raw)}</span>` : '';
     return `<button type="button" class="sp-item" data-loc="${s.id}" style="--c:${s.stage.c}">
       <i></i><span class="sp-nm">${mark(s.name, raw)}${en}</span>
@@ -717,8 +741,8 @@
       ? getIndex().filter((x) => !seen.has(x.s.id) && [x.main, x.en].some((n) => n && n.length <= 8 && lev(q, n) === 1))
       : [];
     const out = hits.slice(0, 12).map((h) => spItem(h.x.s, raw));
-    if (near.length) out.push('<p class="sp-sec">名字相近</p>', ...near.slice(0, 4).map((x) => spItem(x.s, '')));
-    if (!out.length) out.push(`<p class="sp-hint">找不到「${esc(raw)}」。試試別的寫法，或用英文名。</p>`);
+    if (near.length) out.push(`<p class="sp-sec">${t('名字相近')}</p>`, ...near.slice(0, 4).map((x) => spItem(x.s, '')));
+    if (!out.length) out.push(`<p class="sp-hint">${t('找不到「{q}」。試試別的寫法，或用英文名。', { q: esc(raw) })}</p>`);
     spRes.innerHTML = out.join('');
     spFirst = (hits[0] && hits[0].x.s.id) || (near[0] && near[0].s.id) || null;
   }
@@ -794,27 +818,31 @@
     lot = { ids, win: null, spinning: false };
     const cands = ids.map((id) => BYID.get(id));
     sheet.innerHTML = `<div class="grab"></div>
-      <h2 id="sheetTitle">撞團抽籤</h2>
-      <p class="sub">${cands.length} 團撞在一起，交給運氣決定</p>
-      <div class="cands">${cands.map((s, i) => `<div class="cand" data-i="${i}" style="--c:${s.stage.c}"><span class="pill">${esc(s.stage.short)}</span><span class="cn">${esc(s.name)}</span><span class="ct">${fmt(s.start)}–${fmt(s.end)}</span></div>`).join('')}</div>
+      <h2 id="sheetTitle">${t('撞團抽籤')}</h2>
+      <p class="sub">${t('{n} 團撞在一起，交給運氣決定', { n: cands.length })}</p>
+      <div class="cands">${cands.map((s, i) => `<div class="cand" data-i="${i}" style="--c:${s.stage.c}"><span class="pill">${esc(s.stage.short)}</span><span class="cn">${esc(s.label)}</span><span class="ct">${fmt(s.start)}–${fmt(s.end)}</span></div>`).join('')}</div>
       <div class="lot-result" id="lotResult" hidden></div>
       <div class="sheet-actions" id="lotActions">
-        <button type="button" class="ghost" data-act="close">取消</button>
-        <button type="button" class="primary" data-act="spin">抽！</button>
+        <button type="button" class="ghost" data-act="close">${t('取消')}</button>
+        <button type="button" class="primary" data-act="spin">${t('抽！')}</button>
       </div>`;
     openSheet(opener);
   }
 
   function spin() {
     if (!lot || lot.spinning) return;
+    if (lot.rigged) { scold(); return; } // the favourite already won: no second draw
     lot.spinning = true;
     lot.win = null;
     const cands = [...sheet.querySelectorAll('.cand')];
     cands.forEach((c) => c.classList.remove('on', 'win', 'lose'));
     $('lotResult').hidden = true;
-    $('lotActions').innerHTML = `<button type="button" class="ghost" data-act="close">取消</button><button type="button" class="primary" disabled>抽籤中…</button>`;
+    $('lotActions').innerHTML = `<button type="button" class="ghost" data-act="close">${t('取消')}</button><button type="button" class="primary" disabled>${t('抽籤中…')}</button>`;
     const n = cands.length;
-    const w = Math.floor(Math.random() * n);
+    // event.json "lottery.favorite": that show always wins the draw (it's a joke the organisers' fans get).
+    const fav = EVT.lottery && EVT.lottery.favorite ? lot.ids.findIndex((id) => BYID.get(id).name === EVT.lottery.favorite) : -1;
+    const w = fav >= 0 ? fav : Math.floor(Math.random() * n);
+    lot.rigged = fav >= 0;
     const total = reduceMotion() ? 0 : n * 4 + w;
     let i = reduceMotion() ? w : 0;
     const step = () => {
@@ -837,9 +865,21 @@
       c.classList.add(j === w ? 'win' : 'lose');
     });
     const r = $('lotResult');
-    r.innerHTML = `<span>就決定是你了</span><b>${esc(s.name)}</b><small>${esc(s.stage.short)} · ${fmt(s.start)}–${fmt(s.end)}</small>`;
+    const L = EVT.lottery || {};
+    const caption = lot.rigged ? (lang === 'en' && L.captionEn) || L.caption : '';
+    r.innerHTML = `<span>${esc(caption || t('就決定是你了'))}</span><b>${esc(s.label)}</b><small>${esc(s.stage.short)} · ${fmt(s.start)}–${fmt(s.end)}</small>`
+      + (lot.rigged && L.emoji && !reduceMotion() ? `<div class="lot-burst" aria-hidden="true">${Array.from({ length: 12 }, (_, k) => `<i style="--a:${k * 30}deg">${esc(L.emoji)}</i>`).join('')}</div>` : '');
     r.hidden = false;
-    $('lotActions').innerHTML = `<button type="button" class="ghost" data-act="spin">再抽一次</button><button type="button" class="primary" data-act="accept">就去這團</button>`;
+    $('lotActions').innerHTML = `<button type="button" class="ghost" data-act="spin">${t('再抽一次')}</button><button type="button" class="primary" data-act="accept">${t('就去這團')}</button>`;
+    sheet.querySelector('.primary').focus();
+  }
+
+  // Drawing again after the favourite won: a telling-off, and only "accept" left.
+  function scold() {
+    const L = EVT.lottery || {};
+    const r = $('lotResult');
+    if (!r.querySelector('.lot-scold')) r.insertAdjacentHTML('beforeend', `<div class="lot-scold">${esc((lang === 'en' && L.scoldEn) || L.scold || '')}</div>`);
+    $('lotActions').innerHTML = `<button type="button" class="primary" data-act="accept">${t('接受結果')}</button>`;
     sheet.querySelector('.primary').focus();
   }
 
@@ -849,18 +889,18 @@
     choose(w.id);
     closeSheet();
     commit();
-    toast(`就決定去 ${w.name}，撞到的改成備選`);
+    toast(t('就決定去 {name}，撞到的改成備選', { name: w.label }));
   }
 
   function openLinkSheet(set) {
     pendingLink = set;
-    const perDay = DAY_NUMS.map((n) => `${DAYS[n].label} ${[...set].filter((id) => BYID.get(id).day === n).length} 團`).join('、');
+    const perDay = DAY_NUMS.map((n) => t('{day} {n} 團', { day: DAYS[n].label, n: [...set].filter((id) => BYID.get(id).day === n).length })).join(listSep);
     sheet.innerHTML = `<div class="grab"></div>
-      <h2 id="sheetTitle">連結裡有一份團序</h2>
-      <p class="sub">連結帶了 ${set.size} 團（${perDay}），你目前選了 ${picks.size} 團。要換成連結裡的嗎？</p>
+      <h2 id="sheetTitle">${t('連結裡有一份團序')}</h2>
+      <p class="sub">${t('連結帶了 {n} 團（{days}），你目前選了 {mine} 團。要換成連結裡的嗎？', { n: set.size, days: perDay, mine: picks.size })}</p>
       <div class="sheet-actions">
-        <button type="button" class="ghost" data-act="close">保留目前的</button>
-        <button type="button" class="primary" data-act="use-link">換成連結的</button>
+        <button type="button" class="ghost" data-act="close">${t('保留目前的')}</button>
+        <button type="button" class="primary" data-act="use-link">${t('換成連結的')}</button>
       </div>`;
     openSheet();
   }
@@ -868,13 +908,13 @@
   // Paste a backup link — also how picks move from Safari into the home-screen app, or from the artifact to the website.
   function openImportSheet(opener) {
     sheet.innerHTML = `<div class="grab"></div>
-      <h2 id="sheetTitle">從備份連結還原</h2>
-      <p class="sub">把之前複製的備份連結貼在下面。網站和 Claude artifact 版的連結都可以。</p>
+      <h2 id="sheetTitle">${t('從備份連結還原')}</h2>
+      <p class="sub">${t('把之前複製的備份連結貼在下面。網站和 Claude artifact 版的連結都可以。')}</p>
       <textarea id="importText" rows="3" placeholder="https://…#p1-…" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
       <p class="sheet-err" id="importErr" hidden></p>
       <div class="sheet-actions">
-        <button type="button" class="ghost" data-act="close">取消</button>
-        <button type="button" class="primary" data-act="import">還原</button>
+        <button type="button" class="ghost" data-act="close">${t('取消')}</button>
+        <button type="button" class="primary" data-act="import">${t('還原')}</button>
       </div>`;
     openSheet(opener);
     $('importText').focus();
@@ -884,16 +924,16 @@
     const set = m ? decodeToken(m[1]) : null;
     const errEl = $('importErr');
     if (!set || !set.size) {
-      errEl.textContent = '讀不到團序。請貼整段備份連結，結尾會是「#p1-」加一串英數字。';
+      errEl.textContent = t('讀不到團序。請貼整段備份連結，結尾會是「#p1-」加一串英數字。');
       errEl.hidden = false;
       return;
     }
     closeSheet();
-    if (sameSet(set, picks)) { toast('跟目前的團序一樣，不用還原'); return; }
+    if (sameSet(set, picks)) { toast(t('跟目前的團序一樣，不用還原')); return; }
     if (!picks.size) {
       set.forEach((id) => picks.add(id));
       commit();
-      toast(`已從連結還原 ${set.size} 團`);
+      toast(t('已從連結還原 {n} 團', { n: set.size }));
     } else {
       openLinkSheet(set);
     }
@@ -903,19 +943,19 @@
     const repo = EVT.urls.repo;
     const ev = `events/${EVT.slug}`;
     const links = repo ? [
-      [`${repo}/tree/main/${ev}`, '原始碼', '這個活動的資料與設定'],
-      [`${repo}/blob/main/${ev}/CLAUDE.md`, 'CLAUDE.md', '交給 Claude 照做的步驟與資料規則'],
-      [`${repo}/blob/main/${ev}/artifact/index.html`, '原始 artifact', '單一 HTML，貼給 Claude 發成你自己的'],
+      [`${repo}/tree/main/${ev}`, t('原始碼'), t('這個活動的資料與設定')],
+      [`${repo}/blob/main/${ev}/CLAUDE.md`, 'CLAUDE.md', t('交給 Claude 照做的步驟與資料規則')],
+      [`${repo}/blob/main/${ev}/artifact/index.html`, t('原始 artifact'), t('單一 HTML，貼給 Claude 發成你自己的')],
     ] : [];
     sheet.innerHTML = `<div class="grab"></div>
-      <h2 id="sheetTitle">關於・自己做一個</h2>
-      <p class="sub">${esc(EVT.name)} 排團工具。${esc(EVT.sourceNote)}</p>
-      ${links.length ? `<p class="about-p">程式和資料都公開在 GitHub。照著活動資料夾裡的 CLAUDE.md，就能做出你自己的音樂祭版本。</p>
+      <h2 id="sheetTitle">${t('關於・自己做一個')}</h2>
+      <p class="sub">${esc(t('{name} 排團工具。', { name: lang === 'en' && EVT.nameEn ? EVT.nameEn : EVT.name }))}${esc(sourceNote)}</p>
+      ${links.length ? `<p class="about-p">${t('程式和資料都公開在 GitHub。照著活動資料夾裡的 CLAUDE.md，就能做出你自己的音樂祭版本。')}</p>
       <div class="about-links">${links.map(([href, label, sub]) => `<a href="${esc(href)}" target="_blank" rel="noopener"><b>${esc(label)}</b><span>${esc(sub)}</span></a>`).join('')}</div>` : ''}
-      <p class="about-h">外觀</p>
-      <div class="about-theme" role="radiogroup" aria-label="外觀">${[['system', '跟隨系統'], ['light', '淺色'], ['dark', '深色']].map(([m, label]) => `<button type="button" role="radio" data-theme-set="${m}" aria-checked="${themeMode() === m}">${label}</button>`).join('')}</div>
-      <p class="about-meta" id="aboutMeta">版本 ${esc(EVT.build)}・時間表資料 ${mmdd(EVT.dataDate)}</p>
-      <div class="sheet-actions"><button type="button" class="primary" data-act="close">完成</button></div>`;
+      <p class="about-h">${t('外觀')}</p>
+      <div class="about-theme" role="radiogroup" aria-label="${t('外觀')}">${[['system', t('跟隨系統')], ['light', t('淺色')], ['dark', t('深色')]].map(([m, label]) => `<button type="button" role="radio" data-theme-set="${m}" aria-checked="${themeMode() === m}">${label}</button>`).join('')}</div>
+      <p class="about-meta" id="aboutMeta">${t('版本 {build}・時間表資料 {date}', { build: esc(EVT.build), date: mmdd(EVT.dataDate) })}</p>
+      <div class="sheet-actions"><button type="button" class="primary" data-act="close">${t('完成')}</button></div>`;
     openSheet(opener);
   }
 
@@ -971,7 +1011,7 @@
       picks.clear();
       set.forEach((id) => picks.add(id));
       commit();
-      toast(`已換成連結裡的 ${set.size} 團`);
+      toast(t('已換成連結裡的 {n} 團', { n: set.size }));
     }
   });
 
@@ -979,9 +1019,9 @@
   function openCopySheet(text, opener, title, sub) {
     sheet.innerHTML = `<div class="grab"></div>
       <h2 id="sheetTitle">${esc(title)}</h2>
-      <p class="sub">${esc(sub)} 沒辦法自動複製，請長按下面的文字全選後複製。</p>
+      <p class="sub">${esc(t('{sub} 沒辦法自動複製，請長按下面的文字全選後複製。', { sub }))}</p>
       <textarea id="copyText" readonly rows="8">${esc(text)}</textarea>
-      <div class="sheet-actions"><button type="button" class="primary" data-act="close">完成</button></div>`;
+      <div class="sheet-actions"><button type="button" class="primary" data-act="close">${t('完成')}</button></div>`;
     openSheet(opener);
     const ta = $('copyText');
     ta.focus();
@@ -1021,6 +1061,7 @@
   let lpHold = false;
   let lpCloseTimer = null;
   let lpShowId = null;
+  let lpBillName = '';
 
   const PLATFORMS = [
     { key: 'spotify', label: 'Spotify' },
@@ -1032,7 +1073,12 @@
 
   function renderPlat(i) {
     const a = lpArtists[i];
-    const links = (ARTISTS[a] && ARTISTS[a].links) || {};
+    const entry = ARTISTS[a] || {};
+    // Players inside the card (website, events with features.embeds); otherwise plain links to the artist pages.
+    const embedded = !!(EVT.features && EVT.features.embeds && EVT.mode !== 'artifact' && window.FP_EMBED && entry.embeds)
+      && window.FP_EMBED.render($('lpEmbed'), entry.embeds, { dark: effectiveTheme() === 'dark', label: t });
+    if (!embedded && $('lpEmbed')) { $('lpEmbed').hidden = true; $('lpEmbed').innerHTML = ''; }
+    const links = embedded ? {} : entry.links || {};
     const avail = PLATFORMS.filter((p) => /^https:\/\//.test(links[p.key] || ''));
     const plat = $('lpPlat');
     plat.innerHTML = avail.map((p) =>
@@ -1042,18 +1088,19 @@
     renderBio(a);
   }
 
+  // A member without an intro of their own shows the billing's intro (official intros are often per billing).
   function renderBio(name) {
     const box = $('lpBio');
     if (!box) return;
-    const a = ARTISTS[name];
+    const a = ARTISTS[name] && ARTISTS[name].bio ? ARTISTS[name] : ARTISTS[lpBillName];
     box.hidden = false;
-    if (!a || !a.bio) { box.innerHTML = '<p class="lp-none">目前沒有找到可靠的介紹資料。</p>'; return; }
+    if (!a || !a.bio) { box.innerHTML = `<p class="lp-none">${t('目前沒有找到可靠的介紹資料。')}</p>`; return; }
     const srcs = (a.sources || []).map((u) => {
       let host = '';
       try { host = new URL(u).hostname.replace(/^www\./, ''); } catch (e) { host = ''; }
       return host ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(host)}</a>` : '';
     }).filter(Boolean);
-    box.innerHTML = `<p>${esc(a.bio)}</p>${srcs.length ? `<div class="lp-src">資料來源：${srcs.join('、')}</div>` : ''}`;
+    box.innerHTML = `${a.bio.split('\n').map((line) => `<p>${esc(line)}</p>`).join('')}${srcs.length ? `<div class="lp-src">${t('資料來源：')}${srcs.join(listSep)}</div>` : ''}`;
   }
 
   function openArtist(id, opener, holding) {
@@ -1061,22 +1108,26 @@
     if (!s) return;
     clearTimeout(lpCloseTimer);
     lpOpener = opener || null;
-    // Talks (entries with a session title) only get a card section when we have data for the host.
-    lpArtists = s.note ? (ARTISTS[s.name] ? [s.name] : []) : splitArtists(s.name);
+    // Who the card covers: the billing's own members list, the whole billing when it has data of its own, nothing for
+    // a talk without data, otherwise "A ft. B" / "A × B" split into artists.
+    const own = ARTISTS[s.name];
+    const hasData = (a) => !!a && (!!a.bio || !!(a.embeds && Object.keys(a.embeds).length) || !!(a.links && Object.keys(a.links).length));
+    lpArtists = own?.members?.length ? own.members : hasData(own) ? [s.name] : s.note ? [] : splitArtists(s.name);
+    lpBillName = s.name;
     const tabs = lpArtists.length > 1
-      ? `<div class="lp-tabs" role="tablist" aria-label="演出者">${lpArtists.map((a, i) => `<button type="button" role="tab" data-lp-tab="${i}" aria-selected="${i === 0}">${esc(a)}</button>`).join('')}</div>`
+      ? `<div class="lp-tabs" role="tablist" aria-label="${t('演出者')}">${lpArtists.map((a, i) => `<button type="button" role="tab" data-lp-tab="${i}" aria-selected="${i === 0}">${esc(a)}</button>`).join('')}</div>`
       : '';
     lpCard.innerHTML = `
       <div class="lp-head" style="--c:${s.stage.c}">
         <span class="pill">${esc(s.stage.short)}</span>
         <span class="lp-time">${fmt(s.start)} – ${fmt(s.end)}</span>
-        <span class="lp-dur">${s.end - s.start} 分鐘</span>
-        <button type="button" class="sr-only" data-lp="close">關閉</button>
+        <span class="lp-dur">${t('{n} 分鐘', { n: s.end - s.start })}</span>
+        <button type="button" class="sr-only" data-lp="close">${t('關閉')}</button>
       </div>
-      <h2 class="lp-name" id="lpName">${esc(s.name)}</h2>
+      <h2 class="lp-name" id="lpName">${esc(s.label)}</h2>
       ${s.note ? `<p class="lp-note">${esc(s.note)}</p>` : ''}
       <div class="lp-act" id="lpAct"></div>
-      ${lpArtists.length ? `${tabs}<div class="lp-plat" id="lpPlat"></div>` : ''}
+      ${lpArtists.length ? `${tabs}<div class="lp-embed" id="lpEmbed" hidden></div><div class="lp-plat" id="lpPlat"></div>` : ''}
       <div class="lp-bio" id="lpBio" hidden></div>`;
     lpShowId = s.id;
     renderLpAct();
@@ -1105,34 +1156,34 @@
     const on = picks.has(s.id);
     const alt = on && isAlt(s.id);
     const others = [...picks].filter((id) => id !== s.id && !isAlt(id)).map((id) => BYID.get(id)).filter((o) => overlap(o, s));
-    const names = (list) => list.map((o) => `${fmt(o.start)} ${esc(o.name)}`).join('、');
+    const names = (list) => list.map((o) => `${fmt(o.start)} ${esc(o.label)}`).join(listSep);
     const btn = (act, label, cls) => `<button type="button" class="${cls}" data-lp-act="${act}">${label}</button>`;
     let html;
     if (!on && others.length) {
-      html = `<div class="lp-warn"><b>撞時段</b>你選了 ${names(others)}</div>
-        <div class="lp-btns">${btn('add', '也加入，之後再選', 'ghost')}${btn('choose-add', '改去這團', 'primary')}</div>`;
+      html = `<div class="lp-warn"><b>${t('撞時段')}</b>${t('你選了 {list}', { list: names(others) })}</div>
+        <div class="lp-btns">${btn('add', t('也加入，之後再選'), 'ghost')}${btn('choose-add', t('改去這團'), 'primary')}</div>`;
     } else if (!on) {
-      html = `<div class="lp-btns">${btn('add', '加入團序', 'primary')}</div>`;
+      html = `<div class="lp-btns">${btn('add', t('加入團序'), 'primary')}</div>`;
     } else if (alt) {
       const chosen = [...prefs].map((id) => BYID.get(id)).filter((p) => overlap(p, s));
-      html = `<div class="lp-state">目前是<b>備選</b>，要去的是 ${names(chosen)}</div>
-        <div class="lp-btns">${btn('remove', '移出團序', 'ghost')}${btn('choose', '改去這團', 'primary')}</div>`;
+      html = `<div class="lp-state">${t('目前是備選，要去的是 {list}', { list: names(chosen) })}</div>
+        <div class="lp-btns">${btn('remove', t('移出團序'), 'ghost')}${btn('choose', t('改去這團'), 'primary')}</div>`;
     } else if (others.length) {
-      html = `<div class="lp-warn"><b>撞時段，還沒決定</b>同時選了 ${names(others)}</div>
-        <div class="lp-btns">${btn('remove', '移出團序', 'ghost')}${btn('choose', '就去這團', 'primary')}</div>`;
+      html = `<div class="lp-warn"><b>${t('撞時段，還沒決定')}</b>${t('同時選了 {list}', { list: names(others) })}</div>
+        <div class="lp-btns">${btn('remove', t('移出團序'), 'ghost')}${btn('choose', t('就去這團'), 'primary')}</div>`;
     } else {
-      html = `<div class="lp-state">${prefs.has(s.id) ? '<span class="go">要去</span>撞團已決定' : '<b>已在團序</b>'}</div>
-        <div class="lp-btns">${btn('remove', '移出團序', 'ghost')}</div>`;
+      html = `<div class="lp-state">${prefs.has(s.id) ? `<span class="go">${t('要去')}</span>${t('撞團已決定')}` : `<b>${t('已在團序')}</b>`}</div>
+        <div class="lp-btns">${btn('remove', t('移出團序'), 'ghost')}</div>`;
     }
     box.innerHTML = html;
   }
   function lpAct(act) {
     const s = BYID.get(lpShowId);
     if (!s) return;
-    if (act === 'add') { addPick(s.id); commit(); toast(`已加入 ${s.name}`); }
-    else if (act === 'choose-add') { addPick(s.id); choose(s.id); commit(); toast(`要去 ${s.name}，撞到的改成備選`); }
-    else if (act === 'choose') { choose(s.id); commit(); toast(`要去 ${s.name}，撞到的改成備選`); }
-    else if (act === 'remove') { picks.delete(s.id); commit(); toast(`已移除 ${s.name}`); }
+    if (act === 'add') { addPick(s.id); commit(); toast(t('已加入 {name}', { name: s.label })); }
+    else if (act === 'choose-add') { addPick(s.id); choose(s.id); commit(); toast(t('要去 {name}，撞到的改成備選', { name: s.label })); }
+    else if (act === 'choose') { choose(s.id); commit(); toast(t('要去 {name}，撞到的改成備選', { name: s.label })); }
+    else if (act === 'remove') { picks.delete(s.id); commit(); toast(t('已移除 {name}', { name: s.label })); }
   }
 
   function releaseHold() {
@@ -1231,10 +1282,33 @@
     setSync,
     adopt,
     snapshot: () => ({ picks: [...picks], prefs: [...prefs], t: stamp }),
+    t,
+    lang,
+    day: () => state.day,
+    shows: () => SHOWS,
+    stages: () => STAGES,
+    festNow,
+    locateShow: (id) => locateShow(id),
     onCommit: (fn) => { commitHooks.push(fn); },
   };
 
   /* ---------- boot ---------- */
+  // Static text in the page template: data-i18n (text) and data-i18n-attr (attributes) hold the Chinese as written.
+  if (lang !== 'zh') {
+    root.lang = 'en';
+    document.querySelectorAll('[data-i18n]').forEach((n) => { n.textContent = t(n.textContent.trim()); });
+    document.querySelectorAll('[data-i18n-attr]').forEach((n) => n.dataset.i18nAttr.split(' ').forEach((a) => { if (n.hasAttribute(a)) n.setAttribute(a, t(n.getAttribute(a))); }));
+    if (EVT.wordmark?.textEn) $('wordmarkText').textContent = EVT.wordmark.textEn;
+    $('topSub').textContent = subtitle;
+    dayBtns.forEach((b, i) => { const d = DAYS[DAY_NUMS[i]]; b.querySelector('.tab-sub').textContent = `${d.dow} ${d.date}`; });
+  }
+  // EN／中: offered when the event has English; switching reloads with the other language.
+  const langBtn = $('langBtn');
+  if (langBtn) {
+    langBtn.textContent = lang === 'en' ? '中' : 'EN';
+    langBtn.setAttribute('aria-label', lang === 'en' ? '切換成中文' : t('切換成英文'));
+    langBtn.addEventListener('click', () => { store.set(KEY_LANG, lang === 'en' ? 'zh' : 'en'); location.reload(); });
+  }
   renderGrid();
   setView(state.view);
   updateCounts();
@@ -1253,7 +1327,7 @@
           // so a newer copy saved in the account (artifact) still wins.
           set.forEach((id) => picks.add(id));
           commit(1);
-          toast(`已從連結還原 ${set.size} 團`);
+          toast(t('已從連結還原 {n} 團', { n: set.size }));
         } else {
           openLinkSheet(set);
         }

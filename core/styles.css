@@ -272,12 +272,17 @@ button { font: inherit; color: inherit; }
 .block .nm.sm { font-size: 11.5px; }
 .block .nt { font: 500 9.5px/1.25 var(--body); opacity: .78; }
 /* Steps app.js applies to a block whose text doesn't fit, until it does. Nothing is ever cut off. */
-.block.fit1 .nm { font-size: 11px; }
-.block.fit2 .nm { font-size: 10px; letter-spacing: -.01em; }
-.block.fit2 .nt { font-size: 8.5px; }
-.block.fit3 .nm { font-size: 9.5px; line-height: 1.15; }
-.block.fit3 .tm { font-size: 9px; }
-.block.fit4 .nt { display: none; }
+.grid .block.fit1 .nm { font-size: 11px; }
+.grid .block.fit2 .nm { font-size: 10px; letter-spacing: -.01em; }
+.grid .block.fit2 .nt { font-size: 8.5px; }
+.grid .block.fit3 .nm { font-size: 9.5px; line-height: 1.15; }
+.grid .block.fit3 .tm { font-size: 9px; }
+.grid .block.fit4 .nt { display: none; }
+.grid .block.fit5 .nm { font-size: 9px; line-height: 1.1; letter-spacing: -.02em; }
+.grid .block.fit5 .tm { font-size: 8.5px; }
+.grid .block.fit6 { padding: 2px 3px; }
+.grid .block.fit6 .nm { font-size: 8.5px; line-height: 1.05; }
+.grid .block.fit6 .tm { display: none; } /* last resort: the block's place on the grid still shows its time */
 .block .tm { font: 400 10.5px/1.2 var(--mono); font-variant-numeric: tabular-nums; color: var(--muted); }
 
 .block.sel {
@@ -936,3 +941,62 @@ button { font: inherit; color: inherit; }
 /* Visually hidden, still announced by screen readers (e.g. the artist card's close button). */
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .item { cursor: pointer; }
+
+/* ---------- language switch (events with English) ---------- */
+.hdr-lang { font: 800 13px/1 var(--body); letter-spacing: .02em; }
+
+/* ---------- in-card players (core/embed.js) ---------- */
+.lp-embed { display: flex; flex-direction: column; gap: 8px; }
+.emb-seg { display: flex; gap: 3px; padding: 3px; border-radius: 10px; background: var(--bg-2); border: 1px solid var(--line); }
+.emb-seg button { flex: 1; min-width: 0; appearance: none; border: 0; border-radius: 7px; padding: 7px 2px; background: transparent; color: var(--muted); font: 700 11.5px/1.1 var(--body); cursor: pointer; overflow-wrap: anywhere; }
+.emb-seg button[aria-selected="true"] { background: var(--surface-2); color: var(--fg); box-shadow: inset 0 0 0 1px var(--line-2); }
+.emb-frame { border-radius: 12px; overflow: hidden; background: var(--bg-2); }
+.emb-frame iframe { display: block; width: 100%; height: 152px; border: 0; }
+.emb-frame.emb-appleMusic iframe { height: 175px; }
+.emb-frame.emb-youtube iframe { height: auto; aspect-ratio: 16 / 9; }
+.emb-frame.emb-streetvoice iframe { height: 100px; }
+
+/* ---------- venue map & official images (core/map.js) ---------- */
+.mv { position: fixed; inset: 0; z-index: 35; background: color-mix(in srgb, var(--bg) 92%, black); }
+.mv-stage { position: absolute; inset: 0 0 calc(var(--dock-gap) + 66px) 0; padding-top: env(safe-area-inset-top, 0px); overflow: hidden; touch-action: none; }
+.mv-pan { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+.mv-pan img { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; pointer-events: none; }
+.mv-spots { position: absolute; inset: 0; }
+.mv-spots button { position: absolute; appearance: none; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.mv-bar { position: absolute; left: 0; right: 0; bottom: var(--dock-gap); display: flex; gap: 8px; padding-inline: max(12px, env(safe-area-inset-left, 0px)) max(12px, env(safe-area-inset-right, 0px)); justify-content: center; }
+.mv-bar .tabbar { max-width: 380px; }
+.mv-fill { flex: 1; }
+.mv-done { width: auto; padding: 0 18px; font: 800 14px/1 var(--body); }
+.mv-pop {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--dock-gap) + 74px);
+  width: min(calc(100% - 24px), 420px);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 18px;
+  color: var(--fg);
+}
+.mv-pop-h { display: flex; align-items: center; gap: 8px; }
+.mv-pop-h i { width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex: none; }
+.mv-pop-h b { font: 800 16px/1.2 var(--body); overflow-wrap: anywhere; }
+.mv-pop-h span { margin-left: auto; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.mv-list { display: flex; flex-direction: column; gap: 4px; }
+.mv-list button { appearance: none; display: flex; gap: 10px; align-items: baseline; padding: 8px 10px; border: 0; border-radius: 10px; background: color-mix(in srgb, var(--fg) 6%, transparent); color: var(--fg); text-align: left; font: 600 14px/1.35 var(--body); cursor: pointer; overflow-wrap: anywhere; }
+.mv-list button span { flex: none; font: 600 12.5px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.mv-none { margin: 0; font-size: 13px; color: var(--muted); }
+.mv-go { display: block; padding: 11px; border-radius: 12px; background: var(--gold); color: var(--ink); text-align: center; text-decoration: none; font: 800 14px/1 var(--body); }
+
+/* ---------- the favourite always wins (event.json "lottery") ---------- */
+.lot-result { position: relative; }
+.lot-burst { position: absolute; left: 50%; top: 50%; pointer-events: none; }
+.lot-burst i { position: absolute; font-style: normal; font-size: 22px; animation: lotBurst 1.1s ease-out forwards; }
+@keyframes lotBurst {
+  from { transform: rotate(var(--a)) translateY(0) rotate(calc(-1 * var(--a))); opacity: 1; }
+  to { transform: rotate(var(--a)) translateY(-110px) rotate(calc(-1 * var(--a))); opacity: 0; }
+}
+.lot-scold { margin-top: 10px; padding: 8px 12px; border-radius: 12px; background: #F5A623; color: #1A1617; font: 900 18px/1.3 var(--display); transform: rotate(-6deg); animation: lotScold .35s cubic-bezier(.175, .885, .32, 1.275); }
+@keyframes lotScold { from { transform: rotate(-18deg) scale(.4); opacity: 0; } }
