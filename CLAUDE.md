@@ -9,7 +9,7 @@
 ```bash
 node scripts/validate.mjs [slug]        # 檢查資料；有錯就 exit 1
 node scripts/build.mjs <slug>           # → dist/<slug>/（網站）與 dist-artifact/<slug>/index.html（單檔）
-node scripts/build.mjs site             # → dist-site/index.html，chiparashi.tw/ 首頁（列出 events/ 下的所有活動）
+node scripts/build.mjs site             # → dist-site/：chiparashi.tw/ 首頁（每個活動一張票券）、robots.txt、llms.txt、sitemap.xml
 node scripts/serve.mjs                  # 本機預覽 http://localhost:8787/<slug>/，轉址與快取標頭和正式站一樣
 npm test                                # 資料／建置檢查＋手機寬度的瀏覽器測試（需要本機的 Chrome；FP_E2E=0 跳過瀏覽器測試）
 node scripts/fonts.mjs <slug>           # 重抓字型子集（藝人名單改了要跑）
@@ -39,7 +39,8 @@ node scripts/og.mjs <slug>              # 畫分享預覽圖（1200×630）→ a
 | `events/<slug>/data/venue.json` | 選用：地圖熱區（圖的百分比）、舞台座標、官方圖清單 |
 | `events/<slug>/artifact/` | 單檔版本與發佈說明，跟著 git tag 走 |
 | `events/<slug>/CLAUDE.md` | 這個活動的來源、限制、資料規則、待辦 |
-| `site/index.html` | 首頁樣板：列出所有活動（圖示、名稱、日期地點、還有幾天／今天／已結束），單一檔案、不載入其他網站的東西 |
+| `site/index.html` | 首頁樣板：每個活動一張票券（配色、舞台色條、日期、舞台、還有幾天／今天／日期待公布），已結束的收成小票根；單一檔案、不載入其他網站的東西 |
+| `site/robots.txt`、`site/llms.txt` | 網站層級的 robots.txt（Content Signals、各 sitemap）與 llms.txt 樣板，活動清單由 build 從 `event.json` 填入 |
 | `site/wrangler.jsonc`、`site/worker.js` | 首頁的 Worker（`fp-home`）：首頁由 `dist-site/` 的檔案回應，其他路徑原封不動交給原站 |
 | `core/page.css` | 藝人頁與 Claude 頁的樣式（`features.pages`），配色和字型沿用活動的 tokens |
 | `scripts/lib/pages.mjs` | 不用 JavaScript 也讀得到的頁面：文字版時間表、藝人頁、Claude 頁、各頁的 metadata、JSON-LD、Markdown 版、sitemap |
@@ -86,7 +87,7 @@ node scripts/og.mjs <slug>              # 畫分享預覽圖（1200×630）→ a
 4. `node scripts/fonts.mjs <slug>`、`node scripts/icons.mjs <slug>`、`node scripts/og.mjs <slug>`。
 5. `node scripts/validate.mjs <slug>`、`node scripts/build.mjs <slug>`、`node scripts/serve.mjs` 實際看過、`npm test`。
 6. 加一份 `events/<slug>/wrangler.jsonc`（照 vagabond2026 的改名稱與路徑），並在 `.github/workflows/deploy.yml` 的選單加上這個活動，再部署。
-7. 活動上線後，再部署一次 `site`，首頁才會列出它。
+7. 推上 main 後首頁會自動重新部署（`.github/workflows/site.yml`），票券、robots.txt、llms.txt、sitemap.xml 就會列出這個活動。
 
 ## 還沒公布的活動（`"status": "tba"`）
 
@@ -121,7 +122,9 @@ service worker 只把工具頁本身當 App；其他頁面直接走網路，不�
 - 發版時打 tag `<slug>@<版本>`（例如 `vagabond2026@1.0.0`），並在 `events/<slug>/CHANGELOG.md` 記錄。
 - `events/<slug>/artifact/index.html` 要跟該版本實際發佈的 artifact 一致。重新發佈 artifact 時才用 `node scripts/build.mjs <slug> --release-artifact` 更新它。
 - 部署一個活動只動那個活動，不要順手部署別的活動。
-- 首頁在部署選單選 `site`：會先檢查所有活動的資料，再只部署首頁。首頁沒有版本 tag，內容跟著 `events/` 走。
+- 首頁自動部署：推上 main 的修改只要動到 `site/`、任何活動的 `event.json` 或首頁用到的 build 程式，`.github/workflows/site.yml` 就會先檢查所有活動的資料、跑測試，再只部署首頁。也可以手動執行，或在 `deploy.yml` 選 `site`。首頁沒有版本 tag，內容跟著 `events/` 走。
+- 活動只手動部署。任何拿得到部署 token 的 workflow 都不能用 `pull_request`、`pull_request_target` 觸發（`site.test.mjs` 會檢查）。
+- 活動搬到別處（例如上一屆換回舊網站）時，在 `event.json` 的 `urls.archive` 寫新網址：首頁照樣列出它的票券，但根網域的 sitemap 不再列它，llms.txt 改連到 `urls.archive`。
 
 ## 畫面相關的修改
 

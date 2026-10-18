@@ -822,8 +822,9 @@ test('megaport: nothing clipped at 390 and 320 px, in Chinese and English; only 
 
 
 /* ---------------- homepage: chiparashi.tw/ lists the events ---------------- */
-const HOME_READY = () => document.querySelectorAll('.ev').length > 0;
-const homeCards = () => [...document.querySelectorAll('.ev')].map((a) => [a.getAttribute('href'), a.querySelector('.ev-status').textContent]);
+const HOME_READY = () => document.querySelectorAll('.ticket').length > 0;
+// Tickets in page order (coming up, then the finished stubs), each with what its stub says.
+const homeCards = () => [...document.querySelectorAll('.ticket')].map((a) => [a.getAttribute('href'), [...a.querySelectorAll('.t-k, .t-n, .t-u')].map((x) => x.textContent).filter(Boolean).join(' ')]);
 
 test('homepage: upcoming events first with a countdown, today on festival days, ended ones last; a card opens the event', { skip: SKIP }, async () => {
   const main = await origin();
@@ -831,13 +832,13 @@ test('homepage: upcoming events first with a countdown, today on festival days, 
   // Dated events coming up first (soonest first), then the ones waiting for dates, then the ones that are over.
   const TBA = ['megaport2027/', '日期待公布'];
   assert.deepEqual(await at('2026-10-18T12:00:00+08:00'), [['vagabond2026/', '還有 20 天'], TBA, ['megaport2026/', '已結束']]);
-  assert.deepEqual(await at('2026-11-06T09:00:00+08:00'), [['vagabond2026/', '明天開始'], TBA, ['megaport2026/', '已結束']]);
+  assert.deepEqual(await at('2026-11-06T09:00:00+08:00'), [['vagabond2026/', '明天 開始'], TBA, ['megaport2026/', '已結束']]);
   // 23:30 on day 1 in Tainan, seen from a phone set to New York time (still the 7th in Taipei).
-  assert.deepEqual(await at('2026-11-07T23:30:00+08:00', 'America/New_York'), [['vagabond2026/', '今天 · DAY 1'], TBA, ['megaport2026/', '已結束']]);
+  assert.deepEqual(await at('2026-11-07T23:30:00+08:00', 'America/New_York'), [['vagabond2026/', '今天 DAY 1 進行中'], TBA, ['megaport2026/', '已結束']]);
   assert.deepEqual(await at('2026-11-09T09:00:00+08:00'), [TBA, ['vagabond2026/', '已結束'], ['megaport2026/', '已結束']], 'most recent first');
   assert.deepEqual(await at('2026-03-01T12:00:00+08:00'), [['megaport2026/', '還有 20 天'], ['vagabond2026/', '還有 251 天'], TBA], 'soonest first');
   const page = await open(`${main.base}/`, { ready: HOME_READY });
-  await page.tap('.ev[href="vagabond2026/"]');
+  await page.tap('.ticket[href="vagabond2026/"]');
   await page.until(() => location.pathname === '/vagabond2026/' && document.querySelectorAll('#grid .block').length > 0);
   await closePage(page);
   await main.close();

@@ -21,6 +21,7 @@
     "caption": "小朋友就是要看",
     "scold": "小朋友就是要看巧虎！"
   },
+  "venue": { "name": "高雄駁二", "locality": "鹽埕區", "region": "高雄市", "country": "TW" },
   "days": [
     { "label": "DAY 1", "date": "2026-03-21", "start": "12:00", "end": "22:00" },
     { "label": "DAY 2", "date": "2026-03-22", "start": "12:00", "end": "22:00" }
@@ -111,6 +112,7 @@
   },
   "urls": {
     "site": "https://chiparashi.tw/megaport2026/",
+    "archive": "https://luchichitw.github.io/megaport2026/index.html",
     "repo": "https://github.com/luchichiTW/festival-planner"
   }
 }

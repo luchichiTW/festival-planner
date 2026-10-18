@@ -302,30 +302,106 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
 }
 
 /* ---------- homepage: one self-contained page listing every event under events/ ---------- */
+// Homepage (dist-site/): a ticket per event painted from its event.json, and the site-wide robots.txt, llms.txt and
+// sitemap.xml. Events that moved elsewhere (urls.archive) keep their ticket but leave the sitemap and point there in
+// llms.txt.
+const HOST = 'https://chiparashi.tw';
+const mmdd = (iso) => { const [, m, d] = iso.split('-'); return `${m}/${d}`; };
+const dowOf = (iso) => { const [y, m, d] = iso.split('-').map(Number); return DOW[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]; };
+const hex = (c) => (/^#[0-9a-f]{6}$/i.test(c) ? [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16)) : null);
+const apart = (a, b) => { const x = hex(a); const y = hex(b); return x && y ? x.reduce((n, v, i) => n + Math.abs(v - y[i]), 0) : 99; };
+const todayIn = (tz) => new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+
+function ticket(ev) {
+  const d = ev.theme.dark;
+  const tba = ev.status === 'tba';
+  // On the dark page the ticket sits on the event's surface colour, or the next one up when that is too close to
+  // the page itself (#1A1617).
+  const td = apart(d.surface, '#1A1617') < 24 ? (d['surface-2'] || d.surface) : d.surface;
+  const vars = {
+    '--tl': d.bg, '--td': td, '--t-fg': d.fg, '--t-muted': d.muted, '--t-accent': d['accent-text'] || d.gold,
+    '--t-brand': d.brand || d.gold, '--t-shadow': d['brand-shadow'] || 'transparent', '--t-ink': d.ink,
+    '--t-line': d['line-2'] || d.line, '--t-chip': d.line,
+  };
+  const img = ev.icons?.png?.['192'] ? 'icon-192.png' : ev.icons?.svg ? 'icon.svg' : null;
+  const stages = ev.stages || [];
+  // A long Chinese stage name shows its short form; Latin names fit as they are.
+  const chip = (st) => (st.short && /[㐀-鿿\u{20000}-\u{2ffff}]/u.test(st.name) && [...st.name].length > 4 ? st.short : st.name);
+  const days = (ev.days || []).map((day) => `          <div><dt>${esc(day.label)}</dt><dd>${mmdd(day.date)}（${dowOf(day.date)}）</dd><dd class="t-time">${day.start}–${day.end}</dd></div>`);
+  return `    <a class="ticket" href="${ev.slug}/" data-name="${esc(ev.name)}" data-tz="${esc(ev.timezone || 'Asia/Taipei')}"
+       data-days='${esc(JSON.stringify((ev.days || []).map((x) => ({ date: x.date, label: x.label }))))}'
+       style="${Object.entries(vars).map(([k, v]) => `${k}:${esc(v)}`).join(';')}">
+      <div class="t-main">
+        <div class="t-stripe" aria-hidden="true">${tba ? `<b style="flex:1;background:var(--t-accent)"></b>` : stages.map((st, i) => `<i style="--s:${esc(st.color.dark)};--n:${i}"></i>`).join('')}</div>
+        <div class="t-head">
+          ${img ? `<img class="t-icon" src="${ev.slug}/${img}" alt="" width="56" height="56">` : ''}
+          <div class="t-title">
+            <p class="t-mark">${esc(ev.wordmark?.text || ev.shortName)}<small>${esc(ev.wordmark?.sub || '')}</small></p>
+            <p class="t-where">${esc(tba ? ev.notice : ev.venue?.name || ev.subtitle || '')}</p>
+          </div>
+        </div>
+${tba ? '' : `        <dl class="t-days">\n${days.join('\n')}\n        </dl>\n        <ul class="t-stages" aria-label="${stages.length} 個舞台">\n          ${stages.map((st) => `<li style="--s:${esc(st.color.dark)}">${esc(chip(st))}</li>`).join('')}\n        </ul>\n`}      </div>
+      <div class="t-stub">
+        <p class="t-count"><span class="t-k"></span><span class="t-big"><span class="t-n"></span><span class="t-u"></span></span></p>
+        <span class="t-cta">打開排團表</span>
+      </div>
+    </a>`;
+}
+
 export function buildSite({ out = path.join(ROOT, 'dist-site') } = {}) {
   const events = listEvents().map((slug) => {
     const loaded = loadEvent(slug);
     const report = validate(loaded);
     if (report.errors.length) throw Object.assign(new Error(`${slug} 的資料有錯，首頁不建置`), { report });
     return loaded.event;
-  }).sort((a, b) => (b.days?.[0]?.date || '9999').localeCompare(a.days?.[0]?.date || '9999')); // the page re-sorts by today's date
-  const icon = (ev) => (ev.icons?.png?.['192'] ? 'icon-192.png' : ev.icons?.svg ? 'icon.svg' : null);
-  const cards = events.map((ev) => {
-    const img = icon(ev);
-    return `      <li><a class="ev" href="${ev.slug}/" style="--cd:${esc(ev.theme.dark['accent-text'] || ev.theme.dark.gold)};--cl:${esc(ev.theme.light['accent-text'] || ev.theme.light.gold)}">`
-      + (img ? `<img class="ev-icon" src="${ev.slug}/${img}" alt="" width="60" height="60">` : '<span class="ev-icon"></span>')
-      + `<span class="ev-body"><b class="ev-name">${esc(ev.name)}</b><span class="ev-sub">${esc(ev.status === 'tba' ? ev.notice : ev.subtitle || '')}</span><span class="ev-status"></span></span></a></li>`;
-  }).join('\n');
+  });
+  // Coming up first (soonest first), then the ones waiting for dates, then the ones that are over (most recent
+  // first). The page re-sorts by the visitor's today; this order is for readers without JavaScript.
+  const today = todayIn('Asia/Taipei');
+  const state = (ev) => (!ev.days?.length ? 1 : ev.days.at(-1).date < today ? 2 : 0);
+  events.sort((a, b) => state(a) - state(b) || (state(a) === 2 ? b.days.at(-1).date.localeCompare(a.days.at(-1).date) : (a.days?.[0]?.date || '').localeCompare(b.days?.[0]?.date || '')));
   const repo = events.find((ev) => ev.urls?.repo)?.urls.repo || 'https://github.com/luchichiTW/festival-planner';
   const html = fill(read(path.join(ROOT, 'site', 'index.html')), {
-    description: esc(`音樂祭排團工具：${events.map((ev) => ev.name).join('、')}。看時間表、排出自己的團序、撞團抽籤，離線也能用。非官方工具。`),
-    cards,
+    description: esc(`非官方音樂祭排團工具：${events.map((ev) => ev.name).join('、')}。看時間表、排出自己的團序、撞團抽籤，加到手機主畫面後沒訊號也能開。`),
+    tickets: events.map(ticket).join('\n\n'),
     repo: esc(repo),
     repoLabel: esc(repo.replace(/^https:\/\//, '')),
-    events: inlineJSON(events.map((ev) => ({ slug: ev.slug, tz: ev.timezone || 'Asia/Taipei', days: (ev.days || []).map((d) => ({ date: d.date, label: d.label })) }))),
   });
   fs.mkdirSync(out, { recursive: true });
   fs.writeFileSync(path.join(out, 'index.html'), html);
+
+  /* ---------- robots.txt: one group for every crawler, and where the sitemaps are ---------- */
+  const live = events.filter((ev) => !ev.urls?.archive);
+  const sitemaps = [`${HOST}/sitemap.xml`, ...live.filter((ev) => ev.features?.pages).map((ev) => `${HOST}/${ev.slug}/sitemap.xml`)];
+  fs.writeFileSync(path.join(out, 'robots.txt'), fill(read(path.join(ROOT, 'site', 'robots.txt')), { sitemaps: sitemaps.map((u) => `Sitemap: ${u}`).join('\n') }));
+
+  /* ---------- llms.txt (llmstxt.org): what is here, in a form an assistant reads quickly ---------- */
+  const when = (ev) => {
+    const [a, b] = [ev.days[0].date, ev.days.at(-1).date].map((x) => x.split('-').map(Number));
+    if (a[0] === b[0] && a[1] === b[1]) return `${a[0]} 年 ${a[1]} 月 ${a[2]}${b[2] !== a[2] ? `–${b[2]}` : ''} 日`;
+    return `${a[0]} 年 ${a[1]} 月 ${a[2]} 日–${b[0] !== a[0] ? `${b[0]} 年 ` : ''}${b[1]} 月 ${b[2]} 日`;
+  };
+  const festivals = events.map((ev) => {
+    if (ev.status === 'tba') return `- [${ev.name}](${HOST}/${ev.slug}/)：${ev.nameEn ? `${ev.nameEn}，` : ''}日期和陣容待官方公布`;
+    const over = state(ev) === 2;
+    const facts = [when(ev), ev.venue?.name, !over && ev.stages?.length && `${ev.stages.length} 個舞台`, over && '已結束'].filter(Boolean).join('，');
+    return ev.urls?.archive ? `- [${ev.name}（舊版）](${ev.urls.archive})：${facts}` : `- [${ev.name}](${HOST}/${ev.slug}/)：${facts}`;
+  });
+  const withPages = live.filter((ev) => ev.features?.pages);
+  const assistants = withPages.flatMap((ev) => [
+    `- [用 Claude 做你自己的排團工具${withPages.length > 1 ? `（${ev.name}）` : ''}](${HOST}/${ev.slug}/claude/)：可以直接貼給 Claude 的提示、可以發成 artifact 的單一 HTML、時間表與藝人資料的 JSON`,
+    `- [${ev.name} 時間表 JSON](${HOST}/${ev.slug}/data/schedule.json)：各舞台、各天的演出時間`,
+    `- [${ev.name} 藝人資料 JSON](${HOST}/${ev.slug}/data/artists.json)：藝人簡介與推薦曲`,
+  ]);
+  fs.writeFileSync(path.join(out, 'llms.txt'), fill(read(path.join(ROOT, 'site', 'llms.txt')), { festivals: festivals.join('\n'), assistants: assistants.join('\n') }));
+
+  /* ---------- sitemap.xml: the homepage and each event's page; an event's own pages are in its own sitemap ---------- */
+  fs.writeFileSync(path.join(out, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>${HOST}/</loc></url>
+${live.map((ev) => `  <url><loc>${HOST}/${ev.slug}/</loc>${ev.dataDate ? `<lastmod>${ev.dataDate}</lastmod>` : ''}</url>`).join('\n')}
+</urlset>
+`);
   return { out, events: events.map((ev) => ev.slug) };
 }
 

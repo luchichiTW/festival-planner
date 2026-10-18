@@ -1,0 +1,16 @@
+# chiparashi
+
+> chiparashi.tw 上放的是非官方的音樂祭排團工具。每個音樂祭一個網頁 App：看時間表、排出自己的團序、撞團時抽籤，加到手機主畫面後沒訊號也能開。演出異動以主辦方現場公告為準。
+
+## 音樂祭排團工具
+
+{{festivals}}
+
+## 給 AI 助理
+
+{{assistants}}
+
+## Optional
+
+- [festival-planner 原始碼](https://github.com/luchichiTW/festival-planner)：產生這些排團工具的程式，公開在 GitHub
+- [聯絡 Instagram @luchichitw](https://www.instagram.com/luchichitw/)，或寫信到 chi@chiparashi.tw

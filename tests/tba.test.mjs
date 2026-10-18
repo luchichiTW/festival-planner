@@ -49,8 +49,8 @@ test('the homepage lists a tba event without dates', () => {
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'fp-tba-site-'));
   buildSite({ out });
   const html = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
-  assert.match(html, new RegExp(`<a class="ev"[^>]* href="${SLUG}/"`));
-  const events = JSON.parse(/const EVENTS = (\[[\s\S]*?\]);/.exec(html)[1]);
-  assert.deepEqual(events.find((e) => e.slug === SLUG).days, []);
+  const t = new RegExp(`<a class="ticket"[^>]* href="${SLUG}/"[\\s\\S]*?</a>`).exec(html)?.[0] || '';
+  assert.ok(t.includes("data-days='[]'"), 'a ticket without dates');
+  assert.ok(t.includes(loadEvent(SLUG).event.notice), 'saying the details are on the way');
   fs.rmSync(out, { recursive: true, force: true });
 });

@@ -123,22 +123,7 @@ test('validate catches bad streaming IDs, unknown members and broken venue data'
   }
 });
 
-/* ---------------- homepage (site/) ---------------- */
-test('the homepage lists every event with its link, dates and place, and loads nothing from other sites', () => {
-  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'fp-site-'));
-  buildSite({ out });
-  assert.deepEqual(fs.readdirSync(out), ['index.html'], 'one self-contained page');
-  const html = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
-  for (const slug of listEvents()) {
-    const { event: ev } = loadEvent(slug);
-    assert.match(html, new RegExp(`<a class="ev"[^>]* href="${slug}/"`), `${slug} card links to its page`);
-    assert.ok(html.includes(ev.name) && html.includes(ev.status === 'tba' ? ev.notice : ev.subtitle), `${slug} name and place (or its notice)`);
-  }
-  assert.doesNotMatch(html, /<script[^>]+src=|<link[^>]+href="(https?:)?\/\/|<img[^>]+src="(https?:)?\/\//, 'no scripts, styles or images from other sites');
-  assert.ok(html.includes('https://github.com/luchichiTW/festival-planner'), '自己做一個 links to the repo');
-  fs.rmSync(out, { recursive: true, force: true });
-});
-
+/* ---------------- homepage (site/): see site.test.mjs ---------------- */
 test('site and home are kept for the homepage and cannot be event names', () => {
   for (const name of ['site', 'home']) {
     const ev = fresh();

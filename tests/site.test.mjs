@@ -1,0 +1,108 @@
+// The chiparashi.tw homepage (scripts/build.mjs site): one ticket per event painted from its event.json, plus the
+// site-wide robots.txt, llms.txt and sitemap.xml, and the workflow that deploys it on every push that changes it.
+import { test, before, after } from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { ROOT, loadEvent, listEvents } from '../scripts/validate.mjs';
+import { buildSite } from '../scripts/build.mjs';
+
+const HOST = 'https://chiparashi.tw';
+const events = listEvents().map((s) => loadEvent(s).event);
+const archived = (ev) => !!ev.urls?.archive;
+const DOW = '日一二三四五六';
+let out;
+before(() => { out = fs.mkdtempSync(path.join(os.tmpdir(), 'fp-site-')); buildSite({ out }); });
+after(() => fs.rmSync(out, { recursive: true, force: true }));
+const read = (f) => fs.readFileSync(path.join(out, f), 'utf8');
+const ticketOf = (html, slug) => new RegExp(`<a class="ticket"[^>]* href="${slug}/"[\\s\\S]*?</a>`).exec(html)?.[0] || '';
+
+test('the homepage ships four files and loads nothing from other sites', () => {
+  assert.deepEqual(fs.readdirSync(out).sort(), ['index.html', 'llms.txt', 'robots.txt', 'sitemap.xml']);
+  const html = read('index.html');
+  // Loaded resources only: a canonical link or an <a href> to another site loads nothing.
+  assert.doesNotMatch(html, /<script[^>]+src=|<link[^>]+rel="(stylesheet|preload|modulepreload|icon|apple-touch-icon|manifest)"[^>]+href="(https?:)?\/\/|<img[^>]+src="(https?:)?\/\/|fonts\.googleapis/, 'no scripts, styles, fonts or images from other sites');
+  assert.doesNotMatch(html, /claude:viewport-fit-sides/);
+  assert.match(html, /<title>chiparashi — 音樂祭排團工具<\/title>/);
+});
+
+test('one ticket per event, painted from its event.json: wordmark, place, days, stage strip and chips', () => {
+  const html = read('index.html');
+  for (const ev of events) {
+    const t = ticketOf(html, ev.slug);
+    assert.ok(t, `${ev.slug} has a ticket linking to its page`);
+    const d = ev.theme.dark;
+    assert.ok(t.includes(`--tl:${d.bg}`), `${ev.slug}: ticket on the light page uses the event's dark background`);
+    assert.ok(t.includes(`--t-accent:${d['accent-text'] || d.gold}`) && t.includes(`--t-fg:${d.fg}`), `${ev.slug}: text and accent colours`);
+    assert.ok(t.includes(`${ev.wordmark?.text || ev.shortName}<small>${ev.wordmark?.sub || ''}</small>`), `${ev.slug}: wordmark`);
+    if (ev.status === 'tba') {
+      assert.ok(t.includes("data-days='[]'"), `${ev.slug}: no dates yet`);
+      assert.doesNotMatch(t, /class="t-days"|class="t-stages"/, `${ev.slug}: no days or stages`);
+      continue;
+    }
+    assert.equal((t.match(/<i style="--s:/g) || []).length, ev.stages.length, `${ev.slug}: one stripe per stage`);
+    for (const st of ev.stages) assert.ok(t.includes(`<li style="--s:${st.color.dark}">`), `${ev.slug}: chip for ${st.id}`);
+    for (const day of ev.days) {
+      const [y, m, dd] = day.date.split('-').map(Number);
+      const label = `${String(m).padStart(2, '0')}/${String(dd).padStart(2, '0')}（${DOW[new Date(Date.UTC(y, m - 1, dd)).getUTCDay()]}）`;
+      assert.ok(t.includes(`<dt>${day.label}</dt><dd>${label}</dd><dd class="t-time">${day.start}–${day.end}</dd>`), `${ev.slug}: ${day.label}`);
+    }
+    assert.ok(t.includes(ev.venue?.name || ''), `${ev.slug}: place`);
+  }
+});
+
+test('contact and footer', () => {
+  const html = read('index.html');
+  assert.ok(html.includes('href="https://www.instagram.com/luchichitw/"'));
+  assert.ok(html.includes('chi@chiparashi.tw') && /id="copyMail"/.test(html), 'email with a copy button');
+  assert.match(html, /<footer class="foot">\s*<p>非官方工具。演出異動以主辦方現場公告為準。<\/p>\s*<\/footer>/);
+});
+
+test('robots.txt: one group for every crawler, content signals, the site sitemap and each event sitemap', () => {
+  const txt = read('robots.txt');
+  assert.match(txt, /^# chiparashi\.tw\n/);
+  assert.equal((txt.match(/^User-agent:/gm) || []).length, 1, 'a single group, so the content signals apply to every crawler');
+  assert.match(txt, /^User-agent: \*\nContent-Signal: search=yes, ai-input=yes, ai-train=no\nAllow: \/\n/m);
+  const maps = [...txt.matchAll(/^Sitemap: (\S+)$/gm)].map((m) => m[1]);
+  const withPages = events.filter((ev) => ev.features?.pages && !archived(ev)).map((ev) => `${HOST}/${ev.slug}/sitemap.xml`);
+  assert.deepEqual(maps, [`${HOST}/sitemap.xml`, ...withPages]);
+});
+
+test('llms.txt: the festivals from event.json, moved ones linking to where they went, and the pages for assistants', () => {
+  const txt = read('llms.txt');
+  assert.match(txt, /^# chiparashi\n\n> .*非官方/);
+  const list = /## 音樂祭排團工具\n\n([\s\S]*?)\n\n## /.exec(txt)?.[1] || '';
+  for (const ev of events) {
+    const url = archived(ev) ? ev.urls.archive : `${HOST}/${ev.slug}/`;
+    assert.ok(list.includes(`](${url})`), `${ev.slug} → ${url}`);
+    if (archived(ev)) assert.ok(list.includes(`[${ev.name}（舊版）]`) && /已結束/.test(list.split('\n').find((l) => l.includes(url))), `${ev.slug}: old version, over`);
+    if (ev.status === 'tba') assert.match(list.split('\n').find((l) => l.includes(url)), /日期和陣容待官方公布/);
+  }
+  const vb = list.split('\n').find((l) => l.includes(`${HOST}/vagabond2026/`));
+  assert.match(vb, /2026 年 11 月 7–8 日/);
+  assert.match(vb, /7 個舞台/);
+  const ai = /## 給 AI 助理\n\n([\s\S]*?)\n\n## /.exec(txt)?.[1] || '';
+  for (const ev of events.filter((e) => e.features?.pages && !archived(e))) {
+    for (const p of ['claude/', 'data/schedule.json', 'data/artists.json']) assert.ok(ai.includes(`${HOST}/${ev.slug}/${p}`), `${ev.slug} ${p}`);
+  }
+  assert.match(txt, /## Optional\n\n- \[festival-planner 原始碼\]\(https:\/\/github\.com\/luchichiTW\/festival-planner\)/);
+});
+
+test('sitemap.xml: the homepage and every event still served here, not the ones that moved', () => {
+  const locs = [...read('sitemap.xml').matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+  assert.deepEqual(locs.sort(), [`${HOST}/`, ...events.filter((ev) => !archived(ev)).map((ev) => `${HOST}/${ev.slug}/`)].sort());
+});
+
+test('the homepage deploys itself on pushes to main that change it; events stay manual; nothing with the token runs on pull requests', () => {
+  const dir = path.join(ROOT, '.github', 'workflows');
+  const site = fs.readFileSync(path.join(dir, 'site.yml'), 'utf8');
+  assert.match(site, /^on:\n  push:\n    branches: \[main\]\n    paths:\n/m);
+  for (const p of ["'site/**'", "'events/*/event.json'", "'scripts/build.mjs'"]) assert.ok(site.includes(`- ${p}`), p);
+  assert.match(site, /^  workflow_dispatch:/m);
+  assert.match(site, /command: deploy --config site\/wrangler\.jsonc/);
+  const events = fs.readFileSync(path.join(dir, 'deploy.yml'), 'utf8');
+  assert.match(events, /^on:\n  workflow_dispatch:/m);
+  assert.doesNotMatch(events, /^\s+push:/m, 'events deploy only by hand');
+  for (const f of fs.readdirSync(dir)) assert.doesNotMatch(fs.readFileSync(path.join(dir, f), 'utf8'), /pull_request/, `${f}: no pull request triggers`);
+});
