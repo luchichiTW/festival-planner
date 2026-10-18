@@ -66,29 +66,14 @@
     }
   }
 
-  /* ---------- theme ---------- */
-  const themeBtn = $('themeBtn');
+  /* ---------- theme: follow the system unless 關於 sets light or dark ---------- */
+  const themeMode = () => { const t = root.getAttribute('data-theme'); return t === 'light' || t === 'dark' ? t : 'system'; };
+  function setTheme(mode) {
+    if (mode === 'light' || mode === 'dark') { root.setAttribute('data-theme', mode); store.set(KEY_THEME, mode); }
+    else { root.removeAttribute('data-theme'); store.set(KEY_THEME, 'system'); }
+  }
   const savedTheme = store.get(KEY_THEME);
   if (savedTheme === 'light' || savedTheme === 'dark') root.setAttribute('data-theme', savedTheme);
-  function effectiveTheme() {
-    const t = root.getAttribute('data-theme');
-    if (t === 'light' || t === 'dark') return t;
-    return window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-  }
-  function syncThemeBtn() {
-    const t = effectiveTheme();
-    themeBtn.dataset.mode = t;
-    themeBtn.setAttribute('aria-label', t === 'dark' ? '切換成淺色模式' : '切換成深色模式');
-  }
-  themeBtn.addEventListener('click', () => {
-    const next = effectiveTheme() === 'dark' ? 'light' : 'dark';
-    root.setAttribute('data-theme', next);
-    store.set(KEY_THEME, next);
-    syncThemeBtn();
-  });
-  try { matchMedia('(prefers-color-scheme: light)').addEventListener('change', syncThemeBtn); } catch (e) { /* old Safari: the button still works */ }
-  try { new MutationObserver(syncThemeBtn).observe(root, { attributes: true, attributeFilter: ['data-theme'] }); } catch (e) { /* no observer: syncThemeBtn runs on click */ }
-  syncThemeBtn();
 
   /* ---------- picks: kept on this device ---------- */
   const picks = new Set();
@@ -234,7 +219,23 @@
     refreshMarks();
     refreshBoardStatus();
     updateEdge();
+    fitBlocks();
   }
+
+  // Shrink a block's text step by step (fit1…fit4) until it fits — never cut it off. Runs after layout.
+  function fitBlocks() {
+    for (const b of blockEls.values()) {
+      b.classList.remove('fit1', 'fit2', 'fit3', 'fit4');
+      const fits = () => {
+        const kids = [...b.children].filter((c) => !c.classList.contains('hit-tag') && !c.classList.contains('bprog'));
+        const used = kids.reduce((n, c) => n + c.getBoundingClientRect().height, 0) + 2 * Math.max(0, kids.length - 1);
+        return used <= b.clientHeight - 6 && kids.every((c) => c.scrollWidth <= c.clientWidth + 1);
+      };
+      for (let step = 1; step <= 4 && !fits(); step++) b.classList.add(`fit${step}`);
+    }
+  }
+  try { document.fonts.ready.then(fitBlocks); } catch (e) { /* no font loading API: fitted after the first render */ }
+  addEventListener('resize', () => requestAnimationFrame(fitBlocks));
 
   // Fade the board's right edge while more stages are off to the right.
   function updateEdge() {
@@ -400,7 +401,7 @@
       const cl = clusters(day);
       const n = cl.reduce((a, c) => a + c.length, 0);
       out.push(`<section class="mday" id="mday${day}"><h2><span class="dl">${d.label}</span><span class="dd">${d.date}（${d.dow}）</span><span class="dn">${n} 團</span></h2>`);
-      if (!n) out.push(`<p class="empty">這天還沒選。回到「排團」切到 ${d.label}，點表演就會加進來。</p>`);
+      if (!n) out.push(`<p class="empty">這天還沒選。點下方的「${d.label}」，在時間表上點表演就會加進來。</p>`);
       let prevEnd = null;
       for (const c of cl) {
         const info = clusterInfo(c);
@@ -523,44 +524,35 @@
   const mineView = $('mineView');
   const dayBtns = DAY_NUMS.map((n) => $('day' + n));
 
+  // The dock's tabs: one per festival day (that day's board) and 我的團序.
+  function markTabs() {
+    dayBtns.forEach((b, i) => b.setAttribute('aria-pressed', state.view === 'pick' && DAY_NUMS[i] === state.day ? 'true' : 'false'));
+    $('tabMine').setAttribute('aria-pressed', state.view === 'mine' ? 'true' : 'false');
+  }
+
   function setView(v) {
     state.view = v;
-    $('tabPick').setAttribute('aria-pressed', v === 'pick' ? 'true' : 'false');
-    $('tabMine').setAttribute('aria-pressed', v === 'mine' ? 'true' : 'false');
     pickView.hidden = v !== 'pick';
     mineView.hidden = v !== 'mine';
-    if (v === 'pick') { markDay(state.day); updateEdge(); }
+    markTabs();
+    if (v === 'pick') updateEdge();
     if (v === 'mine') renderMine();
     saveView();
   }
 
-  function markDay(n) {
-    dayBtns.forEach((b, i) => b.setAttribute('aria-pressed', DAY_NUMS[i] === n ? 'true' : 'false'));
-  }
-
   function setDay(n) {
-    if (state.view === 'mine') {
-      // In 我的團序 the day buttons jump to that day's list.
-      markDay(n);
-      const sec = $('mday' + n);
-      if (sec) sec.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' });
-      return;
-    }
+    const changed = state.day !== n || state.view !== 'pick';
     state.day = n;
-    markDay(n);
-    renderGrid();
-    scrollBoard();
+    if (state.view !== 'pick') setView('pick');
+    markTabs();
+    if (changed) { renderGrid(); scrollBoard(); }
     saveView();
   }
 
+  // Count and clashes are the 我的團序 tab's second line: plain text that always fits, never a floating badge.
   function updateCounts() {
-    const c = $('tabCount');
-    c.textContent = picks.size;
-    c.hidden = !picks.size;
     const k = conflictCount();
-    const tc = $('tabClash');
-    tc.textContent = `撞 ${k}`;
-    tc.hidden = !k;
+    $('mineSub').innerHTML = `${picks.size} 團${k ? ` · <span class="clash">撞 ${k}</span>` : ''}`;
     $('tabMine').setAttribute('aria-label', `我的團序，已選 ${picks.size} 團${k ? `，${k} 處撞團` : ''}`);
   }
 
@@ -578,7 +570,6 @@
     commitHooks.forEach((fn) => { try { fn(); } catch (e) { console.error('[fp] commit hook failed', e); } });
   }
 
-  $('tabPick').addEventListener('click', () => setView('pick'));
   $('tabMine').addEventListener('click', () => setView('mine'));
   dayBtns.forEach((b, i) => b.addEventListener('click', () => setDay(DAY_NUMS[i])));
 
@@ -724,6 +715,13 @@
   }
   const sp = $('sp');
   const spScrim = $('spScrim');
+  // The search field sits at the bottom: keep it above the on-screen keyboard.
+  const vv = window.visualViewport;
+  function updateKeyboard() {
+    const kb = vv ? Math.max(0, innerHeight - vv.height - vv.offsetTop) : 0;
+    root.style.setProperty('--kb', `${Math.round(kb)}px`);
+  }
+  if (vv) { vv.addEventListener('resize', updateKeyboard); vv.addEventListener('scroll', updateKeyboard); }
   function openSearch() {
     sp.hidden = false;
     spScrim.hidden = false;
@@ -905,12 +903,51 @@
       <p class="sub">${esc(EVT.name)} 排團工具。${esc(EVT.sourceNote)}</p>
       ${links.length ? `<p class="about-p">程式和資料都公開在 GitHub。照著活動資料夾裡的 CLAUDE.md，就能做出你自己的音樂祭版本。</p>
       <div class="about-links">${links.map(([href, label, sub]) => `<a href="${esc(href)}" target="_blank" rel="noopener"><b>${esc(label)}</b><span>${esc(sub)}</span></a>`).join('')}</div>` : ''}
-      <p class="about-meta">版本 ${esc(EVT.build)}・時間表資料 ${mmdd(EVT.dataDate)}</p>
+      <p class="about-h">外觀</p>
+      <div class="about-theme" role="radiogroup" aria-label="外觀">${[['system', '跟隨系統'], ['light', '淺色'], ['dark', '深色']].map(([m, label]) => `<button type="button" role="radio" data-theme-set="${m}" aria-checked="${themeMode() === m}">${label}</button>`).join('')}</div>
+      <p class="about-meta" id="aboutMeta">版本 ${esc(EVT.build)}・時間表資料 ${mmdd(EVT.dataDate)}</p>
       <div class="sheet-actions"><button type="button" class="primary" data-act="close">完成</button></div>`;
     openSheet(opener);
   }
 
+  // Screen and viewport numbers, for checking layouts on a real phone: tap the version line 5 times.
+  let metaTaps = 0;
+  function diagnostics() {
+    const probe = el('div');
+    probe.style.cssText = 'position:fixed;visibility:hidden;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)';
+    document.body.append(probe);
+    const cs = getComputedStyle(probe);
+    const vv = window.visualViewport;
+    const lines = [
+      `build ${EVT.build}`,
+      `screen ${screen.width}×${screen.height} @${devicePixelRatio}`,
+      `inner ${innerWidth}×${innerHeight}`,
+      `client ${root.clientWidth}×${root.clientHeight}`,
+      `visual ${vv ? `${Math.round(vv.width)}×${Math.round(vv.height)} +${Math.round(vv.offsetTop)}` : '-'}`,
+      `safe-area t${cs.paddingTop} r${cs.paddingRight} b${cs.paddingBottom} l${cs.paddingLeft}`,
+      `app ${Math.round(document.querySelector('.app').getBoundingClientRect().height)} dock ${Math.round($('dock').getBoundingClientRect().bottom)}`,
+      `standalone ${navigator.standalone === true || matchMedia('(display-mode: standalone)').matches} theme ${themeMode()}`,
+      navigator.userAgent.replace(/^Mozilla\/5\.0 /, ''),
+    ];
+    probe.remove();
+    return lines.join('\n');
+  }
+
   sheet.addEventListener('click', (e) => {
+    const ts = e.target.closest('[data-theme-set]');
+    if (ts) {
+      setTheme(ts.dataset.themeSet);
+      sheet.querySelectorAll('[data-theme-set]').forEach((x) => x.setAttribute('aria-checked', String(x === ts)));
+      return;
+    }
+    if (e.target.closest('#aboutMeta') && ++metaTaps >= 5) {
+      metaTaps = 0;
+      const m = $('aboutMeta');
+      m.style.whiteSpace = 'pre-wrap';
+      m.style.textAlign = 'left';
+      m.textContent = diagnostics();
+      return;
+    }
     const b = e.target.closest('[data-act]');
     if (!b || b.disabled) return;
     const act = b.dataset.act;
@@ -1168,6 +1205,13 @@
     });
   }
 
+  /* ---------- dock height → --dock-h, so content can scroll clear of it ---------- */
+  const dock = $('dock');
+  const syncDock = () => root.style.setProperty('--dock-h', `${Math.round(dock.getBoundingClientRect().height)}px`);
+  if (typeof ResizeObserver === 'function') new ResizeObserver(syncDock).observe(dock);
+  else addEventListener('resize', syncDock);
+  syncDock();
+
   /* ---------- add-on API (pwa.js, cloud.js) ---------- */
   window.FP = {
     store,
@@ -1181,7 +1225,6 @@
   };
 
   /* ---------- boot ---------- */
-  markDay(state.day);
   renderGrid();
   setView(state.view);
   updateCounts();

@@ -51,7 +51,8 @@
       "glass": "linear-gradient(135deg, rgb(255 236 220 / .10), rgb(255 236 220 / .05), rgb(255 236 220 / .08))",
       "glass-border": "rgb(255 236 220 / .14)",
       "glass-shadow": "0 8px 28px rgb(0 0 0 / .32)",
-      "glass-sel": "rgb(255 236 220 / .12)"
+      "glass-sel": "rgb(255 236 220 / .12)",
+      "glass-solid": "#2C2727"
     },
     "light": {
       "bg": "#F1EEEC",
@@ -81,7 +82,8 @@
       "glass": "linear-gradient(135deg, rgb(255 255 255 / .74), rgb(255 255 255 / .56), rgb(255 255 255 / .66))",
       "glass-border": "rgb(255 255 255 / .6)",
       "glass-shadow": "0 8px 28px rgb(60 30 25 / .10)",
-      "glass-sel": "rgb(60 30 25 / .07)"
+      "glass-sel": "rgb(60 30 25 / .07)",
+      "glass-solid": "#FAF9F8"
     }
   },
   "fonts": {

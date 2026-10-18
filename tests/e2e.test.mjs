@@ -156,10 +156,9 @@ test('AC-03 picks, clashes, deciding, lottery, search, card, theme — and they 
     sel: [...document.querySelectorAll('.block.sel')].map((b) => b.dataset.id).sort(),
     tags: [...document.querySelectorAll('.block.sel .hit-tag')].map((t) => t.textContent),
     clash: document.querySelector('.block[data-id="d1-multiverse-music"]').classList.contains('clash'),
-    count: document.getElementById('tabCount').textContent,
-    clashBadge: document.getElementById('tabClash').textContent,
+    mineSub: document.getElementById('mineSub').textContent,
   }));
-  assert.deepEqual(marks, { sel: ['d1-ggteens', 'd1-sunny-day-service'], tags: ['撞', '撞'], clash: true, count: '2', clashBadge: '撞 1' });
+  assert.deepEqual(marks, { sel: ['d1-ggteens', 'd1-sunny-day-service'], tags: ['撞', '撞'], clash: true, mineSub: '2 團 · 撞 1' });
 
   await page.tap('#tabMine');
   await page.until(() => document.querySelector('.cluster .draw'));
@@ -172,7 +171,7 @@ test('AC-03 picks, clashes, deciding, lottery, search, card, theme — and they 
   await page.tap('[data-act="spin"]');
   await page.until(() => document.querySelector('[data-act="accept"]'), { ms: 15000 });
   await page.tap('[data-act="accept"]');
-  await page.until(() => document.querySelectorAll('.alt-row').length === 1 && document.getElementById('tabClash').hidden);
+  await page.until(() => document.querySelectorAll('.alt-row').length === 1 && document.getElementById('mineSub').textContent === '2 團');
 
   // Search: Chinese, English, and the near-miss row (ana → ano).
   await page.tap('#searchBtn');
@@ -185,7 +184,7 @@ test('AC-03 picks, clashes, deciding, lottery, search, card, theme — and they 
   await page.tap('#spClose');
 
   // Long press → artist card with bio, sources and the verified platform links.
-  await page.tap('#tabPick');
+  await page.tap('#day1');
   await page.longPress('.block[data-id="d1-ano"]');
   await page.until(() => !document.getElementById('lpCard').hidden);
   const card = await page.eval(() => ({
@@ -200,11 +199,13 @@ test('AC-03 picks, clashes, deciding, lottery, search, card, theme — and they 
   await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
   await page.until(() => document.getElementById('lpCard').hidden);
 
-  // Theme toggle persists; picks and decisions persist.
-  const before = await page.eval(`document.documentElement.getAttribute('data-theme') || ''`);
-  await page.tap('#themeBtn');
+  // Theme (set in 關於) persists; picks and decisions persist.
+  await page.tap('#tabMine');
+  await page.until(() => document.getElementById('aboutBtn'));
+  await page.tap('#aboutBtn');
+  await page.tap('[data-theme-set="dark"]');
   const toggled = await page.eval(`document.documentElement.getAttribute('data-theme')`);
-  assert.notEqual(toggled, before);
+  assert.equal(toggled, 'dark');
   const snap = await page.eval(`JSON.stringify(FP.snapshot().picks.sort())`);
   await page.reload();
   await page.until(() => document.querySelectorAll('#grid .block').length > 0);
@@ -400,7 +401,7 @@ test('iPhone layout: glass header under the status bar, floating tab bar, conten
     const board = document.getElementById('board').getBoundingClientRect();
     return {
       rootPad: [css(document.documentElement).paddingTop, css(document.documentElement).paddingBottom],
-      header: { top: Math.round(tr.top), left: Math.round(tr.left), right: Math.round(tr.right), radius: parseFloat(css(top).borderBottomLeftRadius), blur: /blur/.test(css(top).backdropFilter || css(top).webkitBackdropFilter) },
+      header: { top: Math.round(tr.top), left: Math.round(tr.left), right: Math.round(tr.right), radius: parseFloat(css(top).borderBottomLeftRadius), sticky: css(top).position === 'sticky', opaque: !/rgba\(.*, 0\)$|transparent/.test(css(top).backgroundColor) },
       wordmarkTop: Math.round(document.querySelector('.wordmark').getBoundingClientRect().top),
       wordmarkShadow: css(document.querySelector('.wordmark')).textShadow,
       strip: css(document.body, '::before').content,
@@ -416,7 +417,8 @@ test('iPhone layout: glass header under the status bar, floating tab bar, conten
   assert.deepEqual(d.rootPad, ['0px', '0px'], 'no padding around the whole page');
   assert.equal(d.strip, 'none', 'no solid strip painted under the status bar');
   assert.deepEqual([d.header.top, d.header.left, d.header.right], [0, 0, d.w], 'glass header runs edge to edge from the top');
-  assert.ok(d.header.radius >= 16 && d.header.blur, 'header is a rounded glass panel');
+  assert.ok(d.header.radius >= 16, 'header panel has rounded bottom corners');
+  assert.ok(d.header.sticky && d.header.opaque, 'header is sticky with an opaque colour, so iOS tints the status bar area to match');
   assert.ok(d.wordmarkTop >= IPHONE.top, `header content clears the status bar (${d.wordmarkTop})`);
   assert.ok(d.bar.radius >= 20 && d.bar.blur, 'tab bar is a glass capsule');
   assert.ok(d.bar.left > 0 && d.bar.right < d.w, 'capsule floats clear of the screen sides');
@@ -452,12 +454,12 @@ test('iPhone layout: glass header under the status bar, floating tab bar, conten
   const light = await open(`${main.base}/${SLUG}/`, { safeArea: IPHONE, theme: 'light' });
   const l = await light.eval(layout);
   assert.equal(l.strip, 'none');
-  assert.ok(l.header.blur && l.bar.blur);
+  assert.ok(l.header.opaque && l.bar.blur);
   assert.match(l.wordmarkShadow, /^(none|(rgba\(0, 0, 0, 0\)[^,]*,?\s*)+)$/, `light wordmark has no visible shadow (${l.wordmarkShadow})`);
 
   // More stages to the right → fade on the right edge, gone once scrolled to the end. (This origin reopens on
   // 我的團序 from the dark run; switching to 排團 must recompute the fade.)
-  await light.tap('#tabPick');
+  await light.tap('#day1');
   assert.equal(await light.eval(`document.getElementById('pickView').classList.contains('more-right')`), true);
   await light.until(() => getComputedStyle(document.getElementById('pickView'), '::after').opacity === '1');
   await light.eval(`(() => { const b = document.getElementById('board'); b.scrollLeft = b.scrollWidth; b.dispatchEvent(new Event('scroll')); })()`);
@@ -491,5 +493,110 @@ test('no redundant cues on things that are obviously tappable (no 前往, no arr
   const about = await page.eval(() => [...document.querySelectorAll('.about-links a b')].map((b) => b.textContent + getComputedStyle(b, '::after').content));
   assert.deepEqual(about, ['原始碼none', 'CLAUDE.mdnone', '原始 artifactnone']);
   await closePage(page);
+  await main.close();
+});
+
+// Every text box fits: nothing cut off, no "…", at common phone widths.
+const CLIPPED = () => {
+  const out = [];
+  // Clipped = the box hides overflow (or truncates with …) and its content is larger than the box.
+  const clipped = (el) => {
+    if (el.offsetParent === null) return false;
+    const cs = getComputedStyle(el);
+    const hides = cs.overflowX !== 'visible' || cs.overflowY !== 'visible' || cs.textOverflow === 'ellipsis' || (cs.webkitLineClamp && cs.webkitLineClamp !== 'none');
+    return hides && (el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1);
+  };
+  for (const b of document.querySelectorAll('#grid .block')) {
+    if (b.offsetParent === null) continue;
+    const kids = [...b.children].filter((c) => !c.classList.contains('hit-tag') && !c.classList.contains('bprog'));
+    const used = kids.reduce((n, c) => n + c.getBoundingClientRect().height, 0);
+    if (kids.some(clipped) || used > b.clientHeight - 4) out.push(b.dataset.id);
+  }
+  for (const el of document.querySelectorAll('.tab, .tab *, .sp-item *, .nx *, .alt-row *, .wordmark, .top-sub')) if (clipped(el)) out.push(`${el.className || el.tagName}:${el.textContent.trim().slice(0, 20)}`);
+  return out;
+};
+
+test('controls live at the bottom: day tabs, 我的團序 and search in the dock; header has none', { skip: SKIP }, async () => {
+  const main = await origin();
+  const page = await open(`${main.base}/${SLUG}/`, { safeArea: { top: 59, bottom: 34 } });
+  const lay = await page.eval(() => {
+    const dock = document.querySelector('.dock-row').getBoundingClientRect();
+    const ids = ['day1', 'day2', 'tabMine', 'searchBtn'].map((id) => document.getElementById(id).getBoundingClientRect());
+    return { headerButtons: document.querySelectorAll('.top button').length, dockTop: dock.top, h: innerHeight, inDock: ids.every((r) => r.top >= dock.top - 1 && r.bottom <= dock.bottom + 1), lowest: Math.max(...ids.map((r) => r.bottom)) };
+  });
+  assert.equal(lay.headerButtons, 0, 'no controls in the header');
+  assert.ok(lay.inDock, 'day tabs, 我的團序 and search sit in the bottom dock');
+  assert.ok(lay.dockTop > lay.h * 0.8, `dock is in the thumb zone (${Math.round(lay.dockTop)}/${lay.h})`);
+  assert.ok(lay.lowest <= lay.h - 20, 'controls clear the home indicator');
+
+  // Day tabs switch the board; from 我的團序 they bring the board back on that day.
+  await page.tap('#day2');
+  assert.equal(await page.eval(`document.getElementById('day2').getAttribute('aria-pressed') + document.getElementById('pickView').hidden`), 'truefalse');
+  await page.tap('.block[data-id="d2-coldrain"]');
+  await page.tap('.block[data-id="d2-milena"]');
+  await page.tap('#day1');
+  await page.tap('.block[data-id="d1-sunny-day-service"]');
+  await page.tap('.block[data-id="d1-ggteens"]');
+  assert.equal(await page.eval(`document.getElementById('mineSub').textContent`), '4 團 · 撞 1', 'count and clash as the tab\'s second line');
+  await page.tap('#tabMine');
+  assert.equal(await page.eval(`[document.getElementById('tabMine').getAttribute('aria-pressed'), document.getElementById('day1').getAttribute('aria-pressed')].join()`), 'true,false');
+  await page.tap('#day2');
+  assert.equal(await page.eval(`[document.getElementById('mineView').hidden, document.getElementById('day2').getAttribute('aria-pressed')].join()`), 'true,true');
+
+  // Search opens at the bottom, field last (closest to the thumb and the keyboard).
+  await page.tap('#searchBtn');
+  await page.until(() => document.getElementById('sp').getAnimations().every((a) => a.playState === 'finished'));
+  const sp = await page.eval(() => { const s = document.getElementById('sp').getBoundingClientRect(); const f = document.getElementById('spInput').getBoundingClientRect(); return { bottom: Math.round(s.bottom), field: Math.round(f.bottom), h: innerHeight }; });
+  assert.equal(sp.bottom, sp.h, 'search panel is anchored to the bottom');
+  assert.ok(sp.field > sp.h - 110, `search field near the bottom (${sp.field}/${sp.h})`);
+  await page.type('ana');
+  assert.match(await page.eval(`document.getElementById('spRes').innerText`), /名字相近[\s\S]*ano/);
+  await page.tap('#spClose');
+
+  // Theme lives in 關於: follow the system, or force light / dark; remembered.
+  await page.tap('#tabMine');
+  await page.until(() => document.getElementById('aboutBtn'));
+  await page.tap('#aboutBtn');
+  const opts = await page.eval(() => [...document.querySelectorAll('[data-theme-set]')].map((b) => b.textContent + (b.getAttribute('aria-checked') === 'true' ? '*' : '')));
+  assert.deepEqual(opts, ['跟隨系統*', '淺色', '深色']);
+  await page.tap('[data-theme-set="light"]');
+  assert.equal(await page.eval(`document.documentElement.getAttribute('data-theme')`), 'light');
+  await page.reload();
+  await page.until(() => document.querySelectorAll('#grid .block').length > 0 || !document.getElementById('mineView').hidden);
+  assert.equal(await page.eval(`document.documentElement.getAttribute('data-theme')`), 'light');
+  await page.tap('#tabMine');
+  await page.until(() => document.getElementById('aboutBtn'));
+  await page.tap('#aboutBtn');
+  await page.tap('[data-theme-set="system"]');
+  assert.equal(await page.eval(`document.documentElement.hasAttribute('data-theme')`), false);
+  await closePage(page);
+  await main.close();
+});
+
+test('no text is cut off or replaced with "…" at 390, 375 and 320 px', { skip: SKIP }, async () => {
+  const main = await origin();
+  for (const width of [390, 375, 320]) {
+    const page = await open(`${main.base}/${SLUG}/`, { width, height: 844, time: '2026-11-08T15:30:00+08:00' });
+    await page.eval('document.fonts.ready');
+    const found = [];
+    for (const d of [1, 2]) {
+      await page.tap(`#day${d}`);
+      await page.eval('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))');
+      found.push(...await page.eval(CLIPPED));
+    }
+    // A long billing in the next-up bar, the search list and a 備選 row.
+    await page.tap('.block[data-id="d2-whateveryousay-talk"]');
+    await page.tap('.block[data-id="d2-robot-swing"]');
+    await page.tap('.block[data-id="d2-azikazin-magic-world"]');
+    await page.tap('#searchBtn');
+    await page.type('A_Root');
+    found.push(...await page.eval(CLIPPED));
+    await page.tap('#spClose');
+    await page.tap('#tabMine');
+    await page.until(() => document.getElementById('aboutBtn'));
+    found.push(...await page.eval(CLIPPED));
+    assert.deepEqual([...new Set(found)], [], `clipped at ${width}px`);
+    await closePage(page);
+  }
   await main.close();
 });

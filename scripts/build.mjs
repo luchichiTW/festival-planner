@@ -90,7 +90,7 @@ function dayTabs(ev) {
   return ev.days.map((d, i) => {
     const [y, m, dd] = d.date.split('-').map(Number);
     const dow = DOW[new Date(Date.UTC(y, m - 1, dd)).getUTCDay()];
-    return `      <button type="button" id="day${i + 1}" aria-pressed="${i === 0}">${esc(d.label)}<span class="d">${m}/${dd}<span class="w"> ${dow}</span></span></button>`;
+    return `        <button type="button" class="tab" id="day${i + 1}" aria-pressed="${i === 0}"><b>${esc(d.label)}</b><span class="tab-sub">${m}/${dd} ${dow}</span></button>`;
   }).join('\n');
 }
 
@@ -109,7 +109,7 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
   const app = read(path.join(CORE, 'app.js'));
   const common = {
     lang: ev.lang, title: esc(ev.name), description: esc(ev.description || ev.name), build: esc(build),
-    wordmark: esc(ev.wordmark?.text || ev.shortName), wordmarkSub: esc(ev.wordmark?.sub || ''), dayTabs: dayTabs(ev),
+    wordmark: esc(ev.wordmark?.text || ev.shortName), wordmarkSub: esc(ev.wordmark?.sub || ''), subtitle: esc(ev.subtitle || ''), dayTabs: dayTabs(ev),
   };
   const dataJS = (mode) => `window.FP_EVENT = ${inlineJSON(clientConfig(ev, build, mode))};\nwindow.FP_DATA = ${inlineJSON({ schedule, artists })};\n`;
 
