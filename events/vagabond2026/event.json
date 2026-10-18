@@ -46,10 +46,12 @@
       "board-bg": "rgb(0 0 0 / .2)",
       "col-sep": "rgb(0 0 0 / .3)",
       "ray": "rgb(255 236 220 / .025)",
-      "glow": "rgb(241 190 72 / .08)",
       "scrim": "rgb(10 7 7 / .62)",
       "lp-scrim": "rgb(0 0 0 / .3)",
-      "status-bar": "transparent"
+      "glass": "linear-gradient(135deg, rgb(255 236 220 / .10), rgb(255 236 220 / .05), rgb(255 236 220 / .08))",
+      "glass-border": "rgb(255 236 220 / .14)",
+      "glass-shadow": "0 8px 28px rgb(0 0 0 / .32)",
+      "glass-sel": "rgb(255 236 220 / .12)"
     },
     "light": {
       "bg": "#F1EEEC",
@@ -69,15 +71,17 @@
       "alert": "#D63A32",
       "ok": "#2B9660",
       "brand": "#C9393D",
-      "brand-shadow": "#EBB33C",
-      "brand-shadow-2": "rgb(60 30 25 / .14)",
+      "brand-shadow": "transparent",
+      "brand-shadow-2": "transparent",
       "board-bg": "rgb(255 255 255 / .5)",
       "col-sep": "rgb(60 30 25 / .08)",
       "ray": "rgb(120 60 40 / .035)",
-      "glow": "rgb(235 179 60 / .16)",
       "scrim": "rgb(35 22 20 / .35)",
       "lp-scrim": "rgb(40 25 20 / .18)",
-      "status-bar": "#1A1617"
+      "glass": "linear-gradient(135deg, rgb(255 255 255 / .74), rgb(255 255 255 / .56), rgb(255 255 255 / .66))",
+      "glass-border": "rgb(255 255 255 / .6)",
+      "glass-shadow": "0 8px 28px rgb(60 30 25 / .10)",
+      "glass-sel": "rgb(60 30 25 / .07)"
     }
   },
   "fonts": {

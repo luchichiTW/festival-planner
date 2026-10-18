@@ -92,7 +92,8 @@ node scripts/icons.mjs <slug>           # 從 assets/icon.html 重畫主畫面�
 
 - 看得出能點的東西（卡片、列表項、按鈕）不加「前往」、箭頭或「點這裡」之類的提示；文字只說會發生什麼（例如「改去這團」）。
 - 不顯示捲軸。
-- iPhone 主畫面版的頁面畫到狀態列底下：靠邊的元件自己處理安全區（頁首 `safe-area-inset-top`、分頁列 `safe-area-inset-bottom`），不要在整頁外圍加內距。狀態列文字是白色，淺色主題用 `--status-bar` 墊底。
+- iPhone 主畫面版的頁面畫到狀態列底下（`black-translucent`），不要在狀態列下方墊單色條：頁首是從螢幕最上緣開始的毛玻璃面板（`--glass` 系列 tokens），自己加 `safe-area-inset-top`；不要在整頁外圍加內距。
+- 分頁列是懸浮在 Home 橫條上方的玻璃膠囊，內容一路延伸到螢幕底；可捲動的內容底部要留 `--dock-space`，最後一項才捲得到膠囊上方。
 
 ## Commit
 

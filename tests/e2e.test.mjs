@@ -55,6 +55,9 @@ async function open(url, { time = PRE_FESTIVAL, timezone = 'Asia/Taipei', safeAr
   })();` });
   await page.goto(url);
   await page.until(() => document.querySelectorAll('#grid .block').length > 0);
+  // Let the app's own first-frame scroll (scrollBoard) happen before the test touches anything.
+  await page.send('Page.bringToFront');
+  await page.eval('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))');
   return page;
 }
 const closePage = (page) => chrome.conn.send('Target.closeTarget', { targetId: page.targetId });
@@ -382,7 +385,7 @@ test('the built single-file artifact runs on its own, without service worker or 
   await closePage(page);
 });
 
-test('iPhone layout: page draws the status bar area, bottom bar reaches the edge, no scrollbars, fade when more stages', { skip: SKIP }, async () => {
+test('iPhone layout: glass header under the status bar, floating tab bar, content to the bottom, no scrollbars, edge fade', { skip: SKIP }, async () => {
   const main = await origin();
   const IPHONE = { top: 59, bottom: 34 };
   const html = await (await fetch(`${main.base}/${SLUG}/`)).text();
@@ -390,49 +393,67 @@ test('iPhone layout: page draws the status bar area, bottom bar reaches the edge
 
   const layout = () => {
     const css = (el, pseudo) => getComputedStyle(el, pseudo);
-    const top = document.querySelector('.top').getBoundingClientRect();
-    const word = document.querySelector('.wordmark').getBoundingClientRect();
+    const top = document.querySelector('.top');
+    const tr = top.getBoundingClientRect();
     const bar = document.querySelector('.tabbar');
-    const strip = css(document.body, '::before');
+    const br = bar.getBoundingClientRect();
+    const board = document.getElementById('board').getBoundingClientRect();
     return {
       rootPad: [css(document.documentElement).paddingTop, css(document.documentElement).paddingBottom],
-      headerTop: Math.round(top.top), wordmarkTop: Math.round(word.top),
-      barBottom: Math.round(bar.getBoundingClientRect().bottom), barPad: css(bar).paddingBottom,
-      buttonsBottom: Math.round(Math.max(...[...bar.querySelectorAll('button')].map((b) => b.getBoundingClientRect().bottom))),
-      strip: { height: strip.height, bg: strip.backgroundColor, z: Number(strip.zIndex) },
+      header: { top: Math.round(tr.top), left: Math.round(tr.left), right: Math.round(tr.right), radius: parseFloat(css(top).borderBottomLeftRadius), blur: /blur/.test(css(top).backdropFilter || css(top).webkitBackdropFilter) },
+      wordmarkTop: Math.round(document.querySelector('.wordmark').getBoundingClientRect().top),
+      wordmarkShadow: css(document.querySelector('.wordmark')).textShadow,
+      strip: css(document.body, '::before').content,
+      bar: { top: Math.round(br.top), bottom: Math.round(br.bottom), left: Math.round(br.left), right: Math.round(br.right), radius: parseFloat(css(bar).borderTopLeftRadius), blur: /blur/.test(css(bar).backdropFilter || css(bar).webkitBackdropFilter) },
+      boardBottom: Math.round(board.bottom),
       scrollbars: ['.board', '.mine', '.sp-res', '.sheet', '.lp-card'].map((sel) => css(document.querySelector(sel)).scrollbarWidth),
-      innerHeight,
+      w: innerWidth, h: innerHeight,
     };
   };
 
-  // Dark: the status bar area is the page itself.
   const dark = await open(`${main.base}/${SLUG}/`, { safeArea: IPHONE, theme: 'dark' });
   const d = await dark.eval(layout);
   assert.deepEqual(d.rootPad, ['0px', '0px'], 'no padding around the whole page');
-  assert.equal(d.headerTop, 0, 'header background starts under the status bar');
+  assert.equal(d.strip, 'none', 'no solid strip painted under the status bar');
+  assert.deepEqual([d.header.top, d.header.left, d.header.right], [0, 0, d.w], 'glass header runs edge to edge from the top');
+  assert.ok(d.header.radius >= 16 && d.header.blur, 'header is a rounded glass panel');
   assert.ok(d.wordmarkTop >= IPHONE.top, `header content clears the status bar (${d.wordmarkTop})`);
-  assert.equal(d.barBottom, d.innerHeight, 'tab bar reaches the bottom edge');
-  assert.equal(d.barPad, `${IPHONE.bottom}px`, 'tab bar keeps the home indicator clear');
-  assert.ok(d.buttonsBottom <= d.innerHeight - IPHONE.bottom, 'tab buttons sit above the home indicator');
-  assert.equal(d.strip.height, `${IPHONE.top}px`);
-  assert.equal(d.strip.bg, 'rgba(0, 0, 0, 0)', 'dark: status bar area shows the page');
+  assert.ok(d.bar.radius >= 20 && d.bar.blur, 'tab bar is a glass capsule');
+  assert.ok(d.bar.left > 0 && d.bar.right < d.w, 'capsule floats clear of the screen sides');
+  assert.ok(d.bar.bottom <= d.h - 20, `capsule sits above the home indicator (${d.bar.bottom}/${d.h})`);
+  assert.ok(d.bar.bottom - d.bar.top <= 60, 'capsule is no taller than a tab bar');
+  assert.equal(d.boardBottom, d.h, 'timetable runs to the bottom edge, under the capsule');
   assert.deepEqual(d.scrollbars, ['none', 'none', 'none', 'none', 'none']);
-  // A sheet dims the status bar area too.
+  // The last show and the end of 我的團序 can scroll clear of the capsule.
+  const lastClear = await dark.eval(async () => {
+    const b = document.getElementById('board');
+    b.scrollTop = b.scrollHeight;
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const blocks = [...document.querySelectorAll('#grid .block')];
+    const lowest = Math.max(...blocks.map((x) => x.getBoundingClientRect().bottom));
+    return lowest <= document.querySelector('.tabbar').getBoundingClientRect().top;
+  });
+  assert.ok(lastClear, 'the latest show scrolls above the capsule');
   await dark.tap('#tabMine');
   await dark.until(() => document.getElementById('aboutBtn'));
+  const mineClear = await dark.eval(async () => {
+    const m = document.getElementById('mineView');
+    m.scrollTop = m.scrollHeight;
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    return document.getElementById('aboutBtn').getBoundingClientRect().bottom <= document.querySelector('.tabbar').getBoundingClientRect().top;
+  });
+  assert.ok(mineClear, 'the end of 我的團序 scrolls above the capsule');
   await dark.tap('#aboutBtn');
   const scrim = await dark.eval(() => { const r = document.getElementById('scrim').getBoundingClientRect(); return { top: r.top, h: r.height }; });
-  assert.deepEqual(scrim, { top: 0, h: d.innerHeight }, 'the sheet scrim covers the status bar area too');
-  // The strip is the top layer (transparent in dark), so the search panel and card never hide the status bar text.
-  const overlays = await dark.eval(() => ['scrim', 'sp', 'spScrim', 'lpBackdrop', 'lpCard', 'toast'].map((id) => Number(getComputedStyle(document.getElementById(id)).zIndex)));
-  assert.ok(overlays.every((z) => z < d.strip.z), `strip above every overlay (${overlays} < ${d.strip.z})`);
+  assert.deepEqual(scrim, { top: 0, h: d.h }, 'the sheet scrim covers the status bar area too');
   await closePage(dark);
 
-  // Light: a charcoal strip keeps the white status bar text readable, and follows the in-app theme switch.
+  // Light: same glass, and the wordmark has no doubled shadow.
   const light = await open(`${main.base}/${SLUG}/`, { safeArea: IPHONE, theme: 'light' });
-  assert.equal((await light.eval(layout)).strip.bg, 'rgb(26, 22, 23)');
-  await light.tap('#themeBtn');
-  assert.equal((await light.eval(layout)).strip.bg, 'rgba(0, 0, 0, 0)', 'switching the app to dark updates the strip');
+  const l = await light.eval(layout);
+  assert.equal(l.strip, 'none');
+  assert.ok(l.header.blur && l.bar.blur);
+  assert.match(l.wordmarkShadow, /^(none|(rgba\(0, 0, 0, 0\)[^,]*,?\s*)+)$/, `light wordmark has no visible shadow (${l.wordmarkShadow})`);
 
   // More stages to the right → fade on the right edge, gone once scrolled to the end. (This origin reopens on
   // 我的團序 from the dark run; switching to 排團 must recompute the fade.)

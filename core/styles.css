@@ -9,20 +9,17 @@ html {
   box-sizing: border-box;
   -webkit-text-size-adjust: 100%;
 }
-/* Safe areas belong to the parts that touch the screen edges (header, tab bar, sheets), not to padding around the
-   whole page — so backgrounds reach under the status bar and the home indicator. :root also cancels the padding
-   Claude's artifact frame puts there. */
-:root { padding-top: 0; padding-bottom: 0; }
-/* The status bar text is white (black-translucent). Behind it: the page in dark themes, --status-bar in light ones.
-   Top layer, so overlays never hide the time; transparent, so in dark themes they still dim the area. */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0 0 auto;
-  height: env(safe-area-inset-top, 0px);
-  z-index: 50;
-  background: var(--status-bar, transparent);
-  pointer-events: none;
+/* Safe areas belong to the parts that touch the screen edges (glass header, floating tab bar, sheets), not to padding
+   around the whole page — so the page runs under the status bar and the home indicator. :root also cancels the
+   padding Claude's artifact frame puts there.
+   --dock-*: the floating tab bar's height, its gap above the screen bottom, and the room scrolling content leaves
+   for it. */
+:root {
+  padding-top: 0;
+  padding-bottom: 0;
+  --dock-h: 57px;
+  --dock-gap: max(calc(env(safe-area-inset-bottom, 0px) - 6px), 12px);
+  --dock-space: calc(var(--dock-h) + var(--dock-gap) + 10px);
 }
 /* Scroll without visible scrollbars. */
 .board, .mine, .sp-res, .sheet, .lp-card, .lp-tabs { scrollbar-width: none; }
@@ -38,9 +35,7 @@ body {
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   background-color: var(--bg);
-  background-image:
-    radial-gradient(120% 60% at 50% -12%, var(--glow), transparent 62%),
-    repeating-conic-gradient(from -90deg at 50% -25%, var(--ray) 0deg 3deg, transparent 3deg 8deg);
+  background-image: repeating-conic-gradient(from -90deg at 50% -25%, var(--ray) 0deg 3deg, transparent 3deg 8deg);
   color: var(--fg);
   font: 400 14px/1.5 var(--body);
   -webkit-tap-highlight-color: transparent;
@@ -56,13 +51,21 @@ button { font: inherit; color: inherit; }
   flex-direction: column;
 }
 
-/* ---------- header: one row ---------- */
+/* ---------- header: one row on a glass panel that starts under the status bar ---------- */
 .top {
   flex: none;
+  position: relative;
+  z-index: 8;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding-block: calc(10px + env(safe-area-inset-top, 0px)) 8px;
+  margin: 0 calc(-1 * max(16px, env(safe-area-inset-right, 0px))) 8px calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
+  padding: calc(10px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
+  border-radius: 0 0 22px 22px;
+  background: var(--glass, var(--bg-2));
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  backdrop-filter: blur(28px) saturate(180%);
+  box-shadow: var(--glass-shadow, none), inset 0 -.5px 0 var(--glass-border, var(--line));
 }
 .wordmark {
   flex: none;
@@ -176,7 +179,7 @@ button { font: inherit; color: inherit; }
 .coach {
   position: absolute;
   left: 50%;
-  bottom: 12px;
+  bottom: var(--dock-space);
   z-index: 6;
   width: min(calc(100% - 8px), 460px);
   transform: translateX(-50%);
@@ -220,7 +223,7 @@ button { font: inherit; color: inherit; }
   grid-template-columns: var(--tw) repeat(var(--ns, 7), minmax(var(--cw), 1fr));
   grid-template-rows: auto var(--H);
   min-width: calc(var(--tw) + var(--ns, 7) * var(--cw));
-  padding-bottom: 10px;
+  padding-bottom: var(--dock-space); /* the latest show can scroll above the floating tab bar */
 }
 .corner, .sh { position: sticky; top: 0; background: var(--bg-2); border-bottom: 1px solid var(--line-2); }
 .corner { left: 0; z-index: 5; }
@@ -391,7 +394,7 @@ button { font: inherit; color: inherit; }
   cursor: pointer;
 }
 .mine { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
-.mine-in { max-width: 640px; margin: 0 auto; padding-block: 4px 24px; display: flex; flex-direction: column; gap: 24px; }
+.mine-in { max-width: 640px; margin: 0 auto; padding-block: 4px calc(var(--dock-space) + 12px); display: flex; flex-direction: column; gap: 24px; }
 .mday { display: flex; flex-direction: column; gap: 8px; scroll-margin-top: 8px; }
 .mday h2 { margin: 0 0 2px; display: flex; align-items: baseline; gap: 10px; font-weight: 400; }
 .dl { font: 900 21px/1 var(--display); letter-spacing: .04em; color: var(--accent-text); }
@@ -579,34 +582,39 @@ button { font: inherit; color: inherit; }
 .pill-btn.armed { color: var(--alert); border-color: var(--alert); }
 .src { margin: 0; text-align: center; font-size: 11.5px; color: var(--faint); }
 
-/* ---------- tab bar ---------- */
+/* ---------- tab bar: a floating glass capsule above the home indicator (iOS 26 style); content runs under it ---------- */
 .tabbar {
-  flex: none;
+  position: fixed;
+  left: 50%;
+  bottom: var(--dock-gap);
+  z-index: 12;
   display: flex;
-  margin-left: calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
-  margin-right: calc(-1 * max(16px, env(safe-area-inset-right, 0px)));
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  border-top: 1px solid var(--line);
-  background: var(--bg-2);
+  gap: 2px;
+  padding: 4px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: var(--glass, var(--bg-2));
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  backdrop-filter: blur(28px) saturate(180%);
+  box-shadow: var(--glass-shadow, none), inset 0 0 0 .5px var(--glass-border, var(--line));
 }
 .tabbar button {
   position: relative;
-  flex: 1;
+  min-width: 104px;
   appearance: none;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 8px 4px 7px;
+  gap: 3px;
+  padding: 7px 14px 6px;
   border: 0;
+  border-radius: 999px;
   background: transparent;
   color: var(--muted);
-  font: 700 11px/1 var(--body);
+  font: 700 10.5px/1 var(--body);
   cursor: pointer;
 }
-.tabbar button[aria-pressed="true"] { color: var(--accent-text); }
+.tabbar button[aria-pressed="true"] { color: var(--accent-text); background: var(--glass-sel, var(--line)); }
 .tabbar svg { width: 22px; height: 22px; }
 .tb-badges { position: absolute; top: 3px; left: calc(50% + 9px); display: flex; gap: 3px; }
 .tb-badges span {
@@ -865,7 +873,7 @@ button { font: inherit; color: inherit; }
 .toast {
   position: fixed;
   left: 50%;
-  bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--dock-space) + 6px);
   z-index: 30;
   max-width: calc(100% - 32px);
   padding: 10px 16px;
