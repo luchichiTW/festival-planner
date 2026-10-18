@@ -18,8 +18,13 @@ after(() => fs.rmSync(out, { recursive: true, force: true }));
 const read = (f) => fs.readFileSync(path.join(out, f), 'utf8');
 const ticketOf = (html, slug) => new RegExp(`<a class="ticket"[^>]* href="${slug}/"[\\s\\S]*?</a>`).exec(html)?.[0] || '';
 
-test('the homepage ships four files and loads nothing from other sites', () => {
-  assert.deepEqual(fs.readdirSync(out).sort(), ['index.html', 'llms.txt', 'robots.txt', 'sitemap.xml']);
+test('the homepage ships its own files, icons included, and loads nothing from other sites', () => {
+  assert.deepEqual(fs.readdirSync(out).sort(), ['icons', 'index.html', 'llms.txt', 'robots.txt', 'sitemap.xml']);
+  // Icons are the homepage's own copies: an event's path may redirect elsewhere once the event moves (urls.archive).
+  for (const ev of events) {
+    assert.ok(fs.existsSync(path.join(out, 'icons', `${ev.slug}.png`)), `${ev.slug} icon copied`);
+    assert.ok(read('index.html').includes(`<img class="t-icon" src="icons/${ev.slug}.png"`), `${ev.slug} ticket uses the copy`);
+  }
   const html = read('index.html');
   // Loaded resources only: a canonical link or an <a href> to another site loads nothing.
   assert.doesNotMatch(html, /<script[^>]+src=|<link[^>]+rel="(stylesheet|preload|modulepreload|icon|apple-touch-icon|manifest)"[^>]+href="(https?:)?\/\/|<img[^>]+src="(https?:)?\/\/|fonts\.googleapis/, 'no scripts, styles, fonts or images from other sites');

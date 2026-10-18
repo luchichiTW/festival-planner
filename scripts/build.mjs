@@ -323,7 +323,7 @@ function ticket(ev) {
     '--t-brand': d.brand || d.gold, '--t-shadow': d['brand-shadow'] || 'transparent', '--t-ink': d.ink,
     '--t-line': d['line-2'] || d.line, '--t-chip': d.line,
   };
-  const img = ev.icons?.png?.['192'] ? 'icon-192.png' : ev.icons?.svg ? 'icon.svg' : null;
+  const img = ev.icons?.png?.['192'] ? `icons/${ev.slug}.png` : null; // copied by buildSite
   const stages = ev.stages || [];
   // A long Chinese stage name shows its short form; Latin names fit as they are.
   const chip = (st) => (st.short && /[㐀-鿿\u{20000}-\u{2ffff}]/u.test(st.name) && [...st.name].length > 4 ? st.short : st.name);
@@ -334,7 +334,7 @@ function ticket(ev) {
       <div class="t-main">
         <div class="t-stripe" aria-hidden="true">${tba ? `<b style="flex:1;background:var(--t-accent)"></b>` : stages.map((st, i) => `<i style="--s:${esc(st.color.dark)};--n:${i}"></i>`).join('')}</div>
         <div class="t-head">
-          ${img ? `<img class="t-icon" src="${ev.slug}/${img}" alt="" width="56" height="56">` : ''}
+          ${img ? `<img class="t-icon" src="${img}" alt="" width="56" height="56">` : ''}
           <div class="t-title">
             <p class="t-mark">${esc(ev.wordmark?.text || ev.shortName)}<small>${esc(ev.wordmark?.sub || '')}</small></p>
             <p class="t-where">${esc(tba ? ev.notice : ev.venue?.name || ev.subtitle || '')}</p>
@@ -369,6 +369,13 @@ export function buildSite({ out = path.join(ROOT, 'dist-site') } = {}) {
   });
   fs.mkdirSync(out, { recursive: true });
   fs.writeFileSync(path.join(out, 'index.html'), html);
+  // The homepage keeps its own copy of each icon: once an event moves elsewhere (urls.archive), its path redirects.
+  fs.rmSync(path.join(out, 'icons'), { recursive: true, force: true });
+  fs.mkdirSync(path.join(out, 'icons'));
+  for (const ev of events) {
+    const rel = ev.icons?.png?.['192'];
+    if (rel) fs.copyFileSync(path.join(ROOT, 'events', ev.slug, rel), path.join(out, 'icons', `${ev.slug}.png`));
+  }
 
   /* ---------- robots.txt: one group for every crawler, and where the sitemaps are ---------- */
   const live = events.filter((ev) => !ev.urls?.archive);
