@@ -22,9 +22,12 @@ const get = async (url, opts = {}) => {
 };
 const text = async (url) => { const r = await get(url); return r.ok ? r.text() : ''; };
 const json = async (url) => { const r = await get(url); return r.ok ? r.json() : null; };
-// Loose title match: lower case, no brackets, no spaces or punctuation; either contains the other.
-const norm = (t) => String(t || '').toLowerCase().replace(/[(（\[【「][^)）\]】」]*[)）\]】」]/g, '').replace(/[\s\p{P}\p{S}]/gu, '');
-const sameTitle = (a, b) => { const x = norm(a); const y = norm(b); return !!x && !!y && (x.includes(y) || y.includes(x)); };
+// Loose title match: lower case, no spaces or punctuation; either contains the other. Video titles often carry the
+// song inside brackets (【神岡】, 「c r a z y」), so compare with the brackets' contents kept and with them dropped.
+const squash = (t) => String(t || '').toLowerCase().replace(/[\s\p{P}\p{S}]/gu, '');
+const unbracket = (t) => String(t || '').replace(/[(（\[【「][^)）\]】」]*[)）\]】」]/g, '');
+const sameTitle = (a, b) => [[squash(a), squash(b)], [squash(unbracket(a)), squash(unbracket(b))]]
+  .some(([x, y]) => !!x && !!y && (x.includes(y) || y.includes(x)));
 
 const idFrom = {
   spotify: (u) => (u || '').match(/\/artist\/([A-Za-z0-9]{22})/)?.[1],
