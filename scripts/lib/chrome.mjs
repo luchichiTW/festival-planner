@@ -102,21 +102,29 @@ export class Page {
     if (file) fs.writeFileSync(file, Buffer.from(r.data, 'base64'));
     return Buffer.from(r.data, 'base64');
   }
-  // Center of the first element matching the selector, in CSS pixels.
+  // Center of the first element matching the selector, in CSS pixels, scrolled onto the screen.
+  // Re-checks after two frames: the page may still be scrolling itself (e.g. the board's scroll on startup).
   async center(selector) {
     await this.send('Page.bringToFront'); // input only reaches the front tab
-    const c = await this.eval((sel) => {
-      const el = document.querySelector(sel);
-      if (!el) return null;
-      el.scrollIntoView({ block: 'center', inline: 'center' });
-      const r = el.getBoundingClientRect();
-      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-    }, selector);
-    if (!c) throw new Error(`no element ${selector}`);
-    return c;
+    for (let i = 0; i < 4; i++) {
+      const c = await this.eval(async (sel) => {
+        const el = document.querySelector(sel);
+        if (!el) return null;
+        el.scrollIntoView({ block: 'center', inline: 'center' });
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        const r = el.getBoundingClientRect();
+        const x = r.left + r.width / 2;
+        const y = r.top + r.height / 2;
+        return { x, y, on: x >= 0 && y >= 0 && x <= innerWidth && y <= innerHeight };
+      }, selector);
+      if (!c) throw new Error(`no element ${selector}`);
+      if (c.on) return { x: c.x, y: c.y };
+    }
+    throw new Error(`${selector} stays off screen`);
   }
   async tap(selector) {
     const { x, y } = await this.center(selector);
+    if (process.env.FP_DEBUG) console.log('tap', selector, x, y, await this.eval(`(() => { const e = document.elementFromPoint(${x}, ${y}); return e ? (e.closest('[data-id]')?.dataset.id || e.id || e.className) : null; })()`));
     await this.send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1 });
     await this.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 });
   }
@@ -154,7 +162,8 @@ export async function launch({ args = [], userDataDir } = {}) {
   const conn = new Connection(ws);
   return {
     conn,
-    async newPage({ width = 390, height = 844, scale = 3, mobile = true, touch = true, timezone } = {}) {
+    // safeArea: { top, bottom, left, right } in CSS px, like an iPhone's notch and home indicator.
+    async newPage({ width = 390, height = 844, scale = 3, mobile = true, touch = true, timezone, safeArea } = {}) {
       const { targetId } = await conn.send('Target.createTarget', { url: 'about:blank' });
       const { sessionId } = await conn.send('Target.attachToTarget', { targetId, flatten: true });
       const page = new Page(conn, sessionId, targetId);
@@ -164,6 +173,7 @@ export async function launch({ args = [], userDataDir } = {}) {
       await page.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: scale, mobile });
       if (touch) await page.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
       if (timezone) await page.send('Emulation.setTimezoneOverride', { timezoneId: timezone });
+      if (safeArea) await page.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 0, bottom: 0, left: 0, right: 0, ...safeArea } });
       return page;
     },
     async close() {

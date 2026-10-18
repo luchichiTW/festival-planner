@@ -40,8 +40,9 @@ const rebuild = (root, buildId) => {
 };
 
 // Page with the festival clock set to `time` and a controllable page visibility (window.__fpSetVis).
-async function open(url, { time = PRE_FESTIVAL, timezone = 'Asia/Taipei' } = {}) {
-  const page = await chrome.newPage({ timezone });
+async function open(url, { time = PRE_FESTIVAL, timezone = 'Asia/Taipei', safeArea, theme, width, height, mobile } = {}) {
+  const page = await chrome.newPage({ timezone, safeArea, width, height, mobile, touch: mobile !== false });
+  if (theme) await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: theme }] });
   const t = Date.parse(time);
   await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
     const off = ${t} - Date.now(); const R = Date;
@@ -58,11 +59,15 @@ async function open(url, { time = PRE_FESTIVAL, timezone = 'Asia/Taipei' } = {})
 }
 const closePage = (page) => chrome.conn.send('Target.closeTarget', { targetId: page.targetId });
 // Each test gets its own origin (a new port on the shared folder), so storage and service workers never leak between tests.
+const servers = [];
 async function origin() {
   const s = await serve({ root: mainRoot, port: 0 });
   s.base = `http://127.0.0.1:${s.port}`;
+  servers.push(s);
   return s;
 }
+// Close every per-test server even when a test fails half-way (an open server keeps node:test from exiting).
+after(async () => { for (const s of servers) await s.close().catch(() => {}); });
 
 const readBoard = () => ({
   stages: [...document.querySelectorAll('#grid .sh b')].map((b) => b.textContent),
@@ -375,4 +380,95 @@ test('the built single-file artifact runs on its own, without service worker or 
   await page.until(() => document.getElementById('syncNote'));
   assert.match(await page.eval(`document.getElementById('syncNote').textContent`), /存在這個瀏覽器裡/);
   await closePage(page);
+});
+
+test('iPhone layout: page draws the status bar area, bottom bar reaches the edge, no scrollbars, fade when more stages', { skip: SKIP }, async () => {
+  const main = await origin();
+  const IPHONE = { top: 59, bottom: 34 };
+  const html = await (await fetch(`${main.base}/${SLUG}/`)).text();
+  assert.match(html, /<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">/);
+
+  const layout = () => {
+    const css = (el, pseudo) => getComputedStyle(el, pseudo);
+    const top = document.querySelector('.top').getBoundingClientRect();
+    const word = document.querySelector('.wordmark').getBoundingClientRect();
+    const bar = document.querySelector('.tabbar');
+    const strip = css(document.body, '::before');
+    return {
+      rootPad: [css(document.documentElement).paddingTop, css(document.documentElement).paddingBottom],
+      headerTop: Math.round(top.top), wordmarkTop: Math.round(word.top),
+      barBottom: Math.round(bar.getBoundingClientRect().bottom), barPad: css(bar).paddingBottom,
+      buttonsBottom: Math.round(Math.max(...[...bar.querySelectorAll('button')].map((b) => b.getBoundingClientRect().bottom))),
+      strip: { height: strip.height, bg: strip.backgroundColor, z: Number(strip.zIndex) },
+      scrollbars: ['.board', '.mine', '.sp-res', '.sheet', '.lp-card'].map((sel) => css(document.querySelector(sel)).scrollbarWidth),
+      innerHeight,
+    };
+  };
+
+  // Dark: the status bar area is the page itself.
+  const dark = await open(`${main.base}/${SLUG}/`, { safeArea: IPHONE, theme: 'dark' });
+  const d = await dark.eval(layout);
+  assert.deepEqual(d.rootPad, ['0px', '0px'], 'no padding around the whole page');
+  assert.equal(d.headerTop, 0, 'header background starts under the status bar');
+  assert.ok(d.wordmarkTop >= IPHONE.top, `header content clears the status bar (${d.wordmarkTop})`);
+  assert.equal(d.barBottom, d.innerHeight, 'tab bar reaches the bottom edge');
+  assert.equal(d.barPad, `${IPHONE.bottom}px`, 'tab bar keeps the home indicator clear');
+  assert.ok(d.buttonsBottom <= d.innerHeight - IPHONE.bottom, 'tab buttons sit above the home indicator');
+  assert.equal(d.strip.height, `${IPHONE.top}px`);
+  assert.equal(d.strip.bg, 'rgba(0, 0, 0, 0)', 'dark: status bar area shows the page');
+  assert.deepEqual(d.scrollbars, ['none', 'none', 'none', 'none', 'none']);
+  // A sheet dims the status bar area too.
+  await dark.tap('#tabMine');
+  await dark.until(() => document.getElementById('aboutBtn'));
+  await dark.tap('#aboutBtn');
+  const scrim = await dark.eval(() => { const r = document.getElementById('scrim').getBoundingClientRect(); return { top: r.top, h: r.height }; });
+  assert.deepEqual(scrim, { top: 0, h: d.innerHeight }, 'the sheet scrim covers the status bar area too');
+  // The strip is the top layer (transparent in dark), so the search panel and card never hide the status bar text.
+  const overlays = await dark.eval(() => ['scrim', 'sp', 'spScrim', 'lpBackdrop', 'lpCard', 'toast'].map((id) => Number(getComputedStyle(document.getElementById(id)).zIndex)));
+  assert.ok(overlays.every((z) => z < d.strip.z), `strip above every overlay (${overlays} < ${d.strip.z})`);
+  await closePage(dark);
+
+  // Light: a charcoal strip keeps the white status bar text readable, and follows the in-app theme switch.
+  const light = await open(`${main.base}/${SLUG}/`, { safeArea: IPHONE, theme: 'light' });
+  assert.equal((await light.eval(layout)).strip.bg, 'rgb(26, 22, 23)');
+  await light.tap('#themeBtn');
+  assert.equal((await light.eval(layout)).strip.bg, 'rgba(0, 0, 0, 0)', 'switching the app to dark updates the strip');
+
+  // More stages to the right → fade on the right edge, gone once scrolled to the end. (This origin reopens on
+  // 我的團序 from the dark run; switching to 排團 must recompute the fade.)
+  await light.tap('#tabPick');
+  assert.equal(await light.eval(`document.getElementById('pickView').classList.contains('more-right')`), true);
+  await light.until(() => getComputedStyle(document.getElementById('pickView'), '::after').opacity === '1');
+  await light.eval(`(() => { const b = document.getElementById('board'); b.scrollLeft = b.scrollWidth; b.dispatchEvent(new Event('scroll')); })()`);
+  await light.until(() => !document.getElementById('pickView').classList.contains('more-right'));
+  await closePage(light);
+  const wide = await open(`${main.base}/${SLUG}/`, { width: 1280, height: 900, mobile: false });
+  assert.equal(await wide.eval(`document.getElementById('pickView').classList.contains('more-right')`), false, 'all stages fit: no fade');
+  await closePage(wide);
+  await main.close();
+});
+
+test('no redundant cues on things that are obviously tappable (no 前往, no arrows, no tap hints)', { skip: SKIP }, async () => {
+  const main = await origin();
+  const page = await open(`${main.base}/${SLUG}/`);
+  await page.tap('#searchBtn');
+  assert.equal(await page.eval(`document.getElementById('spRes').innerText.trim()`), '', 'empty search: the placeholder says enough');
+  await page.type('落日');
+  const item = await page.eval(() => ({ text: document.querySelector('.sp-item').innerText, go: !!document.querySelector('.sp-go') }));
+  assert.equal(item.go, false);
+  assert.doesNotMatch(item.text, /前往|→/);
+  await page.tap('#spClose');
+  await page.longPress('.block[data-id="d1-ano"]');
+  await page.until(() => !document.getElementById('lpCard').hidden);
+  const card = await page.eval(() => ({ plats: [...document.querySelectorAll('#lpPlat a')].map((a) => a.textContent), hint: !!document.getElementById('lpHint') }));
+  assert.deepEqual(card, { plats: ['Spotify', 'Apple Music', 'YouTube'], hint: false });
+  await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+  await page.until(() => document.getElementById('lpCard').hidden);
+  await page.tap('#tabMine');
+  await page.until(() => document.getElementById('aboutBtn'));
+  await page.tap('#aboutBtn');
+  const about = await page.eval(() => [...document.querySelectorAll('.about-links a b')].map((b) => b.textContent + getComputedStyle(b, '::after').content));
+  assert.deepEqual(about, ['原始碼none', 'CLAUDE.mdnone', '原始 artifactnone']);
+  await closePage(page);
+  await main.close();
 });
