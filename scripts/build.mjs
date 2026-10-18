@@ -97,6 +97,72 @@ function dayTabs(ev) {
   }).join('\n');
 }
 
+// _redirects and _headers for every event built into `out` (one deploy may hold several when built locally).
+function writeRouting(out) {
+  // /<slug> → /<slug>/ (relative links and the service worker scope need the slash).
+  const built = fs.readdirSync(out, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && fs.existsSync(path.join(out, d.name, 'index.html'))).map((d) => d.name).sort();
+  fs.writeFileSync(path.join(out, '_redirects'), built.map((s) => `/${s} /${s}/ 301`).join('\n') + '\n');
+  // Each page that has a Markdown copy says so in its response headers too (events built with features.pages).
+  const withPages = built.filter((s) => fs.existsSync(path.join(out, s, 'sitemap.xml')));
+  const headerRules = withPages.map((s) => [`/${s}/`, `/${s}/claude/`, `/${s}/artists/*`]
+    .map((r) => `${r}\n  Link: <index.md>; rel="alternate"; type="text/markdown"`).join('\n'));
+  if (headerRules.length) fs.writeFileSync(path.join(out, '_headers'), headerRules.join('\n') + '\n');
+  else fs.rmSync(path.join(out, '_headers'), { force: true });
+}
+
+// "status": "tba": one page in the event's colours saying the details are on the way. No planner, no service
+// worker (nothing to keep offline, and nothing cached to clean up when the real planner replaces it), no artifact.
+function buildTba({ event: ev, dir }, out) {
+  const site = path.join(out, ev.slug);
+  fs.rmSync(site, { recursive: true, force: true });
+  fs.mkdirSync(site, { recursive: true });
+  const copy = (rel, name) => { fs.copyFileSync(path.join(dir, rel), path.join(site, name)); return name; };
+  const icon = {};
+  if (ev.icons?.svg) icon.svg = copy(ev.icons.svg, 'icon.svg');
+  for (const [size, rel] of Object.entries(ev.icons?.png || {})) icon[size] = copy(rel, `icon-${size}.png`);
+  const fontName = (rel) => `fonts/${path.basename(rel)}`;
+  for (const role of ['display', 'body', 'mono']) {
+    const f = ev.fonts?.[role]?.file;
+    if (f) { fs.mkdirSync(path.join(site, 'fonts'), { recursive: true }); copy(f, fontName(f)); }
+  }
+  const base = ev.urls?.site || '';
+  const title = `${ev.name} 排團工具（${ev.notice}）`;
+  const description = `${ev.name}非官方排團工具：${ev.notice}。陣容與時間表公布後，這裡會變成排團工具。`;
+  const links = [ev.urls?.official && ['官方網站', ev.urls.official], ev.urls?.instagram && ['官方 Instagram', ev.urls.instagram], ev.urls?.previous && [ev.urls.previousLabel || '上一屆的排團工具', ev.urls.previous]].filter(Boolean);
+  const html = `<!doctype html>
+<html lang="${esc(ev.lang)}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>${esc(title)}</title>
+<meta name="description" content="${esc(description)}">
+<meta name="theme-color" content="${esc(ev.icons?.themeColor || ev.theme.dark.bg)}">
+${base ? `<link rel="canonical" href="${esc(base)}">\n<meta property="og:title" content="${esc(title)}">\n<meta property="og:description" content="${esc(description)}">\n<meta property="og:url" content="${esc(base)}">` : ''}
+${icon.svg ? '<link rel="icon" href="icon.svg" type="image/svg+xml">' : icon['192'] ? '<link rel="icon" href="icon-192.png" sizes="192x192" type="image/png">' : ''}
+${icon['180'] ? '<link rel="apple-touch-icon" href="icon-180.png">' : ''}
+<style>
+${themeCSS({ ...ev, stages: ev.stages || [] }, fontName)}
+${read(path.join(CORE, 'tba.css'))}${ev.css ? '\n' + read(path.join(dir, ev.css)) : ''}
+</style>
+</head>
+<body>
+<main class="tba">
+  <h1 class="wordmark"><span>${esc(ev.wordmark?.text || ev.shortName)}</span><small>${esc(ev.wordmark?.sub || '')}</small></h1>
+  <p class="tba-notice">${esc(ev.notice)}</p>
+  ${ev.noticeEn ? `<p class="tba-en" lang="en">${esc(ev.nameEn || '')}${ev.nameEn ? ' — ' : ''}${esc(ev.noticeEn)}</p>` : ''}
+  <p class="tba-text">陣容和時間表公布後，這裡會變成排團工具：看時間表、排出自己的團序、撞團時抽籤，加到手機主畫面後沒訊號也能開。</p>
+  ${links.length ? `<p class="tba-links">${links.map(([l, u]) => `<a href="${esc(u)}">${esc(l)}</a>`).join('')}</p>` : ''}
+  <p class="tba-foot">非官方排團工具。活動資訊以主辦方公告為準。</p>
+</main>
+</body>
+</html>
+`;
+  fs.writeFileSync(path.join(site, 'index.html'), html);
+  writeRouting(out);
+  return { build: 'tba', site, artifact: null, files: [], report: { warnings: [] } };
+}
+
 export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'dist'), artifactOut = path.join(ROOT, 'dist-artifact') } = {}) {
   const loaded = loadEvent(slug);
   const report = validate(loaded);
@@ -105,6 +171,7 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
     e.report = report;
     throw e;
   }
+  if (loaded.event.status === 'tba') return buildTba(loaded, out);
   const { event: ev, schedule, artists, venue, dir } = loaded;
   const build = buildId();
   const template = read(path.join(CORE, 'index.html'));
@@ -203,16 +270,7 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
     .replace("'__PREFIX__'", JSON.stringify(`fp-${slug}-`))
     .replace('__FILES__', JSON.stringify(files)));
 
-  // /<slug> → /<slug>/ for every event built into this folder (relative links and the service worker scope need the slash).
-  const built = fs.readdirSync(out, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && fs.existsSync(path.join(out, d.name, 'sw.js'))).map((d) => d.name).sort();
-  fs.writeFileSync(path.join(out, '_redirects'), built.map((s) => `/${s} /${s}/ 301`).join('\n') + '\n');
-  // Each page that has a Markdown copy says so in its response headers too (events built with features.pages).
-  const withPages = built.filter((s) => fs.existsSync(path.join(out, s, 'sitemap.xml')));
-  const headerRules = withPages.map((s) => [`/${s}/`, `/${s}/claude/`, `/${s}/artists/*`]
-    .map((r) => `${r}\n  Link: <index.md>; rel="alternate"; type="text/markdown"`).join('\n'));
-  if (headerRules.length) fs.writeFileSync(path.join(out, '_headers'), headerRules.join('\n') + '\n');
-  else fs.rmSync(path.join(out, '_headers'), { force: true });
+  writeRouting(out);
 
   /* ---------- single-file artifact ---------- */
   const dataURI = (rel) => `data:font/woff2;base64,${fs.readFileSync(path.join(dir, rel)).toString('base64')}`;
@@ -250,13 +308,13 @@ export function buildSite({ out = path.join(ROOT, 'dist-site') } = {}) {
     const report = validate(loaded);
     if (report.errors.length) throw Object.assign(new Error(`${slug} 的資料有錯，首頁不建置`), { report });
     return loaded.event;
-  }).sort((a, b) => b.days[0].date.localeCompare(a.days[0].date)); // the page re-sorts by today's date
+  }).sort((a, b) => (b.days?.[0]?.date || '9999').localeCompare(a.days?.[0]?.date || '9999')); // the page re-sorts by today's date
   const icon = (ev) => (ev.icons?.png?.['192'] ? 'icon-192.png' : ev.icons?.svg ? 'icon.svg' : null);
   const cards = events.map((ev) => {
     const img = icon(ev);
     return `      <li><a class="ev" href="${ev.slug}/" style="--cd:${esc(ev.theme.dark['accent-text'] || ev.theme.dark.gold)};--cl:${esc(ev.theme.light['accent-text'] || ev.theme.light.gold)}">`
       + (img ? `<img class="ev-icon" src="${ev.slug}/${img}" alt="" width="60" height="60">` : '<span class="ev-icon"></span>')
-      + `<span class="ev-body"><b class="ev-name">${esc(ev.name)}</b><span class="ev-sub">${esc(ev.subtitle || '')}</span><span class="ev-status"></span></span></a></li>`;
+      + `<span class="ev-body"><b class="ev-name">${esc(ev.name)}</b><span class="ev-sub">${esc(ev.status === 'tba' ? ev.notice : ev.subtitle || '')}</span><span class="ev-status"></span></span></a></li>`;
   }).join('\n');
   const repo = events.find((ev) => ev.urls?.repo)?.urls.repo || 'https://github.com/luchichiTW/festival-planner';
   const html = fill(read(path.join(ROOT, 'site', 'index.html')), {
@@ -264,7 +322,7 @@ export function buildSite({ out = path.join(ROOT, 'dist-site') } = {}) {
     cards,
     repo: esc(repo),
     repoLabel: esc(repo.replace(/^https:\/\//, '')),
-    events: inlineJSON(events.map((ev) => ({ slug: ev.slug, tz: ev.timezone, days: ev.days.map((d) => ({ date: d.date, label: d.label })) }))),
+    events: inlineJSON(events.map((ev) => ({ slug: ev.slug, tz: ev.timezone || 'Asia/Taipei', days: (ev.days || []).map((d) => ({ date: d.date, label: d.label })) }))),
   });
   fs.mkdirSync(out, { recursive: true });
   fs.writeFileSync(path.join(out, 'index.html'), html);
@@ -291,6 +349,7 @@ function main() {
   }
   try {
     const r = build(slug, { releaseArtifact: args.includes('--release-artifact') });
+    if (r.build === 'tba') { console.log(`✓ ${slug}：待官方資訊公布的一頁 → ${path.relative(ROOT, r.site)}/`); return; }
     console.log(`✓ ${slug} @ ${r.build}`);
     console.log(`  網站     ${path.relative(ROOT, r.site)}/（${r.files.length} 個檔案進離線快取）`);
     console.log(`  artifact ${path.relative(ROOT, r.artifact)}${args.includes('--release-artifact') ? `，並更新 events/${slug}/artifact/index.html` : ''}`);

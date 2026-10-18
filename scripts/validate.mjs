@@ -37,8 +37,9 @@ export const splitArtists = (name) => name.split(/\s+(?:ft\.|×)\s+/).map((a) =>
 export function loadEvent(slug) {
   const dir = path.join(ROOT, 'events', slug);
   const read = (f) => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
-  const venue = fs.existsSync(path.join(dir, 'data/venue.json')) ? read('data/venue.json') : null;
-  return { slug, dir, event: read('event.json'), schedule: read('data/schedule.json'), artists: read('data/artists.json'), venue };
+  const opt = (f, empty) => (fs.existsSync(path.join(dir, f)) ? read(f) : empty);
+  // An event announced by name only ("status": "tba") has no timetable files yet.
+  return { slug, dir, event: read('event.json'), schedule: opt('data/schedule.json', []), artists: opt('data/artists.json', {}), venue: opt('data/venue.json', null) };
 }
 
 export function listEvents() {
@@ -64,6 +65,14 @@ export function validate({ slug, dir, event: ev, schedule, artists, venue }) {
   // Each event is served at <slug>* — a slug that starts another one would take over its paths.
   for (const other of listEvents()) {
     if (other !== slug && (other.startsWith(slug) || slug.startsWith(other))) err(`活動代號 "${slug}" 和 "${other}" 開頭相同，網址會互相蓋到，換一個代號`);
+  }
+  // Announced by name only: one page that says the details are on the way (see CLAUDE.md, "status": "tba").
+  if (ev.status !== undefined && ev.status !== 'tba') err(`event.json: status 只能是 "tba"（還沒公布日期與時間表），或不寫`);
+  if (ev.status === 'tba') {
+    for (const k of ['name', 'shortName', 'lang', 'notice']) if (!ev[k]) err(`event.json: 缺少 ${k}（status tba 的頁面要用）`);
+    if (!ev.theme?.dark?.bg || !ev.theme?.light?.bg) err('event.json: theme 要有 dark 與 light（至少 bg）');
+    if ((schedule || []).length || (ev.days || []).length) err('event.json: 有日期或時間表就不是 tba 了，把 status 拿掉再補完整資料');
+    return { errors, warnings, notes: ['待官方資訊公布：只產生一頁說明'] };
   }
   for (const k of ['name', 'shortName', 'lang', 'timezone', 'dataDate', 'sourceNote']) if (!ev[k]) err(`event.json: 缺少 ${k}`);
   if (ev.dataDate && !DATE.test(ev.dataDate)) err(`event.json: dataDate "${ev.dataDate}" 要是 YYYY-MM-DD`);

@@ -87,7 +87,10 @@ before(async () => {
   chrome = await launch();
   mainRoot = site('main', 'e2e-main');
   process.env.FP_BUILD = 'e2e-main';
-  try { build('megaport2026', { out: mainRoot, artifactOut: path.join(tmp, 'main-mp-art') }); } finally { delete process.env.FP_BUILD; }
+  try {
+    build('megaport2026', { out: mainRoot, artifactOut: path.join(tmp, 'main-mp-art') });
+    build('megaport2027', { out: mainRoot, artifactOut: path.join(tmp, 'main-mp-art') });
+  } finally { delete process.env.FP_BUILD; }
   buildSite({ out: mainRoot });
   main = await origin();
 });
@@ -825,12 +828,14 @@ const homeCards = () => [...document.querySelectorAll('.ev')].map((a) => [a.getA
 test('homepage: upcoming events first with a countdown, today on festival days, ended ones last; a card opens the event', { skip: SKIP }, async () => {
   const main = await origin();
   const at = async (time, timezone) => { const p = await open(`${main.base}/`, { time, timezone, ready: HOME_READY }); const c = await p.eval(homeCards); await closePage(p); return c; };
-  assert.deepEqual(await at('2026-10-18T12:00:00+08:00'), [['vagabond2026/', '還有 20 天'], ['megaport2026/', '已結束']]);
-  assert.deepEqual(await at('2026-11-06T09:00:00+08:00'), [['vagabond2026/', '明天開始'], ['megaport2026/', '已結束']]);
+  // Dated events coming up first (soonest first), then the ones waiting for dates, then the ones that are over.
+  const TBA = ['megaport2027/', '日期待公布'];
+  assert.deepEqual(await at('2026-10-18T12:00:00+08:00'), [['vagabond2026/', '還有 20 天'], TBA, ['megaport2026/', '已結束']]);
+  assert.deepEqual(await at('2026-11-06T09:00:00+08:00'), [['vagabond2026/', '明天開始'], TBA, ['megaport2026/', '已結束']]);
   // 23:30 on day 1 in Tainan, seen from a phone set to New York time (still the 7th in Taipei).
-  assert.deepEqual(await at('2026-11-07T23:30:00+08:00', 'America/New_York'), [['vagabond2026/', '今天 · DAY 1'], ['megaport2026/', '已結束']]);
-  assert.deepEqual(await at('2026-11-09T09:00:00+08:00'), [['vagabond2026/', '已結束'], ['megaport2026/', '已結束']], 'most recent first');
-  assert.deepEqual(await at('2026-03-01T12:00:00+08:00'), [['megaport2026/', '還有 20 天'], ['vagabond2026/', '還有 251 天']], 'soonest first');
+  assert.deepEqual(await at('2026-11-07T23:30:00+08:00', 'America/New_York'), [['vagabond2026/', '今天 · DAY 1'], TBA, ['megaport2026/', '已結束']]);
+  assert.deepEqual(await at('2026-11-09T09:00:00+08:00'), [TBA, ['vagabond2026/', '已結束'], ['megaport2026/', '已結束']], 'most recent first');
+  assert.deepEqual(await at('2026-03-01T12:00:00+08:00'), [['megaport2026/', '還有 20 天'], ['vagabond2026/', '還有 251 天'], TBA], 'soonest first');
   const page = await open(`${main.base}/`, { ready: HOME_READY });
   await page.tap('.ev[href="vagabond2026/"]');
   await page.until(() => location.pathname === '/vagabond2026/' && document.querySelectorAll('#grid .block').length > 0);
@@ -983,5 +988,23 @@ test('the service worker leaves the other pages alone: an artist page opens as i
   assert.match(m.headers.get('content-type'), /^text\/markdown/);
   assert.match(await m.text(), /^# 拍謝少年/);
   await closePage(page);
+  await main.close();
+});
+
+test('an event waiting for its announcement: one page saying so, readable at 390 and 320 px, nothing from other sites', { skip: SKIP }, async () => {
+  const main = await origin();
+  for (const [width, theme] of [[390, 'dark'], [320, 'light']]) {
+    const page = await chrome.newPage({ width, height: 844 });
+    const urls = [];
+    chrome.conn.listeners.add((m) => { if (m.sessionId === page.sessionId && m.method === 'Network.requestWillBeSent') urls.push(m.params.request.url); });
+    await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: theme }] });
+    await page.goto(`${main.base}/megaport2027`);
+    assert.equal(await page.eval('location.pathname'), '/megaport2027/');
+    assert.match(await page.eval('document.body.innerText'), /待官方資訊公布/);
+    assert.deepEqual(await page.eval(NOJS_CLIPPED), [], `clipped at ${width}px`);
+    assert.equal(await page.eval('navigator.serviceWorker.controller'), null);
+    assert.deepEqual(urls.filter((u) => !u.startsWith(main.base) && !u.startsWith('data:')), []);
+    await closePage(page);
+  }
   await main.close();
 });

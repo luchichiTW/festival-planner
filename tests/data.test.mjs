@@ -132,7 +132,7 @@ test('the homepage lists every event with its link, dates and place, and loads n
   for (const slug of listEvents()) {
     const { event: ev } = loadEvent(slug);
     assert.match(html, new RegExp(`<a class="ev"[^>]* href="${slug}/"`), `${slug} card links to its page`);
-    assert.ok(html.includes(ev.name) && html.includes(ev.subtitle), `${slug} name and place`);
+    assert.ok(html.includes(ev.name) && html.includes(ev.status === 'tba' ? ev.notice : ev.subtitle), `${slug} name and place (or its notice)`);
   }
   assert.doesNotMatch(html, /<script[^>]+src=|<link[^>]+href="(https?:)?\/\/|<img[^>]+src="(https?:)?\/\//, 'no scripts, styles or images from other sites');
   assert.ok(html.includes('https://github.com/luchichiTW/festival-planner'), '自己做一個 links to the repo');

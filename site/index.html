@@ -71,7 +71,7 @@ h1 { margin: 28px 0 8px; font-size: 30px; line-height: 1.25; font-weight: 800; l
 .ev-status { display: flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 13px; font-weight: 600; color: var(--c); }
 .ev-status::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .ev-status:empty { display: none; }
-.ev[data-state="past"] .ev-status { color: var(--faint); font-weight: 500; }
+.ev[data-state="past"] .ev-status, .ev[data-state="tba"] .ev-status { color: var(--faint); font-weight: 500; }
 
 .make { margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--line); }
 .make h2 { margin: 0 0 6px; font-size: 17px; line-height: 1.4; }
@@ -113,6 +113,11 @@ footer { margin: 28px 0 0; padding-bottom: 28px; font-size: 13px; color: var(--f
   const rows = EVENTS.map((ev) => {
     const a = list.querySelector(`.ev[href="${ev.slug}/"]`);
     const t = today(ev.tz);
+    if (!ev.days.length) { // announced by name only
+      a.dataset.state = 'tba';
+      a.querySelector('.ev-status').textContent = '日期待公布';
+      return { li: a.closest('li'), state: 'tba', first: '', last: '' };
+    }
     const first = ev.days[0].date;
     const last = ev.days[ev.days.length - 1].date;
     const on = ev.days.find((d) => d.date === t);
@@ -125,8 +130,9 @@ footer { margin: 28px 0 0; padding-bottom: 28px; font-size: 13px; color: var(--f
     a.querySelector('.ev-status').textContent = text;
     return { li: a.closest('li'), state, first, last };
   });
-  // Coming up (soonest first), then the ones that are over (most recent first).
-  rows.sort((x, y) => (x.state === 'past') - (y.state === 'past') || (x.state === 'past' ? y.last.localeCompare(x.last) : x.first.localeCompare(y.first)));
+  // Coming up (soonest first), then the ones waiting for dates, then the ones that are over (most recent first).
+  const rank = { now: 0, soon: 0, tba: 1, past: 2 };
+  rows.sort((x, y) => rank[x.state] - rank[y.state] || (x.state === 'past' ? y.last.localeCompare(x.last) : x.first.localeCompare(y.first)));
   rows.forEach((r) => list.append(r.li));
 
   /* ---------- light / dark ---------- */

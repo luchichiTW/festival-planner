@@ -88,6 +88,12 @@ node scripts/og.mjs <slug>              # 畫分享預覽圖（1200×630）→ a
 6. 加一份 `events/<slug>/wrangler.jsonc`（照 vagabond2026 的改名稱與路徑），並在 `.github/workflows/deploy.yml` 的選單加上這個活動，再部署。
 7. 活動上線後，再部署一次 `site`，首頁才會列出它。
 
+## 還沒公布的活動（`"status": "tba"`）
+
+只知道活動名稱、日期和陣容都還沒公布時，`event.json` 寫 `"status": "tba"` 和 `notice`（例如「待官方資訊公布」），不需要 `days`、`stages` 和 `data/`。build 只產生一頁：活動名稱、`notice`、`urls` 裡的官方連結（`official`、`instagram`、上一屆 `previous`），用活動自己的配色與圖示。這一頁沒有 service worker，換成完整的排團工具時不會留下舊的離線快取。首頁的票券顯示「日期待公布」。
+
+官方公布後：補 `days`、`stages`、`data/schedule.json`、`data/artists.json` 與其他設定，拿掉 `status` 和 `notice`，照「新增一個活動」的步驟做完再部署。
+
 ## 不用 JavaScript 也讀得到的頁面（`features.pages`）
 
 工具本身是 JavaScript 畫出來的，只抓 HTML、不執行程式的讀者（搜尋引擎、連結預覽、螢幕閱讀器、幫人查資料的 AI 工具）會看到空殼。開了 `features.pages`，build 會多產生：
