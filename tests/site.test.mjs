@@ -59,11 +59,20 @@ test('contact and footer', () => {
   assert.match(html, /<footer class="foot">\s*<p>非官方工具。演出異動以主辦方現場公告為準。<\/p>\s*<\/footer>/);
 });
 
-test('robots.txt: one group for every crawler, content signals, the site sitemap and each event sitemap', () => {
+test('robots.txt: content signals for everyone, a block list, the site sitemap and each event sitemap', () => {
   const txt = read('robots.txt');
   assert.match(txt, /^# chiparashi\.tw\n/);
-  assert.equal((txt.match(/^User-agent:/gm) || []).length, 1, 'a single group, so the content signals apply to every crawler');
-  assert.match(txt, /^User-agent: \*\nContent-Signal: search=yes, ai-input=yes, ai-train=no\nAllow: \/\n/m);
+  const groups = txt.split(/\n\s*\n/).filter((g) => /^User-agent:/m.test(g));
+  assert.equal(groups.length, 2, 'everyone, and the blocked crawlers');
+  assert.match(groups[0], /^User-agent: \*\nContent-Signal: search=yes, ai-input=yes, ai-train=no\nAllow: \/$/);
+  const blocked = [...groups[1].matchAll(/^User-agent: (\S+)$/gm)].map((m) => m[1]);
+  assert.match(groups[1], /\nDisallow: \/$/);
+  assert.ok(blocked.includes('Bingbot') && blocked.includes('Baiduspider') && blocked.includes('GPTBot'));
+  // Search and answer crawlers that should still read the site stay in the * group, so the content signals reach them.
+  for (const ua of ['Googlebot', 'Google-Extended', 'Claude-SearchBot', 'Claude-User', 'OAI-SearchBot', 'ChatGPT-User', 'PerplexityBot', 'Perplexity-User']) {
+    assert.ok(!blocked.includes(ua), `${ua} is not blocked`);
+    assert.doesNotMatch(txt, new RegExp(`^User-agent: ${ua}$`, 'm'), `${ua} has no group of its own`);
+  }
   const maps = [...txt.matchAll(/^Sitemap: (\S+)$/gm)].map((m) => m[1]);
   const withPages = events.filter((ev) => ev.features?.pages && !archived(ev)).map((ev) => `${HOST}/${ev.slug}/sitemap.xml`);
   assert.deepEqual(maps, [`${HOST}/sitemap.xml`, ...withPages]);
