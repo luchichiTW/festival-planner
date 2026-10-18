@@ -40,7 +40,7 @@ node scripts/og.mjs <slug>              # 畫分享預覽圖（1200×630）→ a
 | `events/<slug>/artifact/` | 單檔版本與發佈說明，跟著 git tag 走 |
 | `events/<slug>/CLAUDE.md` | 這個活動的來源、限制、資料規則、待辦 |
 | `site/index.html` | 首頁樣板：列出所有活動（圖示、名稱、日期地點、還有幾天／今天／已結束），單一檔案、不載入其他網站的東西 |
-| `site/wrangler.jsonc` | 首頁的 Worker（`fp-home`），只接 `chiparashi.tw/` 這一頁 |
+| `site/wrangler.jsonc`、`site/worker.js` | 首頁的 Worker（`fp-home`）：首頁由 `dist-site/` 的檔案回應，其他路徑原封不動交給原站 |
 | `core/page.css` | 藝人頁與 Claude 頁的樣式（`features.pages`），配色和字型沿用活動的 tokens |
 | `scripts/lib/pages.mjs` | 不用 JavaScript 也讀得到的頁面：文字版時間表、藝人頁、Claude 頁、各頁的 metadata、JSON-LD、Markdown 版、sitemap |
 | `scripts/` | validate、build、serve、fonts、icons、og、check-embeds；`lib/chrome.mjs` 是不用套件的無頭 Chrome 驅動 |

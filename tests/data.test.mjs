@@ -155,8 +155,25 @@ test('deploy.yml offers every event and the homepage, and each has its wrangler 
   const root = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
   for (const slug of listEvents()) assert.ok(fs.existsSync(path.join(root, 'events', slug, 'wrangler.jsonc')), slug);
   const site = fs.readFileSync(path.join(root, 'site', 'wrangler.jsonc'), 'utf8');
-  // Only the homepage itself (with or without a query string such as ?fbclid=…); every other path stays as it is.
-  assert.deepEqual([...site.matchAll(/"pattern": "([^"]+)"/g)].map((m) => m[1]), ['chiparashi.tw/', 'chiparashi.tw/?*']);
+  // One route for the whole host (a route pattern cannot hold a query string, so this is how /?fbclid=… is caught);
+  // the homepage file answers /, and the script hands everything else on unchanged.
+  assert.deepEqual([...site.matchAll(/"pattern": "([^"]+)"/g)].map((m) => m[1]), ['chiparashi.tw/*']);
+  assert.match(site, /"main": "worker\.js"/);
+  assert.doesNotMatch(site, /run_worker_first/, 'files first, the script only for paths with no file');
+});
+
+test('the homepage script hands every request it gets on to the origin unchanged', async () => {
+  const worker = (await import('../site/worker.js')).default;
+  const seen = [];
+  const real = globalThis.fetch;
+  globalThis.fetch = async (req) => { seen.push(req); return new Response('origin', { status: 200 }); };
+  try {
+    const req = new Request('https://chiparashi.tw/favicon.ico?x=1', { headers: { 'x-test': '1' } });
+    const res = await worker.fetch(req, {}, {});
+    assert.equal(await res.text(), 'origin');
+    assert.equal(seen.length, 1);
+    assert.equal(seen[0], req, 'the same request object, untouched');
+  } finally { globalThis.fetch = real; }
 });
 
 /* ---------------- recommended songs (one per platform) ---------------- */
