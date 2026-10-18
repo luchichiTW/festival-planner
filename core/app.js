@@ -74,6 +74,21 @@
   }
   const savedTheme = store.get(KEY_THEME);
   if (savedTheme === 'light' || savedTheme === 'dark') root.setAttribute('data-theme', savedTheme);
+  // The header button flips light ↔ dark from whatever is showing; 關於 can set it back to follow the system.
+  const themeBtn = $('themeBtn');
+  const effectiveTheme = () => {
+    const t = themeMode();
+    if (t !== 'system') return t;
+    return window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  };
+  function syncThemeBtn() {
+    const t = effectiveTheme();
+    themeBtn.dataset.mode = t;
+    themeBtn.setAttribute('aria-label', t === 'dark' ? '切換成淺色模式' : '切換成深色模式');
+  }
+  themeBtn.addEventListener('click', () => { setTheme(effectiveTheme() === 'dark' ? 'light' : 'dark'); syncThemeBtn(); });
+  try { matchMedia('(prefers-color-scheme: light)').addEventListener('change', syncThemeBtn); } catch (e) { /* old Safari: the button still works */ }
+  syncThemeBtn();
 
   /* ---------- picks: kept on this device ---------- */
   const picks = new Set();
@@ -937,6 +952,7 @@
     const ts = e.target.closest('[data-theme-set]');
     if (ts) {
       setTheme(ts.dataset.themeSet);
+      syncThemeBtn();
       sheet.querySelectorAll('[data-theme-set]').forEach((x) => x.setAttribute('aria-checked', String(x === ts)));
       return;
     }

@@ -57,27 +57,40 @@ button { font: inherit; color: inherit; }
   flex-direction: column;
 }
 
-/* ---------- header: brand only, on a panel that starts under the status bar ----------
-   Sticky with an opaque background-color: iOS tints the status bar area from a sticky/fixed element at the top, so
-   the area under the clock matches the panel instead of showing a line. */
+/* ---------- header: brand, date/place and the theme switch, on a panel that starts under the status bar ----------
+   Painted in the page colour: iOS tints the band under the clock from the page background, so the two meet without a
+   line. Not sticky — iOS 26 lays its frosted edge blur over a sticky/fixed top element, which blurs the wordmark. */
 .top {
   flex: none;
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 8;
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 2px 12px;
+  align-items: center;
+  gap: 10px;
   margin: 0 calc(-1 * max(16px, env(safe-area-inset-right, 0px))) 8px calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
   padding: calc(10px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
   border-radius: 0 0 22px 22px;
-  background-color: var(--glass-solid, var(--bg-2));
-  background-image: var(--glass, none);
-  box-shadow: var(--glass-shadow, none), inset 0 -.5px 0 var(--glass-border, var(--line));
+  background: var(--bg);
+  box-shadow: var(--glass-shadow, none), inset 0 -.5px 0 var(--line);
 }
-.top-sub { margin: 0; font-size: 12px; color: var(--muted); }
+.top-sub { flex: 1; min-width: 0; margin: 0; text-align: right; font-size: 12px; line-height: 1.35; color: var(--muted); }
+.hdr-btn {
+  flex: none;
+  appearance: none;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: var(--bg-2);
+  box-shadow: inset 0 0 0 .5px var(--line-2);
+  color: var(--fg);
+  cursor: pointer;
+}
+.hdr-btn svg { width: 19px; height: 19px; }
+.hdr-btn .i-moon, .hdr-btn[data-mode="light"] .i-sun { display: none; }
+.hdr-btn[data-mode="light"] .i-moon { display: block; }
 .wordmark {
   flex: none;
   margin: 0;

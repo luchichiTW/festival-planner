@@ -401,7 +401,7 @@ test('iPhone layout: glass header under the status bar, floating tab bar, conten
     const board = document.getElementById('board').getBoundingClientRect();
     return {
       rootPad: [css(document.documentElement).paddingTop, css(document.documentElement).paddingBottom],
-      header: { top: Math.round(tr.top), left: Math.round(tr.left), right: Math.round(tr.right), radius: parseFloat(css(top).borderBottomLeftRadius), sticky: css(top).position === 'sticky', opaque: !/rgba\(.*, 0\)$|transparent/.test(css(top).backgroundColor) },
+      header: { top: Math.round(tr.top), left: Math.round(tr.left), right: Math.round(tr.right), radius: parseFloat(css(top).borderBottomLeftRadius), sticky: css(top).position === 'sticky', pageColour: css(top).backgroundColor === css(document.body).backgroundColor },
       wordmarkTop: Math.round(document.querySelector('.wordmark').getBoundingClientRect().top),
       wordmarkShadow: css(document.querySelector('.wordmark')).textShadow,
       strip: css(document.body, '::before').content,
@@ -418,7 +418,8 @@ test('iPhone layout: glass header under the status bar, floating tab bar, conten
   assert.equal(d.strip, 'none', 'no solid strip painted under the status bar');
   assert.deepEqual([d.header.top, d.header.left, d.header.right], [0, 0, d.w], 'glass header runs edge to edge from the top');
   assert.ok(d.header.radius >= 16, 'header panel has rounded bottom corners');
-  assert.ok(d.header.sticky && d.header.opaque, 'header is sticky with an opaque colour, so iOS tints the status bar area to match');
+  assert.ok(!d.header.sticky, 'header is not sticky (iOS 26 blurs sticky top bars, wordmark included)');
+  assert.ok(d.header.pageColour, 'header is painted in the page colour, matching the band iOS draws under the clock');
   assert.ok(d.wordmarkTop >= IPHONE.top, `header content clears the status bar (${d.wordmarkTop})`);
   assert.ok(d.bar.radius >= 20 && d.bar.blur, 'tab bar is a glass capsule');
   assert.ok(d.bar.left > 0 && d.bar.right < d.w, 'capsule floats clear of the screen sides');
@@ -454,7 +455,7 @@ test('iPhone layout: glass header under the status bar, floating tab bar, conten
   const light = await open(`${main.base}/${SLUG}/`, { safeArea: IPHONE, theme: 'light' });
   const l = await light.eval(layout);
   assert.equal(l.strip, 'none');
-  assert.ok(l.header.opaque && l.bar.blur);
+  assert.ok(l.header.pageColour && l.bar.blur);
   assert.match(l.wordmarkShadow, /^(none|(rgba\(0, 0, 0, 0\)[^,]*,?\s*)+)$/, `light wordmark has no visible shadow (${l.wordmarkShadow})`);
 
   // More stages to the right → fade on the right edge, gone once scrolled to the end. (This origin reopens on
@@ -522,9 +523,9 @@ test('controls live at the bottom: day tabs, 我的團序 and search in the dock
   const lay = await page.eval(() => {
     const dock = document.querySelector('.dock-row').getBoundingClientRect();
     const ids = ['day1', 'day2', 'tabMine', 'searchBtn'].map((id) => document.getElementById(id).getBoundingClientRect());
-    return { headerButtons: document.querySelectorAll('.top button').length, dockTop: dock.top, h: innerHeight, inDock: ids.every((r) => r.top >= dock.top - 1 && r.bottom <= dock.bottom + 1), lowest: Math.max(...ids.map((r) => r.bottom)) };
+    return { headerButtons: [...document.querySelectorAll('.top button')].map((b) => b.id).join(), dockTop: dock.top, h: innerHeight, inDock: ids.every((r) => r.top >= dock.top - 1 && r.bottom <= dock.bottom + 1), lowest: Math.max(...ids.map((r) => r.bottom)) };
   });
-  assert.equal(lay.headerButtons, 0, 'no controls in the header');
+  assert.equal(lay.headerButtons, 'themeBtn', 'the header only holds the light/dark switch');
   assert.ok(lay.inDock, 'day tabs, 我的團序 and search sit in the bottom dock');
   assert.ok(lay.dockTop > lay.h * 0.8, `dock is in the thumb zone (${Math.round(lay.dockTop)}/${lay.h})`);
   assert.ok(lay.lowest <= lay.h - 20, 'controls clear the home indicator');
@@ -598,5 +599,21 @@ test('no text is cut off or replaced with "…" at 390, 375 and 320 px', { skip:
     assert.deepEqual([...new Set(found)], [], `clipped at ${width}px`);
     await closePage(page);
   }
+  await main.close();
+});
+
+test('light/dark switch in the header flips the theme and stays in sync with 關於', { skip: SKIP }, async () => {
+  const main = await origin();
+  const page = await open(`${main.base}/${SLUG}/`, { theme: 'dark' });
+  assert.equal(await page.eval(`document.getElementById('themeBtn').getAttribute('aria-label')`), '切換成淺色模式');
+  await page.tap('#themeBtn');
+  assert.equal(await page.eval(`document.documentElement.getAttribute('data-theme') + '|' + document.getElementById('themeBtn').getAttribute('aria-label')`), 'light|切換成深色模式');
+  await page.tap('#tabMine');
+  await page.until(() => document.getElementById('aboutBtn'));
+  await page.tap('#aboutBtn');
+  assert.equal(await page.eval(`document.querySelector('[data-theme-set][aria-checked="true"]').dataset.themeSet`), 'light');
+  await page.tap('[data-theme-set="system"]');
+  assert.equal(await page.eval(`document.getElementById('themeBtn').getAttribute('aria-label')`), '切換成淺色模式', 'back to the system (dark) theme');
+  await closePage(page);
   await main.close();
 });
