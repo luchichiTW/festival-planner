@@ -113,7 +113,7 @@ service worker 只把工具頁本身當 App；其他頁面直接走網路，不�
 - 版本號是 git commit（有未提交的修改時加 `-dev`），寫進 `sw.js`、頁面的 `<meta name="fp-build">` 與「關於」畫面。不用手動改版本。
 - 新版本在背景整包下載，App 切到背景或剛打開時才換上，換好顯示「已更新到 MM/DD 的時間表」。頁面網路優先（約 3 秒），但只用同一版本的頁面，新舊檔案不會混用。
 - 團序存在 `localStorage` 的 `fp:<slug>:picks`。**改這個格式一定要寫遷移**，更新不能讓任何人的團序消失。
-- 頁面只能載入自己網域的檔案：不放任何第三方字型、分析碼或 CDN。
+- 頁面只能載入自己網域的檔案：不放任何第三方字型、分析碼或 CDN。例外：Cloudflare Web Analytics（`static.cloudflareinsights.com` 的 beacon 與它送回資料的請求）。那是 Cloudflare 在邊緣加進頁面的，repo 裡不放這段程式；Cloudflare 同網域的 `/cdn-cgi/` 也允許。
 
 ## 部署與版本
 

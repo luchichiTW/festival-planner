@@ -18,6 +18,9 @@ const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + 
 const PRE_FESTIVAL = '2026-10-20T12:00:00+08:00';
 
 let chrome;
+// Requests to other sites. Allowed: data: URIs, and Cloudflare Web Analytics, which Cloudflare adds to the live pages
+// at its edge (never in this repo, so the local server here never shows it).
+const foreignOf = (urls, base) => urls.filter((u) => !u.startsWith(base) && !u.startsWith('data:') && !/^https:\/\/(static\.)?cloudflareinsights\.com\//.test(u));
 // Claude wraps an artifact's HTML in this document skeleton before showing it (doctype, viewport, base styles).
 const CLAUDE_FRAME = (html) => '<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>\n' + html + '\n</body></html>';
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'fp-e2e-'));
@@ -318,7 +321,7 @@ test('AC-08 loading the page only talks to its own origin', { skip: SKIP }, asyn
   await page.goto(`${main.base}/${SLUG}/`);
   await page.until(() => navigator.serviceWorker.controller !== null, { ms: 10000 });
   await sleep(500);
-  const foreign = urls.filter((u) => !u.startsWith(main.base) && !u.startsWith('data:'));
+  const foreign = foreignOf(urls, main.base);
   assert.deepEqual(foreign, []);
   assert.ok(urls.some((u) => u.endsWith('/fonts/display.woff2')), 'fonts come from the site itself');
   await closePage(page);
@@ -812,7 +815,7 @@ test('megaport: nothing clipped at 390 and 320 px, in Chinese and English; only 
       await page.until(() => document.getElementById('aboutBtn'));
       found.push(...await page.eval(CLIPPED));
       assert.deepEqual([...new Set(found)], [], `clipped at ${width}px (${lng})`);
-      const foreign = urls.filter((u) => !u.startsWith(main.base) && !u.startsWith('data:'));
+      const foreign = foreignOf(urls, main.base);
       assert.deepEqual(foreign, [], `third-party requests (${lng})`);
       await closePage(page);
     }
@@ -877,7 +880,7 @@ test('homepage: theme switch top-right, nothing clipped, no arrows or 前往, on
     assert.equal(await page.eval('document.documentElement.dataset.theme'), 'light', 'remembered');
     await page.tap('#themeBtn');
     assert.equal(await page.eval(`localStorage.getItem('fp:home:theme')`), null, 'back to the system theme forgets the choice');
-    const foreign = urls.filter((u) => !u.startsWith(main.base) && !u.startsWith('data:'));
+    const foreign = foreignOf(urls, main.base);
     assert.deepEqual(foreign, []);
     await closePage(page);
   }
@@ -1004,7 +1007,7 @@ test('an event waiting for its announcement: one page saying so, readable at 390
     assert.match(await page.eval('document.body.innerText'), /待官方資訊公布/);
     assert.deepEqual(await page.eval(NOJS_CLIPPED), [], `clipped at ${width}px`);
     assert.equal(await page.eval('navigator.serviceWorker.controller'), null);
-    assert.deepEqual(urls.filter((u) => !u.startsWith(main.base) && !u.startsWith('data:')), []);
+    assert.deepEqual(foreignOf(urls, main.base), []);
     await closePage(page);
   }
   await main.close();
