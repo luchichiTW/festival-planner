@@ -14,6 +14,7 @@ node scripts/serve.mjs                  # 本機預覽 http://localhost:8787/<sl
 npm test                                # 資料／建置檢查＋手機寬度的瀏覽器測試（需要本機的 Chrome；FP_E2E=0 跳過瀏覽器測試）
 node scripts/fonts.mjs <slug>           # 重抓字型子集（藝人名單改了要跑）
 node scripts/icons.mjs <slug>           # 從 assets/icon.html 重畫主畫面圖示
+node scripts/check-embeds.mjs <slug>    # 連網核對每個試聽：存在、可嵌入、是這位藝人的（改了 embeds 要跑）
 ```
 
 建置與測試都只用 Node 內建功能，不需要 `npm install`。
@@ -64,9 +65,9 @@ node scripts/icons.mjs <slug>           # 從 assets/icon.html 重畫主畫面�
 { "ano": { "bio": "…", "sources": ["https://…", "https://…"], "links": { "spotify": "…", "apple": "…", "youtube": "…" } } }
 ```
 
-其他選用欄位：`embeds`（試聽 ID：`spotify`、`appleMusic`、`youtube`、`spotifyPodcast`、`streetvoice`，事件要開 `features.embeds`）、`members`（一個演出底下的演出者，各自是 `artists.json` 的鍵）。
+其他選用欄位：`embeds`（試聽 ID：整個藝人或專輯用 `spotify`、`appleMusic`；單首推薦曲用 `spotifyTrack`、`appleMusicSong`（`<專輯 ID>?i=<歌曲 ID>`）、`youtube`（影片）；另有 `spotifyPodcast`、`streetvoice`。一個平台只放一個播放器，事件要開 `features.embeds`）、`picks`（每個試聽的推薦說明：`title`、`why`、`sources`，只留在 repo 給人審，不會進網頁）、`members`（一個演出底下的演出者，各自是 `artists.json` 的鍵）。
 
-`event.json` 的選用設定：`languages`（`["zh", "en"]` 時出現 EN／中 切換，英文名放 `nameEn`、`subtitleEn`、`sourceNoteEn`、舞台 `en`、演出 `en`）、`features`（`embeds`、`map`）、`lottery`（抽籤彩蛋：`favorite` 那一場一定抽中）、`rules`（`minBioSources`、`minBioChars`，預設 2 與 40）、`css`（活動專屬的少量樣式，例如字標漸層）。
+`event.json` 的選用設定：`languages`（`["zh", "en"]` 時出現 EN／中 切換，英文名放 `nameEn`、`subtitleEn`、`sourceNoteEn`、舞台 `en`、演出 `en`）、`features`（`embeds`、`map`）、`lottery`（抽籤彩蛋：`favorite` 那一場一定抽中）、`rules`（`minBioSources`、`minBioChars`，預設 2 與 40；`picks: true` 時每個試聽都要有 `picks` 說明，而且同一組藝人每個平台放不同首）、`css`（活動專屬的少量樣式，例如字標漸層）。
 
 `validate.mjs` 會擋：ID／seq 重複、時間格式、同舞台時間重疊、超出當天時段、未知舞台、簡介少於兩個不同網站的來源（Last.fm 不算）、不是藝人頁格式的平台連結、活動代號開頭和別的活動相同。
 

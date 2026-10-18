@@ -20,8 +20,10 @@ const LINK_PATTERNS = {
 // Streaming IDs for the in-card player (features.embeds): what each platform's ID looks like.
 const EMBED_PATTERNS = {
   spotify: /^[A-Za-z0-9]{22}$/,
+  spotifyTrack: /^[A-Za-z0-9]{22}$/,
   spotifyPodcast: /^[A-Za-z0-9]{22}$/,
   appleMusic: /^\d+$/,
+  appleMusicSong: /^\d+\?i=\d+$/,
   youtube: /^[A-Za-z0-9_-]{11}$/,
   streetvoice: /^\d+$/,
 };
@@ -169,6 +171,29 @@ export function validate({ slug, dir, event: ev, schedule, artists, venue }) {
     for (const [k, id] of Object.entries(a.embeds || {})) {
       if (!EMBED_PATTERNS[k]) err(`${at}: 不支援的內嵌平台 "${k}"（只收 ${Object.keys(EMBED_PATTERNS).join('、')}）`);
       else if (!EMBED_PATTERNS[k].test(id)) err(`${at}: ${k} 的 ID "${id}" 格式不對`);
+    }
+    // One player per platform: a whole-artist player and a single song would show two tabs with the same name.
+    if (a.embeds?.spotify && a.embeds?.spotifyTrack) err(`${at}: Spotify 只能放一個播放器（spotify 或 spotifyTrack 擇一）`);
+    if (a.embeds?.appleMusic && a.embeds?.appleMusicSong) err(`${at}: Apple Music 只能放一個播放器（appleMusic 或 appleMusicSong 擇一）`);
+    // Recommended songs (rules.picks): each player says which song, why it represents the artist, and where that comes from.
+    const picks = a.picks || {};
+    for (const k of Object.keys(picks)) if (!a.embeds?.[k]) err(`${at}: picks 裡的 "${k}" 沒有對應的播放器`);
+    if (ev.rules?.picks) {
+      for (const k of Object.keys(a.embeds || {})) {
+        const p = picks[k];
+        if (!p || !p.title || !p.why || !Array.isArray(p.sources) || !p.sources.length || !p.sources.every((u) => /^https:\/\//.test(u))) {
+          err(`${at}: ${k} 要有推薦的歌名、理由和來源（picks.${k} 的 title、why、sources）`);
+        }
+      }
+      // A different song on each platform; a live take or MV of the same song is the same song.
+      const song = (t) => String(t).toLowerCase().replace(/[(（\[【「][^)）\]】」]*[)）\]】」]/g, '').replace(/[\s\p{P}\p{S}]/gu, '');
+      const seen = new Map();
+      for (const [k, p] of Object.entries(picks)) {
+        if (!p?.title) continue;
+        const key = song(p.title);
+        if (seen.has(key)) err(`${at}: 「${seen.get(key).title}」放在兩個平台（${seen.get(key).k}、${k}），每個平台要不同首`);
+        else seen.set(key, { k, title: p.title });
+      }
     }
     for (const m of a.members || []) if (!artists[m]) err(`${at}: members 裡的 "${m}" 在 artists.json 找不到`);
     if (!performers.has(name)) warn(`${at}: 沒有對應的演出，可能是名字拼法不一致`);

@@ -1,11 +1,14 @@
 /* In-card listening (event.json features.embeds): Spotify, Apple Music, YouTube, Spotify podcasts and StreetVoice,
-   from the IDs in artists.json "embeds". Third-party players load only when someone opens an artist card, never on
+   from the IDs in artists.json "embeds" — a whole artist or album (spotify, appleMusic) or one recommended song
+   (spotifyTrack, appleMusicSong, youtube). Third-party players load only when someone opens an artist card, never on
    page load, and not at all offline. Website only — the single-file artifact shows the bio without players. */
 (() => {
   const PLATFORMS = [
     ['spotify', 'Spotify'],
+    ['spotifyTrack', 'Spotify'],
     ['spotifyPodcast', 'Podcast'],
     ['appleMusic', 'Apple Music'],
+    ['appleMusicSong', 'Apple Music'],
     ['streetvoice', 'StreetVoice'],
     ['youtube', 'YouTube'],
   ];
@@ -13,8 +16,13 @@
   function src(platform, id, dark) {
     switch (platform) {
       case 'spotify': return `https://open.spotify.com/embed/artist/${enc(id)}?utm_source=generator&theme=${dark ? 0 : 1}`;
+      case 'spotifyTrack': return `https://open.spotify.com/embed/track/${enc(id)}?utm_source=generator&theme=${dark ? 0 : 1}`;
       case 'spotifyPodcast': return `https://open.spotify.com/embed/show/${enc(id)}?utm_source=generator&theme=${dark ? 0 : 1}`;
       case 'appleMusic': return `https://embed.music.apple.com/tw/album/${enc(id)}?app=music&theme=${dark ? 'dark' : 'light'}`;
+      case 'appleMusicSong': { // "<album id>?i=<song id>", the way Apple Music links to one song on its album
+        const [album, song] = String(id).split('?i=');
+        return `https://embed.music.apple.com/tw/album/${enc(album)}?i=${enc(song)}&app=music&theme=${dark ? 'dark' : 'light'}`;
+      }
       case 'streetvoice': return `https://streetvoice.com/music/embed/?id=${enc(id)}`;
       case 'youtube': return `https://www.youtube-nocookie.com/embed/${enc(id)}`;
       default: return '';
@@ -32,7 +40,7 @@
       : '') + '<div class="emb-frame"></div>';
     const frame = box.querySelector('.emb-frame');
     const show = (k) => {
-      const name = (avail.find(([x]) => x === k) || [k, k])[1];
+      const name = label(k);
       frame.className = `emb-frame emb-${k}`;
       frame.innerHTML = `<iframe src="${src(k, embeds[k], dark)}" title="${name}" loading="lazy" allow="autoplay *; encrypted-media *; clipboard-write; fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
       box.querySelectorAll('[data-emb]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.emb === k)));
@@ -42,5 +50,6 @@
     return true;
   }
 
-  window.FP_EMBED = { render, platforms: PLATFORMS.map(([k]) => k) };
+  const label = (k) => (PLATFORMS.find(([x]) => x === k) || [k, k])[1];
+  window.FP_EMBED = { render, src, label, platforms: PLATFORMS.map(([k]) => k) };
 })();

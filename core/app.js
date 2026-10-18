@@ -1068,6 +1068,8 @@
     { key: 'apple', label: 'Apple Music' },
     { key: 'youtube', label: 'YouTube' },
   ];
+  // Which link button a player in the card stands in for (core/embed.js keys → artists.json "links" keys).
+  const EMBED_LINK = { spotify: 'spotify', spotifyTrack: 'spotify', appleMusic: 'apple', appleMusicSong: 'apple', youtube: 'youtube' };
   // "A ft. B" and "A × B" are separate artists; scripts/validate.mjs splits the same way.
   function splitArtists(name) { return name.split(/\s+(?:ft\.|×)\s+/).map((a) => a.trim()).filter(Boolean); }
 
@@ -1078,8 +1080,10 @@
     const embedded = !!(EVT.features && EVT.features.embeds && EVT.mode !== 'artifact' && window.FP_EMBED && entry.embeds)
       && window.FP_EMBED.render($('lpEmbed'), entry.embeds, { dark: effectiveTheme() === 'dark', label: t });
     if (!embedded && $('lpEmbed')) { $('lpEmbed').hidden = true; $('lpEmbed').innerHTML = ''; }
-    const links = embedded ? {} : entry.links || {};
-    const avail = PLATFORMS.filter((p) => /^https:\/\//.test(links[p.key] || ''));
+    // A platform with a player in the card needs no link button; one without a player keeps its link.
+    const played = new Set(embedded ? Object.keys(entry.embeds).map((k) => EMBED_LINK[k]).filter(Boolean) : []);
+    const links = entry.links || {};
+    const avail = PLATFORMS.filter((p) => !played.has(p.key) && /^https:\/\//.test(links[p.key] || ''));
     const plat = $('lpPlat');
     plat.innerHTML = avail.map((p) =>
       `<a href="${esc(links[p.key])}" target="_blank" rel="noopener">${p.label}</a>`).join('');

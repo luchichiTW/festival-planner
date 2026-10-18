@@ -120,7 +120,9 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
     map: venue.map && { ...venue.map, image: src(venue.map.image), imageEn: keepEn && venue.map.imageEn ? src(venue.map.imageEn) : undefined },
     images: (venue.images || []).map((im) => ({ ...im, src: src(im.src), srcEn: keepEn && im.srcEn ? src(im.srcEn) : undefined })),
   };
-  const dataJS = (mode, venueSrc) => `window.FP_EVENT = ${inlineJSON(clientConfig(ev, build, mode))};\nwindow.FP_DATA = ${inlineJSON({ schedule, artists })};\n`
+  // The page needs the players, not the notes on why each song was picked (those are for review in the repo).
+  const pageArtists = Object.fromEntries(Object.entries(artists).map(([n, { picks, ...a }]) => [n, a]));
+  const dataJS = (mode, venueSrc) => `window.FP_EVENT = ${inlineJSON(clientConfig(ev, build, mode))};\nwindow.FP_DATA = ${inlineJSON({ schedule, artists: pageArtists })};\n`
     + (venue ? `window.FP_VENUE = ${inlineJSON(venueFor(venueSrc, mode !== 'artifact'))};\n` : '');
   const eventCSS = ev.css ? '\n/* ---------- event.css ---------- */\n' + read(path.join(dir, ev.css)) : '';
   const hasMap = !!(venue && venue.images && venue.images.length);

@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { loadEvent, listEvents, validate } from '../scripts/validate.mjs';
+import vm from 'node:vm';
+import { ROOT, loadEvent, listEvents, validate } from '../scripts/validate.mjs';
 import { build, buildSite } from '../scripts/build.mjs';
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -156,4 +157,54 @@ test('deploy.yml offers every event and the homepage, and each has its wrangler 
   const site = fs.readFileSync(path.join(root, 'site', 'wrangler.jsonc'), 'utf8');
   // Only the homepage itself (with or without a query string such as ?fbclid=…); every other path stays as it is.
   assert.deepEqual([...site.matchAll(/"pattern": "([^"]+)"/g)].map((m) => m[1]), ['chiparashi.tw/', 'chiparashi.tw/?*']);
+});
+
+/* ---------------- recommended songs (one per platform) ---------------- */
+test('players: one song on Spotify and Apple Music, next to the artist-wide players', () => {
+  const ctx = { window: {}, navigator: { onLine: true } };
+  vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'core', 'embed.js'), 'utf8'), ctx);
+  const { src, label } = ctx.window.FP_EMBED;
+  assert.equal(src('spotifyTrack', '0HxFauxKj5X1DIujxM404U', true), 'https://open.spotify.com/embed/track/0HxFauxKj5X1DIujxM404U?utm_source=generator&theme=0');
+  assert.equal(src('appleMusicSong', '1470902108?i=1470902109', false), 'https://embed.music.apple.com/tw/album/1470902108?i=1470902109&app=music&theme=light');
+  assert.equal(src('spotify', '6c4IBMTcnFDhsKHXNSBBvp', true), 'https://open.spotify.com/embed/artist/6c4IBMTcnFDhsKHXNSBBvp?utm_source=generator&theme=0');
+  assert.deepEqual(['spotifyTrack', 'appleMusicSong', 'youtube'].map(label), ['Spotify', 'Apple Music', 'YouTube']);
+});
+
+test('validate checks song picks: ID formats, one player per platform, a reason and source each, a different song per platform', () => {
+  const base = () => {
+    const ev = fresh();
+    ev.event.rules = { ...(ev.event.rules || {}), picks: true };
+    const a = ev.artists['拍謝少年'];
+    a.embeds = { spotifyTrack: '0HxFauxKj5X1DIujxM404U', appleMusicSong: '1470902108?i=1470902109', youtube: 'dQw4w9WgXcQ' };
+    const note = (title) => ({ title, why: '官方介紹點名的代表作', sources: ['https://www.vagabondfest.com/blog/posts/x'] });
+    a.picks = { spotifyTrack: note('暗流'), appleMusicSong: note('撐'), youtube: note('歹勢好勢') };
+    return ev;
+  };
+  assert.deepEqual(validate(base()).errors, []);
+  const cases = [
+    ['bad spotify track id', (a) => { a.embeds.spotifyTrack = 'nope'; }, /spotifyTrack 的 ID "nope" 格式不對/],
+    ['bad apple song id', (a) => { a.embeds.appleMusicSong = '1470902109'; }, /appleMusicSong 的 ID "1470902109" 格式不對/],
+    ['two Spotify players', (a) => { a.embeds.spotify = '6c4IBMTcnFDhsKHXNSBBvp'; }, /Spotify 只能放一個播放器/],
+    ['no note for a player', (a) => { delete a.picks.youtube; }, /youtube 要有推薦的歌名、理由和來源/],
+    ['note without a reason', (a) => { a.picks.youtube.why = ''; }, /youtube 要有推薦的歌名、理由和來源/],
+    ['note without a source', (a) => { a.picks.youtube.sources = []; }, /youtube 要有推薦的歌名、理由和來源/],
+    ['note for a missing player', (a) => { a.picks.spotify = a.picks.youtube; }, /picks 裡的 "spotify" 沒有對應的播放器/],
+    ['same song on two platforms', (a) => { a.picks.youtube.title = '暗流 (Official Music Video)'; }, /「暗流」放在兩個平台/],
+  ];
+  for (const [name, breakIt, expected] of cases) {
+    const ev = base();
+    breakIt(ev.artists['拍謝少年']);
+    const { errors } = validate(ev);
+    assert.ok(errors.some((e) => expected.test(e)), `${name}: expected ${expected}, got ${JSON.stringify(errors)}`);
+  }
+});
+
+test('the page gets the players but not the pick notes (they are for review, not for download)', () => {
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'fp-picks-'));
+  process.env.FP_BUILD = 'picks-test';
+  try { build('vagabond2026', { out, artifactOut: out + '-art' }); } finally { delete process.env.FP_BUILD; }
+  const data = fs.readFileSync(path.join(out, 'vagabond2026', 'data.js'), 'utf8');
+  assert.doesNotMatch(data, /"picks":/);
+  fs.rmSync(out, { recursive: true, force: true });
+  fs.rmSync(out + '-art', { recursive: true, force: true });
 });
