@@ -1,0 +1,44 @@
+<!doctype html>
+<!-- Icon source for vagabond2026. An original mark, not the festival's logo: the app's wordmark style
+     (gold 「浪」 with a red offset shadow, Chiron GoRound TC 900) on a red seal, over the charcoal sunburst
+     the official 2026 poster uses. Render the PNGs with: node scripts/icons.mjs vagabond2026 -->
+<html><head><meta charset="utf-8">
+<style>
+@font-face { font-family: "Chiron GoRound TC"; src: url(fonts/display.woff2) format("woff2"); font-weight: 900; }
+html, body { margin: 0; background: #1A1617; }
+svg { display: block; width: 100vmin; height: 100vmin; }
+text { font-family: "Chiron GoRound TC"; font-weight: 900; }
+</style></head>
+<body>
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#F1BE48" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#F1BE48" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="#1A1617"/>
+  <g id="rays" fill="#F1BE48" fill-opacity=".09"></g>
+  <circle cx="256" cy="256" r="256" fill="url(#glow)"/>
+  <!-- seal: stays inside the maskable safe zone (radius 204) -->
+  <circle cx="256" cy="256" r="176" fill="#F1BE48"/>
+  <circle cx="256" cy="256" r="164" fill="#D9474A"/>
+  <circle cx="256" cy="256" r="150" fill="none" stroke="#1A1617" stroke-opacity=".45" stroke-width="3"/>
+  <g fill="#17A7B4">
+    <path d="M256 84 l9 9 -9 9 -9 -9z"/><path d="M256 410 l9 9 -9 9 -9 -9z"/>
+    <path d="M84 256 l9 -9 9 9 -9 9z"/><path d="M410 256 l9 -9 9 9 -9 9z"/>
+  </g>
+  <text x="263" y="270" font-size="232" text-anchor="middle" dominant-baseline="central" fill="#1A1617" fill-opacity=".55">浪</text>
+  <text x="256" y="263" font-size="232" text-anchor="middle" dominant-baseline="central" fill="#F1BE48">浪</text>
+</svg>
+<script>
+  // 24 sunburst rays from the centre.
+  const g = document.getElementById('rays');
+  for (let i = 0; i < 24; i++) {
+    const a = (i * 15) * Math.PI / 180, b = (i * 15 + 7.5) * Math.PI / 180, R = 420;
+    const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    p.setAttribute('d', `M256 256 L${256 + R * Math.cos(a)} ${256 + R * Math.sin(a)} L${256 + R * Math.cos(b)} ${256 + R * Math.sin(b)} Z`);
+    g.append(p);
+  }
+</script>
+</body></html>

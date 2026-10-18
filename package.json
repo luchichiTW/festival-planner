@@ -1,0 +1,14 @@
+{
+  "name": "festival-planner",
+  "private": true,
+  "description": "音樂祭排團工具：每個活動一個資料夾，共用同一套引擎，可以離線使用。",
+  "license": "MIT",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "validate": "node scripts/validate.mjs",
+    "build": "node scripts/build.mjs",
+    "serve": "node scripts/serve.mjs",
+    "test": "node --test --test-concurrency=1 \"tests/*.test.mjs\""
+  }
+}
