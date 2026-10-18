@@ -112,7 +112,7 @@ test('the homepage deploys itself on pushes to main that change it; events stay 
   const dir = path.join(ROOT, '.github', 'workflows');
   const site = fs.readFileSync(path.join(dir, 'site.yml'), 'utf8');
   assert.match(site, /^on:\n  push:\n    branches: \[main\]\n    paths:\n/m);
-  for (const p of ["'site/**'", "'events/*/event.json'", "'scripts/build.mjs'"]) assert.ok(site.includes(`- ${p}`), p);
+  for (const p of ["'site/**'", "'events/*/event.json'", "'events/*/assets/icon-192.png'", "'scripts/build.mjs'"]) assert.ok(site.includes(`- ${p}`), p);
   assert.match(site, /^  workflow_dispatch:/m);
   assert.match(site, /command: deploy --config site\/wrangler\.jsonc/);
   const events = fs.readFileSync(path.join(dir, 'deploy.yml'), 'utf8');

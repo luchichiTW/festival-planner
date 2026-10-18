@@ -1,5 +1,6 @@
 # The chiparashi.tw homepage deploys itself: every push to main that changes the homepage, an event's event.json
-# (the tickets, robots.txt, llms.txt and sitemap come from them) or the build scripts. It can also be run by hand.
+# (the tickets, robots.txt, llms.txt and sitemap come from them), an event's icon (the homepage keeps a copy) or the
+# build scripts. It can also be run by hand.
 # Events deploy only by hand (deploy.yml).
 name: Deploy homepage
 
@@ -9,6 +10,7 @@ on:
     paths:
       - 'site/**'
       - 'events/*/event.json'
+      - 'events/*/assets/icon-192.png'
       - 'scripts/build.mjs'
       - 'scripts/validate.mjs'
       - 'scripts/lib/pages.mjs'
