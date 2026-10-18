@@ -9,6 +9,10 @@
   "subtitle": "11.07–08 臺南觀夕平臺大草皮",
   "dataDate": "2026-10-17",
   "sourceNote": "時間表取自浪人祭官方 Threads 公告（2026/10/17），藝人簡介整理自網路公開資料。非官方工具，演出異動以現場公告為準。",
+  "rules": { "picks": true },
+  "features": { "embeds": true, "pages": true },
+  "organizer": { "name": "笨道策展有限公司", "url": "https://www.vagabondfest.com/" },
+  "venue": { "name": "臺南安平觀夕平臺旁大草皮", "locality": "安平區", "region": "臺南市", "country": "TW" },
   "days": [
     { "label": "DAY 1", "date": "2026-11-07", "start": "12:00", "end": "22:00" },
     { "label": "DAY 2", "date": "2026-11-08", "start": "11:00", "end": "22:00" }
@@ -90,6 +94,7 @@
     "display": { "family": "Chiron GoRound TC", "file": "assets/fonts/display.woff2", "weight": "900" },
     "mono": { "family": "Chivo Mono", "file": "assets/fonts/mono.woff2", "weight": "400 700" }
   },
+  "ogImage": "assets/og.png",
   "icons": {
     "png": { "180": "assets/icon-180.png", "192": "assets/icon-192.png", "512": "assets/icon-512.png" },
     "maskable": "assets/icon-maskable-512.png",
@@ -97,6 +102,8 @@
   },
   "urls": {
     "site": "https://chiparashi.tw/vagabond2026/",
+    "official": "https://www.vagabondfest.com/",
+    "tickets": "https://vagabondfest.kktix.cc/events/2026-vagabond-festival",
     "artifact": "https://claude.ai/artifact/7YsJYaYVysmerLRaEzPpcP",
     "repo": "https://github.com/luchichiTW/festival-planner"
   }

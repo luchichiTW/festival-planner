@@ -1,5 +1,6 @@
 {
   "Been Stellar": {
+    "slug": "been-stellar",
     "bio": "來自美國紐約的獨立搖滾樂團，曲風帶有後龐克色彩。核心成員高中時在密西根相識，後來一起到紐約大學就讀並在紐約發展。2024年透過廠牌Dirty Hit發行首張專輯《Scream from New York, NY》，也曾跟著The 1975巡演歐洲，2025年推出EP《Breakaway》。",
     "sources": [
       "https://www.pastemagazine.com/music/been-stellar/been-stellar-announces-debut-album-scream-from-new-york-ny",
@@ -10,9 +11,40 @@
       "spotify": "https://open.spotify.com/artist/3ep1YmatQ8L9UKCGYiJNBh",
       "apple": "https://music.apple.com/tw/artist/been-stellar/1089027566",
       "youtube": "https://www.youtube.com/channel/UCF8MSlk6cm27dndAOJDJE8w"
+    },
+    "embeds": {
+      "spotifyTrack": "64y0eRiwoQlhA9wHFyQECH",
+      "appleMusicSong": "1720555952?i=1720555958",
+      "youtube": "xE9z5_esL8U"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "Passing Judgment",
+        "why": "2024 年首張專輯《Scream from New York, NY》的首支單曲，隨專輯發行消息一同公開。",
+        "sources": [
+          "https://www.pastemagazine.com/music/been-stellar/been-stellar-announces-debut-album-scream-from-new-york-ny"
+        ]
+      },
+      "appleMusicSong": {
+        "title": "Scream from New York, NY",
+        "why": "首張專輯《Scream from New York, NY》（2024）的同名曲。",
+        "sources": [
+          "https://www.pastemagazine.com/music/been-stellar/been-stellar-announces-debut-album-scream-from-new-york-ny"
+        ]
+      },
+      "youtube": {
+        "title": "Pumpkin",
+        "why": "浪人祭官方第一波陣容介紹為 Been Stellar 選出的代表曲，收錄於首張專輯《Scream from New York, NY》；官方 MV 發布於樂團的 VEVO 官方頻道。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第一波演出陣容",
+          "https://www.pastemagazine.com/music/been-stellar/been-stellar-announces-debut-album-scream-from-new-york-ny"
+        ],
+        "channel": "BeenStellarVEVO"
+      }
     }
   },
   "雀斑 Freckles": {
+    "slug": "freckles",
     "bio": "台灣獨立流行樂團，由主唱林以樂（斑斑）領軍，歌曲以輕快俏皮的風格著稱，2017年發行專輯《不標準情人》。樂團沉寂多年，這次在浪人祭限定合體演出。",
     "sources": [
       "https://today.line.me/tw/v3/article/RB5PvJ3",
@@ -22,6 +54,7 @@
     "links": {}
   },
   "Sunny Day Service": {
+    "slug": "sunny-day-service",
     "bio": "1992年成軍的日本搖滾樂團，核心成員是主唱兼吉他手曾我部惠一與貝斯手田中貴，1996年發行專輯《東京》。樂團2000年解散、2008年重組，2023年曾登上浪人祭，這次再度來台演出。",
     "sources": [
       "https://en.wikipedia.org/wiki/Sunny_Day_Service",
@@ -30,9 +63,24 @@
     ],
     "links": {
       "youtube": "https://www.youtube.com/channel/UCWBzqqjqBtDcncKqIdHPZ0Q"
+    },
+    "embeds": {
+      "youtube": "lw6Hz4v70p8"
+    },
+    "picks": {
+      "youtube": {
+        "title": "麻婆思考",
+        "why": "浪人祭官方第一波陣容介紹為 Sunny Day Service 選出的代表曲，同名 EP《麻婆思考 EP》於 2026 年發行。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第一波演出陣容",
+          "https://ja.wikipedia.org/wiki/サニーデイ・サービス"
+        ],
+        "channel": "Sunny Day Service / Keiichi Sokabe"
+      }
     }
   },
   "拍謝少年": {
+    "slug": "sorry-youth",
     "bio": "以台語演唱的台灣三人搖滾樂團，成員是吉他手維尼、貝斯手薑薑與鼓手宗翰。2012年發行首張專輯《海口味》，2017年的《兄弟沒夢不應該》拿下金曲獎最佳專輯裝幀設計獎與金音創作獎最佳搖滾專輯，最新專輯是2024年的《噪音公寓》。2026年曾受邀到美國SXSW演出。",
     "sources": [
       "https://www.sorryyouth.com",
@@ -43,9 +91,40 @@
       "spotify": "https://open.spotify.com/artist/6c4IBMTcnFDhsKHXNSBBvp",
       "apple": "https://music.apple.com/tw/artist/%E6%8B%8D%E8%AC%9D%E5%B0%91%E5%B9%B4/546492743",
       "youtube": "https://www.youtube.com/channel/UCThJUmGlTv48y8vdnAPOJSg"
+    },
+    "embeds": {
+      "spotifyTrack": "6wnUozGyDEGl5dL19D7vHL",
+      "appleMusicSong": "1748096203?i=1748096800",
+      "youtube": "Roxj9OR6ufk"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "歹勢中年",
+        "why": "維基百科列為樂團代表作之一，收錄於拿下第 12 屆金音創作獎最佳搖滾專輯的《歹勢好勢》（2021）。",
+        "sources": [
+          "https://zh.wikipedia.org/wiki/拍謝少年"
+        ]
+      },
+      "appleMusicSong": {
+        "title": "世界第一戇 (feat. 謝銘祐)",
+        "why": "浪人祭官方第一波陣容介紹選出的曲目（本屆演出為拍謝少年 ft. 謝銘祐），收錄於拿下第 15 屆金音創作獎最佳搖滾專輯的《噪音公寓》（2024）。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第一波演出陣容",
+          "https://zh.wikipedia.org/wiki/拍謝少年"
+        ]
+      },
+      "youtube": {
+        "title": "暗流",
+        "why": "維基百科列為樂團代表作之一，收錄於拿下第 9 屆金音創作獎最佳搖滾專輯與第 29 屆金曲獎最佳裝幀設計獎的《兄弟沒夢不應該》（2017）。",
+        "sources": [
+          "https://zh.wikipedia.org/wiki/拍謝少年"
+        ],
+        "channel": "拍謝少年"
+      }
     }
   },
   "謝銘祐": {
+    "slug": "ming-yu-hsieh",
     "bio": "台南在地的台語創作歌手，曾兩度獲得金曲獎最佳台語男歌手。這次以嘉賓身分與台語搖滾樂團拍謝少年限定同台。",
     "sources": [
       "https://zh.wikipedia.org/wiki/%E8%AC%9D%E9%8A%98%E7%A5%90",
@@ -54,6 +133,7 @@
     "links": {}
   },
   "ano": {
+    "slug": "ano",
     "bio": "日本歌手，同時也是演員，2020年起以「ano」名義展開個人音樂活動。2022年演唱動畫《鏈鋸人》片尾曲〈ちゅ、多様性。〉，2023年首次登上NHK紅白歌合戰，2025年在日本武道館舉辦個人首場公演。這次是她第一次以個人身分站上台灣大型音樂祭。",
     "sources": [
       "https://www.toysfactory.co.jp/artist/ano/bio",
@@ -63,10 +143,42 @@
     "links": {
       "spotify": "https://open.spotify.com/artist/7Il739Q5W4yJUYC3hfnX6z",
       "apple": "https://music.apple.com/tw/artist/ano/1529999013",
-      "youtube": "https://www.youtube.com/@anochuru"
+      "youtube": "https://www.youtube.com/channel/UC2tN8yIRVdZ8-Ig2REhPPWg"
+    },
+    "embeds": {
+      "spotifyTrack": "2CaLEXeL3e1Op8JoaWYZcJ",
+      "appleMusicSong": "1889735427?i=1889735428",
+      "youtube": "TBm473lA5Bk"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "ちゅ、多様性。",
+        "why": "2022 年動畫《鏈鋸人》片尾曲之一，也是她 2023 年首次登上 NHK 紅白歌合戰演唱的歌曲。",
+        "sources": [
+          "https://en.wikipedia.org/wiki/Chu,_Tayōsei",
+          "https://en.wikipedia.org/wiki/Ano_(singer)"
+        ]
+      },
+      "appleMusicSong": {
+        "title": "許婚っきゅん",
+        "why": "2024 年新版動畫《亂馬½》片頭曲，Oricon 單曲榜最高第 17 名。",
+        "sources": [
+          "https://en.wikipedia.org/wiki/Ano_(singer)"
+        ]
+      },
+      "youtube": {
+        "title": "絶絶絶絶対聖域",
+        "why": "浪人祭官方第一波陣容介紹為 ano 選出的代表曲，與幾田りら合唱，為電影《デッドデッドデーモンズデデデデデストラクション》前章主題曲。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第一波演出陣容",
+          "https://en.wikipedia.org/wiki/Ano_(singer)"
+        ],
+        "channel": "ano official channel"
+      }
     }
   },
   "淺堤": {
+    "slug": "shallow-levee",
     "bio": "來自高雄的樂團，2016年起以「淺堤」為名活動，用華語和台語演唱，詞曲多由主唱兼吉他手依玲創作。首張專輯《不完整的村莊》（2020）入圍金音創作獎最佳搖滾專輯，之後發行《婚禮之途》（2021），2026年推出新專輯《沈默的鉅作》。",
     "sources": [
       "https://shallowlevee.com/#/home",
@@ -77,9 +189,40 @@
       "spotify": "https://open.spotify.com/artist/6xDRh6bnmn1CQhRUntBka9",
       "apple": "https://music.apple.com/tw/artist/%E6%B7%BA%E5%A0%A4/1301801759",
       "youtube": "https://www.youtube.com/@ShallowLevee"
+    },
+    "embeds": {
+      "spotifyTrack": "5TbOi58CkWuA2DrPhzu3Oc",
+      "appleMusicSong": "1895591271?i=6763995424",
+      "youtube": "01ed9fxeB4I"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "永和",
+        "why": "維基百科列為樂團代表作之一，收錄於入圍第 11 屆金音創作獎最佳搖滾專輯的首張專輯《不完整的村莊》（2020）。",
+        "sources": [
+          "https://zh.wikipedia.org/wiki/淺堤"
+        ]
+      },
+      "appleMusicSong": {
+        "title": "昨日の約束 (feat. 奇妙禮太郎)",
+        "why": "2026 年新專輯《沈默的鉅作》上架前搶先釋出的合作曲，與日本歌手奇妙禮太郎合唱。",
+        "sources": [
+          "https://news.tvbs.com.tw/entertainment/music/3248557"
+        ]
+      },
+      "youtube": {
+        "title": "好不容易",
+        "why": "浪人祭官方第二波陣容介紹為淺堤選出的代表曲，2024 年以單曲《好不容易我變了》發行。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第二波演出陣容",
+          "https://zh.wikipedia.org/wiki/淺堤"
+        ],
+        "channel": "淺堤 Shallow Levée"
+      }
     }
   },
   "Kim Sawol": {
+    "slug": "kim-sawol",
     "bio": "韓國民謠創作歌手김사월，2014年與김해원組成雙人組合，發行EP《비밀》，之後展開個人創作，發行《수잔》（2015）、《로맨스》（2018）、《헤븐》（2020）等專輯，其中《수잔》拿下韓國大眾音樂獎最佳民謠專輯。這次以嘉賓身分與淺堤同台。",
     "sources": [
       "https://ko.wikipedia.org/wiki/김사월",
@@ -88,9 +231,23 @@
     ],
     "links": {
       "spotify": "https://open.spotify.com/artist/08J6v4qHZz06ua0qAicWmE"
+    },
+    "embeds": {
+      "spotifyTrack": "00QwmpGRq9ErPvxpCzXZEa"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "Someone",
+        "why": "〈누군가에게〉（Someone）收錄於 2018 年專輯《로맨스》，拿下第 16 屆韓國大眾音樂獎（2019）最佳民謠歌曲。",
+        "sources": [
+          "https://en.wikipedia.org/wiki/Kim_Sa-wol",
+          "https://www.soompi.com/article/1299992wpp/16th-korean-music-awards-announces-nominees"
+        ]
+      }
     }
   },
   "こっちのけんと Kocchi no Kento": {
+    "slug": "kocchi-no-kento",
     "bio": "日本創作歌手，本名菅生健人，是演員菅田將暉的弟弟。2019年開始在YouTube發表翻唱，2022年正式出道；2024年的〈はいよろこんで〉在各平台累積數億次播放，同年年底首次以歌手身分登上NHK紅白歌合戰。",
     "sources": [
       "https://en.wikipedia.org/wiki/Kocchi_no_Kento",
@@ -101,9 +258,40 @@
       "spotify": "https://open.spotify.com/artist/3qQKrWwcqJlE4OS4e1ox7x",
       "apple": "https://music.apple.com/tw/artist/kocchi-no-kento/1639972219",
       "youtube": "https://www.youtube.com/channel/UC1laSZHo_6VBXU9FmfGNwFA"
+    },
+    "embeds": {
+      "spotifyTrack": "7Ea65yIjXDZDfg39hsvcE6",
+      "appleMusicSong": "1656864162?i=1656864163",
+      "youtube": "jzi6RNVEOtA"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "けっかおーらい",
+        "why": "2025 年動畫《我的英雄學院：非法英雄》片頭曲。",
+        "sources": [
+          "https://en.wikipedia.org/wiki/Kocchi_no_Kento"
+        ]
+      },
+      "appleMusicSong": {
+        "title": "死ぬな!",
+        "why": "2022 年底發行的單曲，2023 年中在 TikTok 爆紅，登上 Billboard Japan Heatseekers Songs 榜第 9 名。",
+        "sources": [
+          "https://en.wikipedia.org/wiki/Kocchi_no_Kento"
+        ]
+      },
+      "youtube": {
+        "title": "はいよろこんで",
+        "why": "浪人祭官方第二波陣容介紹選出的代表曲，也是讓他拿下日本唱片大獎最佳新人獎、首度以歌手身分登上 NHK 紅白歌合戰的突破之作。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第二波演出陣容",
+          "https://en.wikipedia.org/wiki/Kocchi_no_Kento"
+        ],
+        "channel": "こっちのけんと"
+      }
     }
   },
   "紫今": {
+    "slug": "mulasaki-ima",
     "bio": "日本創作歌手，詞曲、編曲到MV多由本人包辦，自幼受福音與非洲音樂影響，擁有五個八度音域。2023年以單曲〈ゴールデンタイム〉開始發表作品，〈魔性の女A〉與〈ウワサのあの子〉在社群累積逾10億次播放，2025年推出首張專輯《eMulsion》，也曾為ILLIT日文單曲作詞。",
     "sources": [
       "https://www.sonymusic.co.jp/artist/mulasakiima/profile/",
@@ -111,10 +299,25 @@
       "https://magazine.weverse.io/article/view/1855?lang=e"
     ],
     "links": {
-      "youtube": "https://www.youtube.com/@mulasakiima"
+      "youtube": "https://www.youtube.com/channel/UCO_33qdYApF4dzGxGWv7gmg"
+    },
+    "embeds": {
+      "youtube": "d0QFalAKRNM"
+    },
+    "picks": {
+      "youtube": {
+        "title": "魔性の女A",
+        "why": "浪人祭官方第一波陣容介紹選出的代表曲；Sony Music 官方簡介指出這首 2024 年 4 月發行的歌曲在日本與海外爆紅，社群總播放突破 5 億次。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第一波演出陣容",
+          "https://www.sonymusic.co.jp/artist/mulasakiima/profile/"
+        ],
+        "channel": "紫 今 - Mulasaki Ima"
+      }
     }
   },
   "血肉果汁機 Flesh Juicer": {
+    "slug": "flesh-juicer",
     "bio": "2006年在台中成軍的重金屬樂團，以死核、金屬核為基底，融入嗩吶、五聲音階與廟會信仰文化，主唱GIGO頭戴的豬頭面具是招牌形象。2022年以專輯《GOLDEN太子BRO》拿下第33屆金曲獎最佳樂團。",
     "sources": [
       "https://www.thenewslens.com/article/169087",
@@ -123,9 +326,25 @@
     ],
     "links": {
       "youtube": "https://www.youtube.com/@FleshJuicer"
+    },
+    "embeds": {
+      "youtube": "Q-EncPy5qVo"
+    },
+    "picks": {
+      "youtube": {
+        "title": "太子哥",
+        "why": "浪人祭官方第二波陣容介紹選出的代表曲，收錄於拿下第 33 屆金曲獎最佳樂團的《GOLDEN太子BRO》，並入圍第 12 屆金音創作獎最佳搖滾歌曲。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第二波演出陣容",
+          "https://www.mirrormedia.mg/story/20211007ent040",
+          "https://www.cna.com.tw/news/amov/202207020241.aspx"
+        ],
+        "channel": "Flesh Juicer 血肉果汁機"
+      }
     }
   },
   "理想混蛋": {
+    "slug": "bestards",
     "bio": "2017年成軍的台灣民謠流行樂團，2020年首張專輯《愚者》入圍第32屆金曲獎最佳新人。代表作包括〈不是因為天氣晴朗才愛你〉，〈離開的一路上〉曾登上Spotify台灣排行榜冠軍。",
     "sources": [
       "https://en.wikipedia.org/wiki/Bestards",
@@ -134,10 +353,32 @@
     ],
     "links": {
       "spotify": "https://open.spotify.com/artist/0Awqm7GXGiBp8fJNGvywra",
-      "youtube": "https://www.youtube.com/channel/UC5AUnQFb4CUE2c4rua_zJKw"
+      "youtube": "https://www.youtube.com/channel/UCZn0sWyHi1OVNfug5l4G3BQ"
+    },
+    "embeds": {
+      "spotifyTrack": "2VEt42QSQxILgEf9B50xxm",
+      "youtube": "3hLESh77fSg"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "不是因為天氣晴朗才愛你",
+        "why": "2018 年發行、讓樂團開始受到關注的代表作，曾拿下 StreetVoice 排行榜冠軍。",
+        "sources": [
+          "https://zh.wikipedia.org/wiki/理想混蛋"
+        ]
+      },
+      "youtube": {
+        "title": "離開的一路上",
+        "why": "收錄於《半熟理想》，2024 年登上 Spotify 台灣單曲日榜與週榜冠軍，並獲 HITO 流行音樂獎 Hit Fm 聽眾最愛情歌。",
+        "sources": [
+          "https://zh.wikipedia.org/wiki/理想混蛋"
+        ],
+        "channel": "理想混蛋 Bestards"
+      }
     }
   },
   "NELL": {
+    "slug": "nell",
     "bio": "來自韓國首爾的另類搖滾樂團，2001年發表首張專輯，2012年專輯《Slip Away》曾登上韓國專輯榜冠軍。〈Time Walking on Memories〉是樂團最受歡迎的代表曲之一，2026年發行正規專輯《X》。",
     "sources": [
       "https://en.wikipedia.org/wiki/Nell_(band)",
@@ -146,9 +387,22 @@
     ],
     "links": {
       "spotify": "https://open.spotify.com/artist/5WY88tCMFA6J6vqSN3MmDZ"
+    },
+    "embeds": {
+      "spotifyTrack": "0LSmb1eo894EJ7eIWPaAgQ"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "The time of walking on remembrance",
+        "why": "〈기억을 걷는 시간〉收錄於 2008 年專輯《Separation Anxiety》，被列為樂團代表熱門曲之一，並拿下 2008 年 Mnet KM Music Festival 最佳搖滾表演獎。",
+        "sources": [
+          "https://en.wikipedia.org/wiki/Nell_(band)"
+        ]
+      }
     }
   },
   "溫室雜草": {
+    "slug": "easy-weeds",
     "bio": "台灣另類搖滾樂團，英文名Easy Weeds，2019年開始活動，成員包括主唱暨吉他手阿J、貝斯手正約與鼓手小康。發行過EP《春天有腳》，專輯《Intro_鞋》入圍第15屆金音創作獎最佳搖滾專輯。",
     "sources": [
       "https://streetvoice.com/easyweeds/about/",
@@ -158,6 +412,7 @@
     "links": {}
   },
   "Laura day romance": {
+    "slug": "laura-day-romance",
     "bio": "日本三人樂團，由主唱井上花月、吉他手鈴木迅與鼓手礒本雄太組成，歌曲多由鈴木迅創作。曾發行專輯《farewell your town》、《roman candles》，2025年推出第三張專輯《合歓る - walls》與《合歓る - bridges》二部作。",
     "sources": [
       "https://lauradayromance.com/discography",
@@ -165,10 +420,25 @@
       "https://ja.wikipedia.org/wiki/Laura_day_romance"
     ],
     "links": {
-      "youtube": "https://www.youtube.com/@lauradayromance"
+      "youtube": "https://www.youtube.com/channel/UCryKAHNdAn-S-w1cWFKZyJA"
+    },
+    "embeds": {
+      "youtube": "2DGx6WAD4ZQ"
+    },
+    "picks": {
+      "youtube": {
+        "title": "winterlust",
+        "why": "浪人祭官方第二波陣容介紹選出的代表曲，2026 年 1 月發行，並作為 JR SKISKI 廣告歌曲。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第二波演出陣容",
+          "https://ja.wikipedia.org/wiki/Laura_day_romance"
+        ],
+        "channel": "Laura day romance"
+      }
     }
   },
   "Band Nah": {
+    "slug": "band-nah",
     "bio": "韓國獨立搖滾三人樂團，韓文團名나상현씨밴드，2014年由首爾大學作曲社團成員組成，隸屬唱片公司January。曾參與韓劇《柔美的細胞小將》原聲帶。",
     "sources": [
       "https://www.nownews.com/news/6876601",
@@ -178,6 +448,7 @@
     "links": {}
   },
   "公館青少年": {
+    "slug": "ggteens",
     "bio": "台灣五人樂團，英文名GGteens，2021年成軍，主唱為Adam與Lucy。代表歌曲有〈要不要跟我出去走一走〉與〈一個人默默的酷〉，2026年7月在Zepp New Taipei舉辦專場《青少年之後》，吸引約2000名樂迷。",
     "sources": [
       "https://streetvoice.com/ggteens_/about/",
@@ -186,6 +457,7 @@
     "links": {}
   },
   "君島大空": {
+    "slug": "ohzora-kimishima",
     "bio": "東京出身的創作歌手暨吉他手，1995年生，2019年以EP《午後の反射光》正式展開個人活動。2023年接連推出專輯《映帶する煙》與《no public sounds》，2026年發行新專輯《花落知多少》。",
     "sources": [
       "https://www.fujipacific.co.jp/artists/artists/post_23.html",
@@ -196,9 +468,40 @@
       "spotify": "https://open.spotify.com/artist/5rjahCZtY8h4y2EHCnpgtQ",
       "apple": "https://music.apple.com/tw/artist/%E5%90%9B%E5%B3%B6%E5%A4%A7%E7%A9%BA/1432423769",
       "youtube": "https://www.youtube.com/channel/UC5mR8Acvi2IbQQyyUBYwzsA"
+    },
+    "embeds": {
+      "spotifyTrack": "74IUus1bCAPnCk0443D4Za",
+      "appleMusicSong": "1854617239?i=1854617240",
+      "youtube": "DWRmDv-gps0"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "映帶する煙",
+        "why": "首張專輯《映帶する煙》（2023）的同名開場曲，這張專輯名列《Music Magazine》2023 年日本搖滾專輯年度第一。",
+        "sources": [
+          "https://ja.wikipedia.org/wiki/君島大空"
+        ]
+      },
+      "appleMusicSong": {
+        "title": "記憶と引力",
+        "why": "由君島大空演唱的 NHK 放送 100 週年電視劇《火星の女王》主題曲（2025）。",
+        "sources": [
+          "https://ja.wikipedia.org/wiki/君島大空"
+        ]
+      },
+      "youtube": {
+        "title": "c r a z y",
+        "why": "浪人祭官方第一波陣容介紹選出的代表曲，收錄於獲 APPLE VINEGAR Music Award 2023 年度大賞的《no public sounds》，並被蔦谷好位置選為 2023 年度最佳歌曲第一名。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第一波演出陣容",
+          "https://ja.wikipedia.org/wiki/君島大空"
+        ],
+        "channel": "Ohzora Kimishima"
+      }
     }
   },
   "無妄合作社": {
+    "slug": "no-nonsense-collective",
     "bio": "台灣搖滾樂團，成員包括郭力瑋與謝碩元。2021年EP《No Mercy》入圍第33屆金曲獎最佳樂團，2024年發行專輯《開往天堂的海盜船》。",
     "sources": [
       "https://www.thenewslens.com/article/169087",
@@ -208,6 +511,7 @@
     "links": {}
   },
   "Vuize 王鍾惟": {
+    "slug": "wang-chung-wei",
     "bio": "台灣客語饒舌創作者，以客語結合嘻哈與多元節奏。2022 年發行首張 EP《GO MODE》，入圍第 34 屆金曲獎最佳客語歌手，也曾經由全球客家流行音樂大賽嶄露頭角；2024 年推出單曲〈Inception〉。",
     "sources": [
       "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第四波演出陣容",
@@ -216,9 +520,23 @@
     ],
     "links": {
       "youtube": "https://www.youtube.com/@vuize_ogm"
+    },
+    "embeds": {
+      "youtube": "26GbDzG7aT0"
+    },
+    "picks": {
+      "youtube": {
+        "title": "TALK2ME",
+        "why": "浪人祭官方第四波陣容介紹為 Vuize 選出的代表曲；官方 MV 發布於唱片公司台灣索尼音樂的頻道，本人頻道沒有這支 MV。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第四波演出陣容"
+        ],
+        "channel": "台灣索尼音樂 Sony Music Taiwan"
+      }
     }
   },
   "禁藥王": {
+    "slug": "asiaboy",
     "bio": "台灣饒舌歌手，也以 Asiaboy 之名活動，曾與 Lizi 栗子搭檔合作。近期單曲〈100%〉是浪人祭官方介紹選出的代表曲。",
     "sources": [
       "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第四波演出陣容",
@@ -227,9 +545,23 @@
     ],
     "links": {
       "youtube": "https://www.youtube.com/channel/UCVi4XNkYPtNpWuk48WfSnFA"
+    },
+    "embeds": {
+      "youtube": "R0gOOIGwsXk"
+    },
+    "picks": {
+      "youtube": {
+        "title": "100%",
+        "why": "浪人祭官方第四波陣容介紹為禁藥王選出的代表曲。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第四波演出陣容"
+        ],
+        "channel": "Asiaboy 禁藥王"
+      }
     }
   },
   "Andy Maker": {
+    "slug": "andy-maker",
     "bio": "DSPS 貝斯手鐘奕安以 Andy Maker 為名推出的個人音樂計畫，浪人祭官方介紹選出的代表曲是〈山裡面〉。",
     "sources": [
       "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第六波演出陣容",
@@ -238,9 +570,24 @@
     ],
     "links": {
       "youtube": "https://www.youtube.com/channel/UCkTiUGYjyrE9qlqc65LhHdw"
+    },
+    "embeds": {
+      "youtube": "VIg6yuADxII"
+    },
+    "picks": {
+      "youtube": {
+        "title": "山裡面",
+        "why": "浪人祭官方演出陣容介紹為 Andy Maker 選出的代表曲，是 DSPS 與海豚刑警貝斯手鐘奕安以 Andy Maker 名義推出的個人作品。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第六波演出陣容",
+          "https://www.setn.com/news/1901980"
+        ],
+        "channel": "鐘奕安"
+      }
     }
   },
   "Multiverse Music": {
+    "slug": "multiverse-music",
     "bio": "台灣嘻哈團體，核心成員為 Macdella、EyeballRay 與 SheATH，三人都曾參加饒舌選秀節目《大嘻哈時代》。近期作品〈NONSTOP 2026〉為浪人祭官方介紹選出的代表曲。",
     "sources": [
       "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第四波演出陣容",
@@ -249,9 +596,23 @@
     ],
     "links": {
       "youtube": "https://www.youtube.com/channel/UCIj79LT0SXxu8vk331qG2Ww"
+    },
+    "embeds": {
+      "youtube": "8tBG8fuPM0s"
+    },
+    "picks": {
+      "youtube": {
+        "title": "NONSTOP 2026",
+        "why": "浪人祭官方演出陣容介紹為 Multiverse Music 選出的代表曲。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第四波演出陣容"
+        ],
+        "channel": "Multiverse Music"
+      }
     }
   },
   "Srirajah Rockers": {
+    "slug": "srirajah-rockers",
     "bio": "來自泰國東部的雷鬼樂團，以 roots reggae 為核心並融入大量 Dub 元素，是泰國雷鬼／Dub 圈具代表性的樂團之一。這次在浪人祭與金曲歌王 Leo王限定合演。",
     "sources": [
       "https://www.esplanade.com/whats-on/festivals-and-series/baybeats/2026/srirajah-rockers",
@@ -261,9 +622,31 @@
     "links": {
       "spotify": "https://open.spotify.com/artist/6H9q7tvRDibAPvjkIiFaEX",
       "youtube": "https://www.youtube.com/@SrirajahRockers"
+    },
+    "embeds": {
+      "spotifyTrack": "2hzPGDDPgpDga36TbQ5Hxg",
+      "youtube": "khyKg0x-WYU"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "Organix",
+        "why": "專輯《Organix》的同名曲，這張專輯在 2017 年 Kom Chad Luek Awards 拿下最佳樂團、最佳錄音與最佳歌曲三項大獎。",
+        "sources": [
+          "https://www.esplanade.com/whats-on/festivals-and-series/baybeats/2026/srirajah-rockers"
+        ]
+      },
+      "youtube": {
+        "title": "From the top",
+        "why": "浪人祭官方介紹 SRIRAJAH ROCKERS ft. Leo王 合演時選出的代表曲之一。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第六波演出陣容"
+        ],
+        "channel": "Srirajah Rockers"
+      }
     }
   },
   "Leo王": {
+    "slug": "leo-wang",
     "bio": "台灣饒舌歌手，本名王之佑，曾就讀台大社會系，曾任搖滾樂團巨大的轟鳴主唱，也與春艷組成嘻哈雙人組夜貓組，隸屬顏社。2019 年以專輯《無病呻吟有情抒情》拿下第 30 屆金曲獎最佳國語男歌手。",
     "sources": [
       "https://www.cna.com.tw/news/firstnews/201906295007.aspx?topic=1662",
@@ -273,9 +656,33 @@
     "links": {
       "spotify": "https://open.spotify.com/artist/5Zn94mKQQYVZUvhiIXeXdP",
       "youtube": "https://www.youtube.com/@LeoWangBoat"
+    },
+    "embeds": {
+      "spotifyTrack": "0TgWgW2UYFctTDdN4GC6B7",
+      "youtube": "DS89Vb07C-U"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "快樂的甘蔗人",
+        "why": "收錄於讓他拿下第 30 屆金曲獎最佳國語男歌手的專輯《無病呻吟有情抒情》，並入圍第 10 屆金音獎最佳嘻哈單曲。",
+        "sources": [
+          "https://zh.wikipedia.org/wiki/Leo王",
+          "https://www.mirrormedia.mg/story/amp/20190712ent009"
+        ]
+      },
+      "youtube": {
+        "title": "陪妳過假日",
+        "why": "與 9m88 合唱、讓更多人開始認識 Leo王的作品，曾入圍第 8 屆金音獎最佳嘻哈單曲。",
+        "sources": [
+          "https://www.setn.com/news/587101",
+          "https://zh.wikipedia.org/wiki/Leo王"
+        ],
+        "channel": "Leo王 Leo Wang"
+      }
     }
   },
   "0WAVE": {
+    "slug": "0wave",
     "bio": "南韓五人另類 R&B／嘻哈團體，成員為 VIIN、yukon、Aiboy、MODS、wooseojun，隸屬歌手 Colde 創立的廠牌 PYRAT。2022 年 12 月以 EP《off the wall》出道，代表曲〈with me〉；本次由韓國文化產業振興院（KOCCA）推薦來台。",
     "sources": [
       "https://www.vagabondfest.com/blog/posts/-2026-浪人祭｜第七波演出陣容",
@@ -285,9 +692,32 @@
     "links": {
       "apple": "https://music.apple.com/us/artist/0wave/1658931288",
       "youtube": "https://www.youtube.com/@0WAVE"
+    },
+    "embeds": {
+      "appleMusicSong": "1805571473?i=1805571474",
+      "youtube": "AIyOrLpwzfg"
+    },
+    "picks": {
+      "appleMusicSong": {
+        "title": "noon",
+        "why": "2025 年 4 月 EP《noon》的同名開場曲，這張由全員參與詞曲創作的 EP 回顧了團體出道以來的歷程。",
+        "sources": [
+          "https://sports.khan.co.kr/article/202504022133003/"
+        ]
+      },
+      "youtube": {
+        "title": "with me",
+        "why": "浪人祭官方介紹選出的代表曲，也是 2022 年出道 EP《off the wall》的單曲，獲 Rolling Stone India 選為推薦歌曲。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/-2026-浪人祭｜第七波演出陣容",
+          "https://rollingstoneindia.com/song-you-need-to-know-0wave-with-me"
+        ],
+        "channel": "0WAVE"
+      }
     }
   },
   "庸俗救星": {
+    "slug": "vulgar-savior",
     "bio": "2020 年底成軍的台灣四人另類搖滾樂團，成員為阿雷、晧宇、家耘、允祈，曲風融合 R&B、放克、迷幻與 City Pop。2021 年發行首張專輯《末日倒數的庸俗週記》，2025 年推出《Little Battle》，〈Marry Me〉則以求婚為題。",
     "sources": [
       "https://streetvoice.com/VulgarSavior/",
@@ -298,9 +728,39 @@
       "spotify": "https://open.spotify.com/artist/0yxKjRdHdfEZvsypUkROaq",
       "apple": "https://music.apple.com/tw/artist/%E5%BA%B8%E4%BF%97%E6%95%91%E6%98%9F/1588200181",
       "youtube": "https://www.youtube.com/@vulgarsavior"
+    },
+    "embeds": {
+      "spotifyTrack": "2J5EbJJJwE5H1u9x4gfiMB",
+      "appleMusicSong": "1807277941?i=1807277947",
+      "youtube": "349Tj7c5FNk"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "Marry Me",
+        "why": "吉他手阿雷 2021 年為向伴侶求婚而寫的求婚歌，許多樂迷也拿它來向另一半表白。",
+        "sources": [
+          "https://realsound.jp/2024/05/post-1652597.html"
+        ]
+      },
+      "appleMusicSong": {
+        "title": "Little Battle",
+        "why": "2025 年 4 月發行的專輯《Little Battle》同名曲，樂團並以此展開專輯同名巡演。",
+        "sources": [
+          "https://www.vulgarsavior.com"
+        ]
+      },
+      "youtube": {
+        "title": "一起去看音樂祭",
+        "why": "浪人祭官方演出陣容介紹為庸俗救星選出的代表曲。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第三波演出陣容"
+        ],
+        "channel": "庸俗救星"
+      }
     }
   },
   "薄暮": {
+    "slug": "evenfall",
     "bio": "來自台中的四人金屬樂團，英文團名 EVENFALL。2019 年以迷你專輯《State of Mind》出道，2025 年發行首張概念專輯《第二星系》，2026 年陸續推出單曲〈千呎之下〉與〈一事無成的勇氣〉。",
     "sources": [
       "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第三波演出陣容",
@@ -311,9 +771,41 @@
       "spotify": "https://open.spotify.com/artist/778rPzhc5oSLtFOeA3SfyF",
       "apple": "https://music.apple.com/tw/artist/%E8%96%84%E6%9A%AE/1484428220",
       "youtube": "https://www.youtube.com/@evenfall_tw"
+    },
+    "embeds": {
+      "spotifyTrack": "3Stck1fVsM9qJb0ZQwv9JF",
+      "appleMusicSong": "1792151457?i=1792151469",
+      "youtube": "P2Q6Ut74Qhk"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "千呎之下",
+        "why": "2026 年度首發單曲，開啟樂團的年度連載發行計畫，將創作重心從《第二星系》的存在廣度轉向自我意識的深度。",
+        "sources": [
+          "https://today.line.me/tw/v3/article/3NYpe0W"
+        ]
+      },
+      "appleMusicSong": {
+        "title": "煙花",
+        "why": "首張概念專輯《第二星系》的首波先行單曲，2024 年 6 月推出。",
+        "sources": [
+          "https://www.mtv.com.tw/news/newsdetail/11195",
+          "https://www.mtv.com.tw/news/newsdetail/11731"
+        ]
+      },
+      "youtube": {
+        "title": "第二星系",
+        "why": "浪人祭官方演出陣容介紹為薄暮選出的代表曲，也是 2025 年首張概念專輯《第二星系》的同名曲。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第三波演出陣容",
+          "https://www.mtv.com.tw/news/newsdetail/11731"
+        ],
+        "channel": "薄暮 EVENFALL"
+      }
     }
   },
   "RIBINGU": {
+    "slug": "ribingu",
     "bio": "由 Yu 與 Melet 組成的客語雙人組合，團名源自 Living（客廳），以客語結合日系流行等曲風。〈Know You So Well〉獲 2025 全球客家流行音樂大賽第三名，2026 年 6 月發行首張專輯《Living》，收錄 12 首歌。",
     "sources": [
       "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第五波演出陣容",
@@ -323,9 +815,32 @@
     "links": {
       "apple": "https://music.apple.com/tw/artist/ribingu/1804056518",
       "youtube": "https://www.youtube.com/@RIBINGU2024"
+    },
+    "embeds": {
+      "appleMusicSong": "6783596675?i=6783596679",
+      "youtube": "AeZQeRZm_70"
+    },
+    "picks": {
+      "appleMusicSong": {
+        "title": "花舌",
+        "why": "2026 年首張專輯《Living》的主打歌，以電子 J-Pop 曲風搭配客語演唱。",
+        "sources": [
+          "https://today.line.me/tw/v3/article/5y1JjQv"
+        ]
+      },
+      "youtube": {
+        "title": "Know You So Well",
+        "why": "浪人祭官方介紹選出的代表曲，獲 2025 全球客家流行音樂大賽創作組第三名；官方 MV 由比賽合輯發行商台灣索尼音樂的頻道發布。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第五波演出陣容",
+          "https://today.line.me/tw/v3/article/5y1JjQv"
+        ],
+        "channel": "台灣索尼音樂 Sony Music Taiwan"
+      }
     }
   },
   "上山": {
+    "slug": "over-the-top",
     "bio": "上山 Over The Top 是獨立搖滾樂團，作品包括〈得到平靜 Inner Peace〉，並曾登上 2026 年諸羅搖滾音樂祭。",
     "sources": [
       "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第三波演出陣容",
@@ -334,9 +849,23 @@
     ],
     "links": {
       "youtube": "https://www.youtube.com/channel/UCyFB9v1KlC6n1NlvR5ntCmQ"
+    },
+    "embeds": {
+      "youtube": "Z9IrTxDX458"
+    },
+    "picks": {
+      "youtube": {
+        "title": "得到平靜",
+        "why": "浪人祭官方演出陣容介紹為上山選出的代表曲。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第三波演出陣容"
+        ],
+        "channel": "上山 Over The Top"
+      }
     }
   },
   "Tickle Tickle 癢癢": {
+    "slug": "tickle-tickle",
     "bio": "Tickle Tickle 癢癢是走荒誕路線的台式日搖樂團，常以搞笑音效與戲劇化唱腔入歌。2025 年初推出抒情單曲〈神岡〉，同年 3 月發行首張專輯《成人料理亭》。",
     "sources": [
       "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第三波演出陣容",
@@ -345,9 +874,24 @@
     ],
     "links": {
       "youtube": "https://www.youtube.com/@tickletickletw"
+    },
+    "embeds": {
+      "youtube": "DvZpO4H6z80"
+    },
+    "picks": {
+      "youtube": {
+        "title": "神岡",
+        "why": "浪人祭官方介紹選出的代表曲，也是首張專輯《成人料理亭》的前導抒情單曲；官方 MV 由出品方笨道策展的頻道發布。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第三波演出陣容",
+          "https://today.line.me/tw/v2/article/7N7Qp6P"
+        ],
+        "channel": "笨道策展 Dustpanner Music"
+      }
     }
   },
   "倒車入庫 R.I.G": {
+    "slug": "reversing-into-garage",
     "bio": "倒車入庫 R.I.G（Reversing into Garage）是來自台北的車庫搖滾樂團，主唱為里鳳 Lyvon，歌詞多取材自日常生活。作品包括專輯《未履莫勸》與歌曲〈門禁〉。",
     "sources": [
       "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜樂團大車拚-b2b-stage",
@@ -357,6 +901,7 @@
     "links": {}
   },
   "COMMON PEOPLE LIKE YOU": {
+    "slug": "common-people-like-you",
     "bio": "COMMON PEOPLE LIKE YOU 是來自泰國的搖滾樂團，曲風帶有後龐克色彩。本屆浪人祭在「樂團大車拚」與台北車庫搖滾樂團倒車入庫 R.I.G 同台演出。",
     "sources": [
       "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜樂團大車拚-b2b-stage",
@@ -365,6 +910,7 @@
     "links": {}
   },
   "SADOG": {
+    "slug": "sadog",
     "bio": "SADOG 是龐克搖滾樂團，曲風粗獷中帶有柔情。2022 年發行專輯《十週年》，作品還包括單曲〈我是海浪〉。",
     "sources": [
       "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜樂團大車拚-b2b-stage",
@@ -373,9 +919,23 @@
     ],
     "links": {
       "youtube": "https://www.youtube.com/channel/UCUw4r2Onp5u-Ec7OJp_creQ"
+    },
+    "embeds": {
+      "youtube": "E25G0cMm39Q"
+    },
+    "picks": {
+      "youtube": {
+        "title": "我是海浪",
+        "why": "2019 年發表、樂團成軍七年來的第一首情歌，由主唱陳融親自執導 MV，曲風從快節奏藍調龐克轉向溫柔。",
+        "sources": [
+          "https://blow.streetvoice.com/45719/"
+        ],
+        "channel": "SADOG"
+      }
     }
   },
   "ONE CLICK STRAIGHT": {
+    "slug": "one-click-straight",
     "bio": "ONE CLICK STRAIGHT 是來自菲律賓的獨立樂團，由 Marquez 三兄弟與吉他手 Joel Cartera 組成，曲風融合另類搖滾與電子元素。2018 年發行專輯《The Midnight Emotion》，2023 年推出同名專輯，人氣歌曲有〈MRT〉。",
     "sources": [
       "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜樂團大車拚-b2b-stage",
@@ -386,9 +946,42 @@
       "spotify": "https://open.spotify.com/artist/457BGAQIRpxlvY5gcbDjUQ",
       "apple": "https://music.apple.com/tw/artist/one-click-straight/1052981999",
       "youtube": "https://www.youtube.com/@OneClickStraight"
+    },
+    "embeds": {
+      "spotifyTrack": "3yXpDz9ZiB3TjKlCkhxwpn",
+      "appleMusicSong": "1660549327?i=1660549334",
+      "youtube": "sPvuG5h_1Hc"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "MRT",
+        "why": "2023 年同名專輯的熱門單曲之一，這張專輯入選 Billboard Philippines 2023 年度最佳專輯。",
+        "sources": [
+          "https://billboardphilippines.com/music/news/one-click-straight-new-single-telepono-release-2025/",
+          "https://www.therealcosmos.com/?p=4370"
+        ]
+      },
+      "appleMusicSong": {
+        "title": "Hahayaan",
+        "why": "2023 年同名專輯的主打單曲之一，與〈MRT〉、〈Siya〉同被 Billboard Philippines 列為該專輯的熱門單曲。",
+        "sources": [
+          "https://en.wikipedia.org/wiki/One_Click_Straight",
+          "https://billboardphilippines.com/music/news/one-click-straight-new-single-telepono-release-2025/"
+        ]
+      },
+      "youtube": {
+        "title": "Telepono",
+        "why": "2025 年 2 月發行、樂團自行創作與製作的單曲，主唱 Sam Marquez 稱它是寫給現代人的「世紀情歌」；官方 MV 發布於樂團的官方 VEVO 頻道。",
+        "sources": [
+          "https://billboardphilippines.com/music/news/one-click-straight-new-single-telepono-release-2025/",
+          "https://philstarlife.com/geeky/714768-one-click-straight-tells-stories-soul"
+        ],
+        "channel": "OneClickStraightVEVO"
+      }
     }
   },
   "高小糕": {
+    "slug": "gao-xiao-gao",
     "bio": "高小糕是台灣龐克音樂人，曾任白目樂隊主唱，參與該團首張專輯《Kiss Your Eyes》。現以「龐克妖女」之名個人創作，作品常觸及女性情慾，同時也是瑜珈老師。",
     "sources": [
       "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜仙手指鼓・刮盤轉運",
@@ -397,9 +990,23 @@
     ],
     "links": {
       "youtube": "https://www.youtube.com/@gaoxiaogao3851"
+    },
+    "embeds": {
+      "youtube": "xvWzKtH2aBY"
+    },
+    "picks": {
+      "youtube": {
+        "title": "我心龐克",
+        "why": "高小糕從白目樂隊單飛、化身「龐克妖女」後發行的首批個人單曲之一。",
+        "sources": [
+          "https://www.marieclaire.com.tw/entertainment/music/70476"
+        ],
+        "channel": "高小糕 Gao Xiao Gao"
+      }
     }
   },
   "大象體操": {
+    "slug": "elephant-gym",
     "bio": "來自高雄的三人數學搖滾樂團，2012 年成立，成員為貝斯手張凱婷、吉他手張凱翔與鼓手涂嘉欽。2019 年獲金音獎最佳樂團，2024 年以專輯《世界 World》拿下第 35 屆金曲獎評審團獎；休團一段時間後，今年以新單曲〈公路 Highway〉回歸。",
     "sources": [
       "https://elephantgym.co/bio/",
@@ -410,9 +1017,39 @@
       "spotify": "https://open.spotify.com/artist/2rqNUPgkBgbhcRabUQ5C9g",
       "apple": "https://music.apple.com/tw/artist/elephant-gym/798537066",
       "youtube": "https://www.youtube.com/channel/UCyCarLRHBVJYXJ3L2uuEEQg"
+    },
+    "embeds": {
+      "spotifyTrack": "3bZaxtkOP7zxmHtS3d4n2X",
+      "appleMusicSong": "1721312985?i=1721312986",
+      "youtube": "vs5eZZwwHRM"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "水底 Underwater",
+        "why": "2018 年專輯《水底 Underwater》的同名曲，入圍第 10 屆金音獎最佳搖滾單曲，樂團也在該屆拿下最佳樂團獎。",
+        "sources": [
+          "https://en.wikipedia.org/wiki/Elephant_Gym"
+        ]
+      },
+      "appleMusicSong": {
+        "title": "羽毛",
+        "why": "收錄於拿下金曲獎評審團獎與金音獎最佳樂團的專輯《世界》，曾入圍金音獎，鼓手嘉欽稱它是該年度金音獎的「最大遺珠」。",
+        "sources": [
+          "https://www.nownews.com/news/6579723"
+        ]
+      },
+      "youtube": {
+        "title": "女巫 Witches",
+        "why": "浪人祭官方介紹大象體操 ft. someshiit 山姆時選出的代表曲，影片為「世界 THE WORLD」巡迴東京場的官方現場版。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第一波演出陣容"
+        ],
+        "channel": "大象體操 Elephant Gym"
+      }
     }
   },
   "someshiit 山姆": {
+    "slug": "someshiit",
     "bio": "台灣饒舌創作者，以臥室饒舌結合樂團編制的自省風格受到注意，早期作品〈那些勸我別抽菸的人都死了〉累積超過五百萬次觀看。2024 年發行首張專輯《愚公》，並以此拿下第 36 屆金曲獎最佳新人與金音獎最佳嘻哈專輯。",
     "sources": [
       "https://www.thenewslens.com/article/254767",
@@ -422,9 +1059,32 @@
     "links": {
       "apple": "https://music.apple.com/tw/artist/someshiit-%E5%B1%B1%E5%A7%86/1749253875",
       "youtube": "https://www.youtube.com/channel/UCkDUey2MDQYQRY8nDaK78ow"
+    },
+    "embeds": {
+      "appleMusicSong": "1770466048?i=1770466055",
+      "youtube": "LqTfWEsGP4U"
+    },
+    "picks": {
+      "appleMusicSong": {
+        "title": "善良是",
+        "why": "收錄於拿下第 36 屆金曲獎最佳新人的首張專輯《愚公》，也是他在金曲獎典禮上的得主表演曲目。",
+        "sources": [
+          "https://zh.wikipedia.org/wiki/Someshiit_山姆",
+          "https://www.cna.com.tw/news/amov/202506280190.aspx"
+        ]
+      },
+      "youtube": {
+        "title": "那些勸我別抽菸的人都死了",
+        "why": "他在街聲發表的第一首創作，發表後連續好幾週霸榜。",
+        "sources": [
+          "https://www.marieclaire.com.tw/entertainment/music/87021"
+        ],
+        "channel": "someshiit 山姆"
+      }
     }
   },
   "鄭宜農": {
+    "slug": "enno-cheng",
     "bio": "台灣創作歌手，2007 年主演電影《夏天的尾巴》並入圍金馬獎最佳新人，2011 年發行首張專輯《海王星》。2022 年推出首張台語專輯《水逆》，拿下第 34 屆金曲獎最佳台語女歌手與最佳台語專輯；2025 年的台語專輯《圓缺》也入圍第 37 屆金曲獎。",
     "sources": [
       "https://www.mirrormedia.mg/story/20250625star001",
@@ -433,9 +1093,23 @@
     ],
     "links": {
       "apple": "https://music.apple.com/tw/artist/%E9%84%AD%E5%AE%9C%E8%BE%B2/981821881"
+    },
+    "embeds": {
+      "appleMusicSong": "1810635857?i=1810636109"
+    },
+    "picks": {
+      "appleMusicSong": {
+        "title": "圓缺",
+        "why": "浪人祭官方陣容介紹選用的歌曲，也是 2025 年台語專輯《圓缺》的同名曲，這張專輯入圍第 37 屆金曲獎最佳台語專輯。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-%E6%B5%AA%E4%BA%BA%E7%A5%AD%EF%BD%9C%E7%AC%AC%E4%BA%94%E6%B3%A2%E6%BC%94%E5%87%BA%E9%99%A3%E5%AE%B9",
+          "https://www.nownews.com/news/6850594"
+        ]
+      }
     }
   },
   "國蛋 GorDoN": {
+    "slug": "gordon",
     "bio": "台南出身的饒舌歌手，高中時期就組過嘻哈團體竹幫，2007 年加入嘻哈廠牌顏社 KAO!INC，此後一直是旗下歌手。發表過多張混音帶，作品包括〈嘻哈囝〉。",
     "sources": [
       "https://kao-inc.com/artist.php",
@@ -443,9 +1117,24 @@
     ],
     "links": {
       "spotify": "https://open.spotify.com/artist/4L4ArdVJzY6Uxbd82fJjqu"
+    },
+    "embeds": {
+      "spotifyTrack": "2E6ZE0QN88EqnR75llokWF"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "嘻哈囝",
+        "why": "拿下第 10 屆金音獎最佳嘻哈單曲的作品，浪人祭官方介紹也以「嘻哈囝」稱呼他。",
+        "sources": [
+          "https://zh.wikipedia.org/wiki/%E5%9C%8B%E8%9B%8B",
+          "https://www.bamid.gov.tw/News_Content.aspx?n=3548&s=124332",
+          "https://www.vagabondfest.com/blog/posts/2026-%E6%B5%AA%E4%BA%BA%E7%A5%AD%EF%BD%9C%E7%AC%AC%E5%9B%9B%E6%B3%A2%E6%BC%94%E5%87%BA%E9%99%A3%E5%AE%B9"
+        ]
+      }
     }
   },
   "美秀集團": {
+    "slug": "amazing-show",
     "bio": "來自嘉義的樂團，2016 年成軍，以自製的低科技實驗樂器搭配搖滾編制，混合搖滾、民謠與電子聲響。發行過《電火王》、《多色寶山大王》與同名專輯，和盧廣仲合作的〈手機錢包鑰匙菸〉入圍第 36 屆金曲獎年度歌曲；今年 5 月在嘉義舉辦十週年演唱會。",
     "sources": [
       "https://www.nownews.com/news/6700252",
@@ -456,9 +1145,42 @@
       "spotify": "https://open.spotify.com/artist/3n16EAnJtz6SZGx2zJssrI",
       "apple": "https://music.apple.com/tw/artist/%E7%BE%8E%E7%A7%80%E9%9B%86%E5%9C%98/1315577977",
       "youtube": "https://www.youtube.com/@amazingshowtw"
+    },
+    "embeds": {
+      "spotifyTrack": "67aEhtXw9vYZKgyVLhkblq",
+      "appleMusicSong": "1432351180?i=1432353102",
+      "youtube": "mRma6NkHwWU"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "手機錢包鑰匙菸",
+        "why": "與盧廣仲合作的歌曲，入圍第 36 屆金曲獎年度歌曲。",
+        "sources": [
+          "https://en.wikipedia.org/wiki/36th_Golden_Melody_Awards",
+          "https://zh.wikipedia.org/wiki/%E7%BE%8E%E7%A7%80%E9%9B%86%E5%9C%98"
+        ]
+      },
+      "appleMusicSong": {
+        "title": "電火王",
+        "why": "首張專輯《電火王》的同名主打歌，拿下第 10 屆金音獎最佳搖滾單曲。",
+        "sources": [
+          "https://zh.wikipedia.org/wiki/%E7%BE%8E%E7%A7%80%E9%9B%86%E5%9C%98",
+          "https://www.bamid.gov.tw/News_Content.aspx?n=3548&s=124332"
+        ]
+      },
+      "youtube": {
+        "title": "愛情的大壞蛋",
+        "why": "浪人祭官方陣容介紹選用的歌曲，收錄於入圍第 36 屆金曲獎最佳樂團的《美秀集團同名專輯》。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-%E6%B5%AA%E4%BA%BA%E7%A5%AD%EF%BD%9C%E7%AC%AC%E4%B8%80%E6%B3%A2%E6%BC%94%E5%87%BA%E9%99%A3%E5%AE%B9",
+          "https://zh.wikipedia.org/wiki/%E7%BE%8E%E7%A7%80%E9%9B%86%E5%9C%98"
+        ],
+        "channel": "美秀集團 Amazing Show"
+      }
     }
   },
   "孫淑媚": {
+    "slug": "may-sun",
     "bio": "台灣台語流行歌手，2005 年拿下金曲獎最佳台語女演唱人獎，媒體常以「台語金曲歌后」稱呼她。除了唱歌，也跨足戲劇演出。",
     "sources": [
       "https://zh.wikipedia.org/wiki/%E5%AD%AB%E6%B7%91%E5%AA%9A",
@@ -468,6 +1190,7 @@
     "links": {}
   },
   "盧廣仲": {
+    "slug": "crowd-lu",
     "bio": "台南出身的創作歌手，2008 年發行首張專輯《100種生活》，隔年拿下第 20 屆金曲獎最佳新人與最佳作曲人。2017 年主演影集《花甲男孩轉大人》並演唱主題曲〈魚仔〉；今年以專輯《HeartBreakFast 傷心早餐店》入圍第 37 屆金曲獎最佳華語男歌手。",
     "sources": [
       "https://en.wikipedia.org/wiki/Crowd_Lu",
@@ -476,9 +1199,23 @@
     ],
     "links": {
       "apple": "https://music.apple.com/tw/artist/%E7%9B%A7%E5%BB%A3%E4%BB%B2/477669285"
+    },
+    "embeds": {
+      "appleMusicSong": "1238558199?i=1238558518"
+    },
+    "picks": {
+      "appleMusicSong": {
+        "title": "魚仔",
+        "why": "維基百科列為盧廣仲的代表作之一，2018 年拿下第 29 屆金曲獎年度歌曲與最佳作曲人。",
+        "sources": [
+          "https://www.cna.com.tw/news/firstnews/201806230175.aspx",
+          "https://zh.wikipedia.org/wiki/%E7%9B%A7%E5%BB%A3%E4%BB%B2"
+        ]
+      }
     }
   },
   "傷心欲絕": {
+    "slug": "wayne-s-so-sad",
     "bio": "2008 年成立的台灣搖滾樂團，主唱為許正泰，作品帶有龐克與另類搖滾色彩。2013 年一度停團、2015 年重新啟動，2019 年專輯《遜到簡直是個藝術品》入圍第 31 屆金曲獎最佳樂團，2023 年再推出《無名氏敬上》。",
     "sources": [
       "https://zh.wikipedia.org/wiki/%E5%82%B7%E5%BF%83%E6%AC%B2%E7%B5%95",
@@ -487,9 +1224,22 @@
     ],
     "links": {
       "apple": "https://music.apple.com/tw/artist/%E5%82%B7%E5%BF%83%E6%AC%B2%E7%B5%95/1257006599"
+    },
+    "embeds": {
+      "appleMusicSong": "1487087579?i=1487087583"
+    },
+    "picks": {
+      "appleMusicSong": {
+        "title": "台北流浪指南",
+        "why": "維基百科列為樂團代表作，入圍第 11 屆金音獎最佳搖滾歌曲，所屬專輯《遜到簡直是個藝術品》拿下同屆最佳搖滾專輯並入圍第 31 屆金曲獎最佳樂團。",
+        "sources": [
+          "https://zh.wikipedia.org/wiki/%E5%82%B7%E5%BF%83%E6%AC%B2%E7%B5%95"
+        ]
+      }
     }
   },
   "溫蒂漫步": {
+    "slug": "wendy-wander",
     "bio": "台灣獨立樂團，2020 年發行首張專輯《Spring Spring》，2026 年與日本俱樂部爵士樂團 JABBERLOOP 合作推出單曲〈Floating City〉，本屆浪人祭也以「溫蒂漫步 ft. JABBERLOOP」的組合同台演出。",
     "sources": [
       "https://global.hk01.com/艺文/60380537/台湾独立乐团温蒂漫步宣布-将于圣诞节正日来港于麦花臣献唱",
@@ -498,9 +1248,33 @@
     "links": {
       "apple": "https://music.apple.com/tw/artist/%E6%BA%AB%E8%92%82%E6%BC%AB%E6%AD%A5/1537365067",
       "youtube": "https://www.youtube.com/@wendywanderofficial"
+    },
+    "embeds": {
+      "appleMusicSong": "1893503655?i=1893503812",
+      "youtube": "ltFNlTWDgU8"
+    },
+    "picks": {
+      "appleMusicSong": {
+        "title": "Floating City",
+        "why": "與日本樂團 JABBERLOOP 合作的 2026 年單曲，浪人祭官方介紹以這首歌介紹兩團在本屆的同台演出。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-%E6%B5%AA%E4%BA%BA%E7%A5%AD%EF%BD%9C%E7%AC%AC%E4%BA%8C%E6%B3%A2%E6%BC%94%E5%87%BA%E9%99%A3%E5%AE%B9",
+          "https://n.yam.com/Article/20260708861679"
+        ]
+      },
+      "youtube": {
+        "title": "我想和你一起",
+        "why": "首張專輯《Spring Spring》的熱門單曲，在串流平台與 YouTube 引起熱烈回響，維基百科列為樂團代表作。",
+        "sources": [
+          "https://zh.wikipedia.org/wiki/%E6%BA%AB%E8%92%82%E6%BC%AB%E6%AD%A5",
+          "https://www.verse.com.tw/article/interview-wendy-wander-vibespaper01"
+        ],
+        "channel": "Wendy Wander溫蒂漫步"
+      }
     }
   },
   "JABBERLOOP": {
+    "slug": "jabberloop",
     "bio": "2004 年在京都成軍的日本俱樂部爵士樂團，之後以東京為據點活動。2024 年推出重新錄製歷年作品的專輯《NOW》迎接成軍 20 週年，2026 年與台灣樂團溫蒂漫步合作單曲〈Floating City〉。",
     "sources": [
       "https://ja.wikipedia.org/wiki/JABBERLOOP",
@@ -508,10 +1282,33 @@
     ],
     "links": {
       "apple": "https://music.apple.com/tw/artist/jabberloop/259530284",
-      "youtube": "https://www.youtube.com/channel/UCujb-EoaWLlvMwXcTbWodvQ"
+      "youtube": "https://www.youtube.com/channel/UCkc6cKEAJFNpwgyAoGp2z4Q"
+    },
+    "embeds": {
+      "appleMusicSong": "523999406?i=523999409",
+      "youtube": "GPwrwH0hvBo"
+    },
+    "picks": {
+      "appleMusicSong": {
+        "title": "イナズマ",
+        "why": "2012 年迷你專輯《イナズマ》的同名曲，OTOTOY 的作品介紹稱它是超越名曲〈シロクマ〉的代表曲。",
+        "sources": [
+          "https://ototoy.jp/_/default/p/1812909",
+          "https://ja.wikipedia.org/wiki/JABBERLOOP"
+        ]
+      },
+      "youtube": {
+        "title": "シロクマ",
+        "why": "OTOTOY 形容這首歌是吹奏樂與舞蹈課的熱門指定曲，樂團 2024 年也將它重新錄製收進成軍 20 週年專輯《NOW》。",
+        "sources": [
+          "https://ototoy.jp/_/default/p/1812909"
+        ],
+        "channel": "JABBERLOOP Channel"
+      }
     }
   },
   "我是機車少女": {
+    "slug": "i-mdifficult",
     "bio": "來自台北的實驗流行樂團，成員為元耕、芷瑄、沂紳與仲林，特色是男女雙主唱。專輯《I'mdifficult》拿下金音獎最佳另類流行專輯，樂團也入選韓國《DAZED KOREA》亞洲100名單，並曾赴日本、韓國巡演。最新單曲是〈Flipper〉。",
     "sources": [
       "https://www.marieclaire.com.tw/entertainment/music/83775/imdifficult-band",
@@ -521,9 +1318,32 @@
     "links": {
       "spotify": "https://open.spotify.com/artist/00RNgtcAow7k32rk5KiUcl",
       "youtube": "https://www.youtube.com/channel/UCdRCQhf8TulRBn_ZeyXLztw"
+    },
+    "embeds": {
+      "spotifyTrack": "47QbWmH6sjwcsXi4lNSwoW",
+      "youtube": "tf7qmHEXrVw"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "Half-Full",
+        "why": "鍵盤手元耕受訪時表示，這是樂團在首張專輯之前最成功的一首歌。",
+        "sources": [
+          "https://www.marieclaire.com.tw/entertainment/story/83374/imdifficult"
+        ]
+      },
+      "youtube": {
+        "title": "Last Summer（月亮惹的禍）",
+        "why": "浪人祭官方陣容介紹選用的歌曲，收錄於拿下金音獎最佳另類流行專輯的首張專輯《I'mdifficult》。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-%E6%B5%AA%E4%BA%BA%E7%A5%AD%EF%BD%9C%E7%AC%AC%E4%B8%80%E6%B3%A2%E6%BC%94%E5%87%BA%E9%99%A3%E5%AE%B9",
+          "https://www.marieclaire.com.tw/entertainment/music/83775/imdifficult-band"
+        ],
+        "channel": "i'mdifficult我是機車少女"
+      }
     }
   },
   "A_Root同根生": {
+    "slug": "a-root",
     "bio": "2015年在宜蘭成軍的跨界樂團，用笙、中阮、柳琴等傳統樂器搭配爵士與電子聲響。2022年專輯《邊緣轉生術》以台灣鬼怪傳說為題，入圍第34屆金曲獎最佳樂團、年度專輯等四項，並拿下最佳專輯製作人獎。2025年推出第三張專輯《不小心降臨了》。",
     "sources": [
       "https://www.cna.com.tw/news/acul/202406230126.aspx",
@@ -533,9 +1353,33 @@
     "links": {
       "apple": "https://music.apple.com/tw/artist/a-root-%E5%90%8C%E6%A0%B9%E7%94%9F/1846313473",
       "youtube": "https://www.youtube.com/channel/UCLdvHDARXmt2gSqHCqUH1Ig"
+    },
+    "embeds": {
+      "appleMusicSong": "1637589301?i=1637589305",
+      "youtube": "sMMdSy-KN1I"
+    },
+    "picks": {
+      "appleMusicSong": {
+        "title": "八寶公主",
+        "why": "收錄於入圍第 34 屆金曲獎年度專輯、最佳台語專輯與最佳樂團的《邊緣轉生術》，風潮音樂介紹樂團的專文以這首融合平埔歌謠與拉丁節奏的歌作結。",
+        "sources": [
+          "https://www.windmusiclabel.com/post/a_root-a-time-travel-band-shuttling-between-the-modern-and-the-past-as-storytellers",
+          "https://en.wikipedia.org/wiki/34th_Golden_Melody_Awards"
+        ]
+      },
+      "youtube": {
+        "title": "指仙",
+        "why": "浪人祭官方陣容介紹列出的首選曲目，出自 2025 年專輯《不小心降臨了》，由 Ponay 以「指仙」身分參與。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-%E6%B5%AA%E4%BA%BA%E7%A5%AD%EF%BD%9C%E7%AC%AC%E4%B8%89%E6%B3%A2%E6%BC%94%E5%87%BA%E9%99%A3%E5%AE%B9",
+          "https://n.yam.com/Article/20251028157499"
+        ],
+        "channel": "A_RooT同根生（A_RooT同根生）"
+      }
     }
   },
   "三牲獻藝": {
+    "slug": "sam-seng-hian-ge",
     "bio": "由柯智豪、鄭各均（Sonic Deadhorse）和VJ邱智群組成的台灣電子音樂團體，把台灣廟宇文化與採集到的聲音融進電子音樂。2024年在巴黎文化奧運台灣館演出，以已故團員fish.the（黃凱宇）的作品為主軸向他致敬。",
     "sources": [
       "https://newtalk.tw/news/view/2024-07-30/930220",
@@ -545,6 +1389,7 @@
     "links": {}
   },
   "coldrain": {
+    "slug": "coldrain",
     "bio": "2007年在日本名古屋成軍的五人搖滾樂團，曲風以後硬蕊、金屬蕊為主，成軍至今陣容沒有變動，並主辦BLARE FEST.音樂祭。代表專輯有《The Revelation》、《Nonnegative》等。",
     "sources": [
       "https://coldrain.jp/",
@@ -555,9 +1400,41 @@
       "spotify": "https://open.spotify.com/artist/4pCVGaLWxDe4d8bsjsnmUM",
       "apple": "https://music.apple.com/tw/artist/coldrain/294914748",
       "youtube": "https://www.youtube.com/@coldrain_official"
+    },
+    "embeds": {
+      "spotifyTrack": "2wJJNgD6GrKoQ435VxTRv6",
+      "appleMusicSong": "1048030376?i=1048030819",
+      "youtube": "y6JikEL_VDM"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "MAYDAY",
+        "why": "動畫《炎炎消防隊》的第二首片頭曲，英文維基百科列為樂團最知名的歌曲之一。",
+        "sources": [
+          "https://en.wikipedia.org/wiki/Mayday_(Coldrain_song)",
+          "https://en.wikipedia.org/wiki/Coldrain"
+        ]
+      },
+      "appleMusicSong": {
+        "title": "Gone",
+        "why": "2015 年專輯《Vena》的首支單曲，英文維基百科指出它常被視為樂團最好的作品，也是現場的常備曲目。",
+        "sources": [
+          "https://en.wikipedia.org/wiki/Gone_(Coldrain_song)"
+        ]
+      },
+      "youtube": {
+        "title": "FREE FALL",
+        "why": "浪人祭官方陣容介紹選用的歌曲，是 2025 年 EP《Optimize》的第三支單曲。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-%E6%B5%AA%E4%BA%BA%E7%A5%AD%EF%BD%9C%E7%AC%AC%E4%B8%80%E6%B3%A2%E6%BC%94%E5%87%BA%E9%99%A3%E5%AE%B9",
+          "https://en.wikipedia.org/wiki/Coldrain"
+        ],
+        "channel": "coldrain"
+      }
     }
   },
   "落日飛車": {
+    "slug": "sunset-rollercoaster",
     "bio": "來自台北、由主唱曾國宏帶領的五人樂團，音樂融合爵士、合成器流行、City Pop與迷幻搖滾。2016年作品《Jinji Kikko》裡的〈My Jinji〉在國際走紅，2023年成為第一組登上美國Coachella的台灣樂團。2021年與2026年兩度拿下金曲獎最佳樂團，最新專輯是2025年的《Quit Quietly》。",
     "sources": [
       "https://en.wikipedia.org/wiki/Sunset_Rollercoaster",
@@ -568,9 +1445,41 @@
       "spotify": "https://open.spotify.com/artist/7BqRcZsHYYQeqMAOp7e532",
       "apple": "https://music.apple.com/tw/artist/%E8%90%BD%E6%97%A5%E9%A3%9B%E8%BB%8A/1230293264",
       "youtube": "https://www.youtube.com/@SunsetRollercoaster"
+    },
+    "embeds": {
+      "spotifyTrack": "7npPPrZEDmeHMk6mxvIeFa",
+      "appleMusicSong": "1830256521?i=1830256693",
+      "youtube": "kb0whVogBkI"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "My Jinji",
+        "why": "維基百科列為樂團代表作，收錄於 2016 年的《Jinji Kikko》，截至 2025 年 1 月在 Spotify 的播放次數已達 1 億次。",
+        "sources": [
+          "https://zh.wikipedia.org/wiki/%E8%90%BD%E6%97%A5%E9%A3%9B%E8%BB%8A"
+        ]
+      },
+      "appleMusicSong": {
+        "title": "Bluebird",
+        "why": "浪人祭官方陣容介紹選用的歌曲，收錄於拿下第 37 屆金曲獎最佳樂團的專輯《Quit Quietly》。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-%E6%B5%AA%E4%BA%BA%E7%A5%AD%EF%BD%9C%E7%AC%AC%E4%B8%80%E6%B3%A2%E6%BC%94%E5%87%BA%E9%99%A3%E5%AE%B9",
+          "https://zh.wikipedia.org/wiki/%E8%90%BD%E6%97%A5%E9%A3%9B%E8%BB%8A"
+        ]
+      },
+      "youtube": {
+        "title": "Candlelight",
+        "why": "收錄於拿下第 32 屆金曲獎最佳樂團的《SOFT STORM》，MV 入圍同屆金曲獎最佳 MV，歌曲也入圍金音獎最佳另類流行歌曲。",
+        "sources": [
+          "https://zh.wikipedia.org/wiki/%E8%90%BD%E6%97%A5%E9%A3%9B%E8%BB%8A",
+          "https://focustaiwan.tw/culture/202108210011"
+        ],
+        "channel": "Sunset Rollercoaster落日飛車"
+      }
     }
   },
   "永井琳子": {
+    "slug": "rinko-nagai",
     "bio": "來自日本的女性歌手，透過浪人祭與日本SYNCHRONICITY合辦的日本藝人徵選，取得2026年浪人祭的演出資格。個人作品有〈Halo〉、〈恋の面影〉與〈雨宿らず〉等單曲。",
     "sources": [
       "https://vagabondfestival.bitfan.id",
@@ -579,9 +1488,32 @@
     "links": {
       "spotify": "https://open.spotify.com/artist/6lKa4ZKIvgDWO8z87DBa8r",
       "youtube": "https://www.youtube.com/channel/UCBSCGkkx4nJQKhJ5Y8RBxcg"
+    },
+    "embeds": {
+      "spotifyTrack": "2CdJLWQbNRYsFdlr4izar9",
+      "youtube": "ssyb6MEWH-4"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "雨宿らず",
+        "why": "2026 年 2 月發行的個人單曲，是藝人介紹列出的三首個人作品之一。",
+        "sources": [
+          "https://www.ticketjam.jp/tickets/nagai-rinko"
+        ]
+      },
+      "youtube": {
+        "title": "Halo",
+        "why": "浪人祭官方陣容介紹選用的歌曲，是她 2025 年 9 月發行的個人單曲。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-%E6%B5%AA%E4%BA%BA%E7%A5%AD%EF%BD%9C%E7%AC%AC%E5%85%AD%E6%B3%A2%E6%BC%94%E5%87%BA%E9%99%A3%E5%AE%B9",
+          "https://www.ticketjam.jp/tickets/nagai-rinko"
+        ],
+        "channel": "永井琳子"
+      }
     }
   },
   "椅子樂團": {
+    "slug": "the-chairs",
     "bio": "由裘詠靖、陳仲穎與孫伯元組成的台灣三人樂團，三人是高中吉他社的同學，用復古旋律結合民謠與迷幻搖滾。2016年發行首張專輯《Cheers!Land》，2018年的《Lovely Sunday 樂芙莉聖代》拿下第30屆金曲獎最佳演唱組合。2025年專輯《愛的對白》再度入圍第37屆金曲獎同一獎項。",
     "sources": [
       "https://zh.wikipedia.org/wiki/椅子樂團",
@@ -592,9 +1524,41 @@
       "spotify": "https://open.spotify.com/artist/4IlxI05VmVDx8ShdgKEnLK",
       "apple": "https://music.apple.com/tw/artist/the-chairs/1096054130",
       "youtube": "https://www.youtube.com/@chairchairmusic"
+    },
+    "embeds": {
+      "spotifyTrack": "1eV8d10G3S0YbK5Zn0Q20I",
+      "appleMusicSong": "1821659174?i=1821659414",
+      "youtube": "Tnp0DySxH7s"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "日常的鏡頭",
+        "why": "收錄於拿下第 30 屆金曲獎最佳演唱組合的專輯《Lovely Sunday 樂芙莉聖代》。",
+        "sources": [
+          "https://zh.wikipedia.org/wiki/%E6%A4%85%E5%AD%90%E6%A8%82%E5%9C%98",
+          "https://en.wikipedia.org/wiki/30th_Golden_Melody_Awards"
+        ]
+      },
+      "appleMusicSong": {
+        "title": "倖存者",
+        "why": "第六張專輯《愛的對白》的前導單曲，這張專輯入圍第 37 屆金曲獎最佳演唱組合。",
+        "sources": [
+          "https://www.marieclaire.com.tw/entertainment/music/87937",
+          "https://www.storm.mg/article/11144155"
+        ]
+      },
+      "youtube": {
+        "title": "Maybe Maybe",
+        "why": "為華視台語劇集《若是一個人》量身創作的主題曲。",
+        "sources": [
+          "https://news.cts.com.tw/cts/entertain/202005/202005111999974.html"
+        ],
+        "channel": "椅子樂團 The Chairs"
+      }
     }
   },
   "DSPS": {
+    "slug": "dsps",
     "bio": "2014年在台北成軍的獨立樂團，由主唱曾稔文帶領。第二張專輯《yolk on rice》由日本Big Romantic Records發行黑膠，樂團也為此前往大阪、名古屋、東京巡演。",
     "sources": [
       "https://www.dspstw.com/",
@@ -603,9 +1567,25 @@
     ],
     "links": {
       "youtube": "https://www.youtube.com/channel/UCcQsz2boxIXHKoZweIzMymw"
+    },
+    "embeds": {
+      "youtube": "3E9Hq7nYLZw"
+    },
+    "picks": {
+      "youtube": {
+        "title": "在意與默契",
+        "why": "浪人祭官方陣容介紹選用的歌曲，收錄於第二張專輯《yolk on rice》，也是樂團官網首頁主推的 MV。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-%E6%B5%AA%E4%BA%BA%E7%A5%AD%EF%BD%9C%E7%AC%AC%E5%85%AD%E6%B3%A2%E6%BC%94%E5%87%BA%E9%99%A3%E5%AE%B9",
+          "https://www.bigromanticrecords.com/single-post/dsps_yolkonrice",
+          "https://www.dspstw.com/"
+        ],
+        "channel": "DSPS"
+      }
     }
   },
   "呂允": {
+    "slug": "lu-yun",
     "bio": "2000年出生的台灣創作歌手，2023年加入經紀公司添翼。同年4月發行實體單曲〈你睡了之後〉，其他作品還有〈夏夕夏景〉、〈到底為什麼我會暈成這樣〉。",
     "sources": [
       "https://zh.wikipedia.org/wiki/呂允",
@@ -614,6 +1594,7 @@
     "links": {}
   },
   "OGRE YOU ASSHOLE": {
+    "slug": "ogre-you-asshole",
     "bio": "來自日本長野的搖滾樂團，2005 年發行首張專輯，曲風以迷幻搖滾為主。《homely》（2011）、《100年後》（2012）、《ペーパークラフト》（2014）由石原洋製作，2010 年起活動也延伸到海外；最新錄音室專輯是 2024 年的《自然とコンピューター》。",
     "sources": [
       "https://ja.wikipedia.org/wiki/OGRE_YOU_ASSHOLE",
@@ -624,9 +1605,42 @@
       "spotify": "https://open.spotify.com/artist/0X9vdekJ6sIKcUvwIgVsjW",
       "apple": "https://music.apple.com/tw/artist/ogre-you-asshole/264694006",
       "youtube": "https://www.youtube.com/channel/UCvfz2XrJ_TjR5XVj1N3_cIQ"
+    },
+    "embeds": {
+      "spotifyTrack": "7thSV2ILyBzKskEIPmGxZ6",
+      "appleMusicSong": "559739842?i=559740073",
+      "youtube": "eWXdu23GAtY"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "ペーパークラフト",
+        "why": "2014 年同名專輯的同名曲，官方簡介指出《homely》《100年後》《ペーパークラフト》三部作確立了樂團的評價。",
+        "sources": [
+          "https://ogreyouasshole.com/profile/",
+          "https://ja.wikipedia.org/wiki/OGRE_YOU_ASSHOLE"
+        ]
+      },
+      "appleMusicSong": {
+        "title": "100年後",
+        "why": "2012 年專輯《100年後》的同名曲，屬於官方簡介所說確立樂團評價的迷幻搖滾三部作。",
+        "sources": [
+          "https://ogreyouasshole.com/profile/",
+          "https://en.wikipedia.org/wiki/100-nengo"
+        ]
+      },
+      "youtube": {
+        "title": "君よりも君らしい",
+        "why": "浪人祭官方陣容介紹選用的歌曲，也是 2024 年專輯《自然とコンピューター》的先行單曲。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-%E6%B5%AA%E4%BA%BA%E7%A5%AD%EF%BD%9C%E7%AC%AC%E4%BA%94%E6%B3%A2%E6%BC%94%E5%87%BA%E9%99%A3%E5%AE%B9",
+          "https://ototoy.jp/_/default/p/2277135"
+        ],
+        "channel": "OGRE YOU ASSHOLE official"
+      }
     }
   },
   "Milena": {
+    "slug": "milena",
     "bio": "南韓創作歌手兼製作人，畢業於首爾大學音樂學院，自幼學習小提琴與古典音樂。2021 年 11 月以單曲〈Night Train〉在廠牌 WAVY 出道，是該廠牌首位女性藝人，曲風結合 R&B 與爵士；2026 年 6 月發行 EP《Mongolian spot》。",
     "sources": [
       "https://namu.moe/w/Milena",
@@ -636,9 +1650,33 @@
     "links": {
       "spotify": "https://open.spotify.com/artist/2ODok2cPMF1Z1gZetfaL6n",
       "youtube": "https://www.youtube.com/@wavymilena"
+    },
+    "embeds": {
+      "spotifyTrack": "7FT7a5DV7Mk6Mc9ZRJnX70",
+      "youtube": "q_-fIDVm92s"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "Night Train",
+        "why": "Milena 於 2021 年 11 月在廠牌 WAVY 發行的個人出道單曲。",
+        "sources": [
+          "https://www.qobuz.com/dk-en/interpreter/milena/744705",
+          "https://www.elle.co.kr/article/66176"
+        ]
+      },
+      "youtube": {
+        "title": "Telescope",
+        "why": "浪人祭第七波陣容介紹選用的歌曲，是 2026 年 EP《Mongolian spot》的先行曲，並在第 18 屆首爾爵士音樂節首度現場演出。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/-2026-浪人祭｜第七波演出陣容",
+          "https://sports.khan.co.kr/en/article/202606121824007"
+        ],
+        "channel": "Milena 밀레나"
+      }
     }
   },
   "ana": {
+    "slug": "ana",
     "bio": "創作者 ana 的作品融入客語演唱，已發行專輯《the final girl》，並推出單曲〈1111〉的音樂錄影帶。",
     "sources": [
       "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第五波演出陣容",
@@ -647,9 +1685,23 @@
     ],
     "links": {
       "youtube": "https://www.youtube.com/@grlonfire666"
+    },
+    "embeds": {
+      "youtube": "BzHSlvmTjKQ"
+    },
+    "picks": {
+      "youtube": {
+        "title": "1111",
+        "why": "浪人祭第五波陣容介紹選用的代表曲，官方 MV 於 2025 年 12 月發表。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第五波演出陣容"
+        ],
+        "channel": "ana."
+      }
     }
   },
   "ผ้าอ้อม99999": {
+    "slug": "pa-om-99999",
     "bio": "以東京為據點的樂團，自稱曲風為「Junk Pop」，以電子節拍搭配 CG 質感的影像。2026 年發行 EP《pop slop》；這次是浪人祭與東京 SYNCHRONICITY 音樂祭合作跨國徵選的入選者。",
     "sources": [
       "https://www.youtube.com/watch?v=sn0Hvbkx9LE",
@@ -660,9 +1712,40 @@
       "spotify": "https://open.spotify.com/artist/5tpfTW6vWImBBePPUQgAq8",
       "apple": "https://music.apple.com/tw/artist/%E0%B8%9C-%E0%B8%B2%E0%B8%AD-%E0%B8%AD%E0%B8%A199999/1721492085",
       "youtube": "https://www.youtube.com/@pa_o_mu_99999"
+    },
+    "embeds": {
+      "spotifyTrack": "4yOCVWd4eYyPdgXY5DpbXl",
+      "appleMusicSong": "1868612332?i=1868612334",
+      "youtube": "BahAJCRll6c"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "遅刻魔",
+        "why": "浪人祭與東京 SYNCHRONICITY 合作徵選入選後，第六波陣容介紹選用的代表曲。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第六波演出陣容",
+          "https://www.setn.com/news/1901980"
+        ]
+      },
+      "appleMusicSong": {
+        "title": "忙忙忙ー忙・忙ー忙忙",
+        "why": "2026 年首張專輯《JUNK POP》發行前推出的先行單曲之一。",
+        "sources": [
+          "https://avyss-magazine.com/2026/03/18/69836/"
+        ]
+      },
+      "youtube": {
+        "title": "Junk Pop",
+        "why": "2026 年首張專輯《JUNK POP》的同名曲，曲名就是樂團一直標榜的自創曲風「Junk Pop」。",
+        "sources": [
+          "https://avyss-magazine.com/2026/03/18/69836/"
+        ],
+        "channel": "パーオームキュウキュウキュウキュウキュウ"
+      }
     }
   },
   "C.Holly": {
+    "slug": "c-holly",
     "bio": "台灣饒舌歌手，曾參加饒舌對戰《地下八英里》，並透過選秀節目《菱格世代 DD52》以女團成員身分出道，之後也參加《大嘻哈時代 2》。歌曲〈三不娶〉在網路上爆紅。",
     "sources": [
       "https://www.marieclaire.com.tw/entertainment/music/92394",
@@ -672,6 +1755,7 @@
     "links": {}
   },
   "YaMon Social Club 壓滿俱樂部": {
+    "slug": "yamon-social-club",
     "bio": "來自屏東恆春的樂團，曲風以雷鬼律動為主，歌曲多取材自日常生活，代表作包括〈怪怪的人都在那邊〉。",
     "sources": [
       "https://streetvoice.com/YaMonSocialClub/",
@@ -680,9 +1764,23 @@
     ],
     "links": {
       "youtube": "https://www.youtube.com/channel/UCGX612kccSh7yGJVMy4jirg"
+    },
+    "embeds": {
+      "youtube": "YYGtbb9Fmd0"
+    },
+    "picks": {
+      "youtube": {
+        "title": "怪怪的人都在那邊",
+        "why": "浪人祭第五波陣容介紹選用的代表曲；完整版官方影片由樂團的聯絡窗口暨影像製作嗨島電波上傳，樂團自己的頻道只有短版。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第五波演出陣容"
+        ],
+        "channel": "High Island Radio Waves（嗨島電波）"
+      }
     }
   },
   "Azikazin Magic World": {
+    "slug": "azikazin-magic-world",
     "bio": "以首爾為據點的創作團體，作品橫跨音樂、角色動畫與遊戲，音樂以 drum and bass（鼓打貝斯）等電子節拍為主。團名取自韓文「아직까진」（意為「到目前為止」），2026 年 1 月發行專輯《Memory Overdrive》。",
     "sources": [
       "https://rollingstonejapan.com/articles/detail/45096/1/1/1",
@@ -693,9 +1791,40 @@
       "spotify": "https://open.spotify.com/artist/5qpO9lqejYisjljnDpOuGA",
       "apple": "https://music.apple.com/tw/artist/azikazin-magic-world/1500237251",
       "youtube": "https://www.youtube.com/@azikazinmagicworld"
+    },
+    "embeds": {
+      "spotifyTrack": "3q61O9xCachUeUsR10Flus",
+      "appleMusicSong": "6795392850?i=6795392858",
+      "youtube": "AM3hX7c3-g8"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "END!",
+        "why": "浪人祭第四波陣容介紹選用的代表曲，收錄於 2026 年 1 月的首張正規專輯《Memory Overdrive》。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第四波演出陣容",
+          "https://rollingstonejapan.com/articles/detail/45096/1/1/1"
+        ]
+      },
+      "appleMusicSong": {
+        "title": "Hotel Room",
+        "why": "2024 年 EP《Hotel Room》的同名曲，韓國《DESIGN》雜誌指出這部作品擴展了團體角色的故事與世界觀。",
+        "sources": [
+          "https://design.co.kr/article/123017/"
+        ]
+      },
+      "youtube": {
+        "title": "Shining Portal",
+        "why": "首張正規專輯《Memory Overdrive》的官方 MV，Rolling Stone Japan 專訪也以這支 MV 介紹團體的角色群。",
+        "sources": [
+          "https://rollingstonejapan.com/articles/detail/45096/1/1/1"
+        ],
+        "channel": "Azikazin Magic World"
+      }
     }
   },
   "白頻率": {
+    "slug": "white-frequency",
     "bio": "來自台南的獨立搖滾樂團，作品以清晰的旋律為主軸，代表曲包括〈迷航〉〈浪花〉。2025 年 10 月發行 EP《日全蝕》。",
     "sources": [
       "https://streetvoice.com/whitefrequency2016/",
@@ -706,9 +1835,40 @@
       "spotify": "https://open.spotify.com/artist/4tREKMNVSLyiI0K6IhgHVc",
       "apple": "https://music.apple.com/tw/artist/%E7%99%BD%E9%A0%BB%E7%8E%87/1428600777",
       "youtube": "https://www.youtube.com/@whitefrequencyofficial"
+    },
+    "embeds": {
+      "spotifyTrack": "5xXXvpow42fngIXF7Wuf3U",
+      "appleMusicSong": "1522668496?i=1522668497",
+      "youtube": "ljY15aivpeA"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "浪花",
+        "why": "2023 年發行的單曲，一推出就登上 StreetVoice 街聲週排行榜冠軍。",
+        "sources": [
+          "https://blow.streetvoice.com/66168/"
+        ]
+      },
+      "appleMusicSong": {
+        "title": "迷航",
+        "why": "繼出道 EP《如果你能到我的雨裡面》之後推出的單曲，也是樂團在 StreetVoice 上最受歡迎的作品。",
+        "sources": [
+          "https://blow.streetvoice.com/66168/",
+          "https://streetvoice.com/whitefrequency2016/"
+        ]
+      },
+      "youtube": {
+        "title": "日全蝕",
+        "why": "浪人祭第六波陣容介紹選用的代表曲，也是 2025 年 EP《日全蝕》的同名曲。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第六波演出陣容"
+        ],
+        "channel": "白頻率 White Frequency_Official"
+      }
     }
   },
   "好日HoNi": {
+    "slug": "honi",
     "bio": "現代客家民謠樂團，由主唱憶慈、吉他手美帆與大提琴手之之組成，以客語書寫生活記憶。2024 年發行同名專輯《好日HoNi》，也與三峽國小合作客語校歌〈像山共樣〉。",
     "sources": [
       "https://www.nownews.com/news/6507049",
@@ -717,9 +1877,24 @@
     ],
     "links": {
       "youtube": "https://www.youtube.com/@HoNiband"
+    },
+    "embeds": {
+      "youtube": "duYkb3B7K5E"
+    },
+    "picks": {
+      "youtube": {
+        "title": "像山共樣",
+        "why": "浪人祭第五波陣容介紹選用的代表曲，是與三峽國小學生共同演唱的客語歌，主唱憶慈也在加拿大華語音樂節特別介紹這首歌。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第五波演出陣容",
+          "https://www.cna.com.tw/news/acul/202511060233.aspx"
+        ],
+        "channel": "好日HoNi"
+      }
     }
   },
   "Iga Nana": {
+    "slug": "iga-nana",
     "bio": "新生代創作歌手，2026年6月30日發行EP《Hi》，並為〈Good Together〉推出官方MV；浪人祭官方介紹也以這首歌作為她的代表曲。",
     "sources": [
       "https://www.vagabondfest.com/blog/posts/-2026-浪人祭｜第七波演出陣容",
@@ -729,9 +1904,32 @@
     "links": {
       "spotify": "https://open.spotify.com/artist/5QcVz3aLRolOwZCVc3IpCu",
       "youtube": "https://www.youtube.com/channel/UCX7__l_A2UZboGFLVbPVrlg"
+    },
+    "embeds": {
+      "spotifyTrack": "2oOElgWjr0qlpIpGlxfdvQ",
+      "youtube": "nhwcxVAX3W4"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "Zone Out",
+        "why": "2025 年 8 月發行的出道單曲。",
+        "sources": [
+          "https://www.ragnet.co.jp/artist-okayama"
+        ]
+      },
+      "youtube": {
+        "title": "Good Together",
+        "why": "2026 年首張 EP《Hi》的主打曲，也是浪人祭官方介紹選用的代表曲。",
+        "sources": [
+          "https://www.thefirsttimes.jp/news/0000838143/",
+          "https://www.vagabondfest.com/blog/posts/-2026-浪人祭｜第七波演出陣容"
+        ],
+        "channel": "Iga Nana"
+      }
     }
   },
   "普通隊長": {
+    "slug": "captain-ordinary",
     "bio": "來自高雄的龐克樂團，2020年發行EP《愛與勇氣》，2024年推出首張專輯、同名的《普通隊長》，也曾登上滅火器主辦的火球祭。",
     "sources": [
       "https://captainpu.ryzm.jp/biography",
@@ -742,9 +1940,39 @@
       "spotify": "https://open.spotify.com/artist/5qJoZTy9eeE8I3U87jtHXo",
       "apple": "https://music.apple.com/tw/artist/%E6%99%AE%E9%80%9A%E9%9A%8A%E9%95%B7/1502533474",
       "youtube": "https://www.youtube.com/@captainpu2016"
+    },
+    "embeds": {
+      "spotifyTrack": "0NJh6C9p5trVG3R0S5UlMV",
+      "appleMusicSong": "1802717854?i=1802717866",
+      "youtube": "Nth5Dv6Vq4w"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "100 秒的紅燈",
+        "why": "2026 年第二張專輯《100 秒的紅燈》的同名曲，鼓手峻瑋形容它是「標準的三件式龐克」。",
+        "sources": [
+          "https://vocus.cc/article/6aaa2dbefd89780001ac7e27"
+        ]
+      },
+      "appleMusicSong": {
+        "title": "打氣歌",
+        "why": "收錄於 2024 年首張同名專輯《普通隊長》，製作人皮皮（滅火器）說這首最像樂團本身，是他的首推歌曲。",
+        "sources": [
+          "https://www.fireonshop.com/blog/posts/captain-ordinary"
+        ]
+      },
+      "youtube": {
+        "title": "Stargazer",
+        "why": "浪人祭第三波陣容介紹選用的代表曲，官方 MV 於 2026 年 5 月發表。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第三波演出陣容"
+        ],
+        "channel": "普通隊長 Captain Ordinary"
+      }
     }
   },
   "貓膽汁": {
+    "slug": "cat-s-bile",
     "bio": "台灣搖滾樂團，作品常帶戲謔幽默的色彩。2025年以專輯《多汁》中的〈失望〉拿下第16屆金音獎最佳搖滾歌曲，同屆也以《多汁》入圍最佳樂團獎。",
     "sources": [
       "https://www.thenewslens.com/article/260462",
@@ -754,6 +1982,7 @@
     "links": {}
   },
   "INFERNAL CHAOS": {
+    "slug": "infernal-chaos",
     "bio": "2004年成軍的台灣金屬樂團，由閃靈（ChthoniC）吉他手Jesse Liu創立。2021年發表單曲〈Steel Gavel of judgement〉的官方影片，也是浪人祭介紹中的代表曲。",
     "sources": [
       "https://uniteasia.org/taiwan-metal-band-infernal-chaos-feat-chthonic-member-announce-hong-kong-date",
@@ -762,9 +1991,23 @@
     ],
     "links": {
       "youtube": "https://www.youtube.com/channel/UCM55XFaHH6_Sk7gQGjltEog"
+    },
+    "embeds": {
+      "youtube": "-fa_fHsD5yI"
+    },
+    "picks": {
+      "youtube": {
+        "title": "Steel Gavel of judgement",
+        "why": "浪人祭第七波陣容介紹選用的代表曲，官方影片於 2021 年發表。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/-2026-浪人祭｜第七波演出陣容"
+        ],
+        "channel": "INFERNAL CHAOS"
+      }
     }
   },
   "Robot Swing (¾ trio)": {
+    "slug": "robot-swing",
     "bio": "2019年成軍的台灣四人樂團，融合Funk、R&B與爵士。首張專輯《SYSTEM BOOTING...》入圍2023年金曲獎最佳樂團，2025年以現場專輯《IS IT ALIVE?》入圍金音獎最佳樂團。本場與日本爵士樂團JABBERLOOP合演。",
     "sources": [
       "https://www.clockenflap.com/robotswing",
@@ -774,6 +2017,7 @@
     "links": {}
   },
   "VOOID": {
+    "slug": "vooid",
     "bio": "由洪申豪領軍的台灣樂團。2026年9月先後在東京duo MUSIC EXCHANGE與台北Legacy和ZAZEN BOYS合辦「ZAZEN to VOOID」聯演專場，浪人祭這場是兩團再度同台。",
     "sources": [
       "https://mukaishutoku.com/main.html",
@@ -783,6 +2027,7 @@
     "links": {}
   },
   "ZAZEN BOYS": {
+    "slug": "zazen-boys",
     "bio": "2003年由前NUMBER GIRL主唱向井秀徳在東京組成的日本搖滾樂團，以複雜節奏與現場演出著稱。2024年1月發行睽違12年的專輯《らんど》，同年10月首度在日本武道館舉辦單獨公演。",
     "sources": [
       "https://en.wikipedia.org/wiki/Zazen_Boys",
@@ -793,9 +2038,41 @@
       "spotify": "https://open.spotify.com/artist/6oAUOiOlMM5wvNfu2xikvM",
       "apple": "https://music.apple.com/tw/artist/zazen-boys/74456038",
       "youtube": "https://www.youtube.com/@matsuristudio"
+    },
+    "embeds": {
+      "spotifyTrack": "1AO9IKBNaYRKVYFnYx5Uv4",
+      "appleMusicSong": "76207033?i=76206646",
+      "youtube": "m6C8wFKd1t0"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "ポテトサラダ",
+        "why": "收錄於 2012 年專輯《すとーりーず》，樂團 2026 年首度登上朝日電視台《Music Station》時演出的就是這首被稱為名曲的歌。",
+        "sources": [
+          "https://www.thefirsttimes.jp/?p=852518"
+        ]
+      },
+      "appleMusicSong": {
+        "title": "半透明少女関係",
+        "why": "樂團 2004 年發行的首張單曲，MV 由向井秀德親自執導。",
+        "sources": [
+          "https://en.wikipedia.org/wiki/Zazen_Boys",
+          "https://ja.wikipedia.org/wiki/ZAZEN_BOYS"
+        ]
+      },
+      "youtube": {
+        "title": "永遠少女",
+        "why": "睽違 11 年多的專輯《らんど》（2024）發行前先行推出的新曲並同步公開 MV，由向井秀德的廠牌 MATSURI STUDIO 頻道發布。",
+        "sources": [
+          "https://lp.p.pia.jp/article/news/300657/index.html",
+          "https://lp.p.pia.jp/article/news/295344/index.html"
+        ],
+        "channel": "matsuristudio"
+      }
     }
   },
   "官靖剛": {
+    "slug": "king-kong-kuan",
     "bio": "台灣搖滾樂團傷心欲絕（Wayne's So Sad）的吉他手，傷心欲絕曾入圍金曲獎最佳樂團。這次以個人身分登上浪人祭的DJ與指鼓舞台。",
     "sources": [
       "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜仙手指鼓・刮盤轉運",
@@ -804,6 +2081,7 @@
     "links": {}
   },
   "柔米": {
+    "slug": "zoomie",
     "bio": "台灣客語創作歌手，英文名 Zoomie。2024年以專輯《鎮妹 Zhin' Moi》拿下第35屆金曲獎最佳客語歌手獎。",
     "sources": [
       "https://www.gvm.com.tw/article/113736",
@@ -813,18 +2091,54 @@
     "links": {}
   },
   "粉內": {
+    "slug": "fi-ne",
     "bio": "",
     "sources": [],
     "links": {
       "spotify": "https://open.spotify.com/artist/6WcKBIz81gaWyTuoGtnTlQ",
       "youtube": "https://www.youtube.com/channel/UCGFL4F6o9U8PoFBL5X2NRZQ"
+    },
+    "embeds": {
+      "spotifyTrack": "0dvelPOEctgO6ixprB0YLO",
+      "youtube": "5Nb8ChHHYdI"
+    },
+    "picks": {
+      "spotifyTrack": {
+        "title": "Really Not",
+        "why": "LINE MUSIC 2026 年專題介紹的歌曲，團員說明這首歌寫的是發現甜言蜜語並非真心的心碎經驗。",
+        "sources": [
+          "https://today.line.me/tw/v3/article/RBkn29m"
+        ]
+      },
+      "youtube": {
+        "title": "Zoology",
+        "why": "浪人祭公布演出徵選結果時選用的代表曲，影片是與 Cinnamon Mango 合作的官方現場演出版本。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-%E6%B5%AA%E4%BA%BA%E7%A5%AD%EF%BD%9C%E6%BC%94%E5%87%BA%E5%BE%B5%E9%81%B8%E5%85%AC%E5%B8%83-fi-ne%CC%81-%E7%B2%89%E5%85%A7"
+        ],
+        "channel": "Fi-Né 粉內"
+      }
     }
   },
   "袁語笙": {
+    "slug": "yuan-yu-sheng",
     "bio": "",
     "sources": [],
     "links": {
       "youtube": "https://www.youtube.com/channel/UCSyH51l_xCVqkvG8WDxoEaA"
+    },
+    "embeds": {
+      "youtube": "R07sQzWhc-E"
+    },
+    "picks": {
+      "youtube": {
+        "title": "懶手指",
+        "why": "浪人祭第四波陣容介紹選用的代表曲，官方 MV 於 2026 年 5 月發表。",
+        "sources": [
+          "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第四波演出陣容"
+        ],
+        "channel": "袁語笙"
+      }
     }
   }
 }
