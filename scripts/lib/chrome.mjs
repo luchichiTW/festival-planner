@@ -131,8 +131,9 @@ export class Page {
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-export async function launch({ args = [] } = {}) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fp-chrome-'));
+// userDataDir: reuse a profile (e.g. to reopen a site after its service worker installed); it is kept on close.
+export async function launch({ args = [], userDataDir } = {}) {
+  const dir = userDataDir || fs.mkdtempSync(path.join(os.tmpdir(), 'fp-chrome-'));
   const proc = spawn(chromePath(), [
     '--headless=new', '--remote-debugging-port=0', `--user-data-dir=${dir}`,
     '--no-first-run', '--no-default-browser-check', '--disable-extensions', '--disable-background-networking',
@@ -166,10 +167,12 @@ export async function launch({ args = [] } = {}) {
       return page;
     },
     async close() {
+      // Graceful first, so the profile (localStorage, caches) is written to disk; then make sure it's gone.
+      await Promise.race([conn.send('Browser.close').catch(() => {}), sleep(3000)]);
       try { ws.close(); } catch { /* already closed */ }
-      proc.kill();
+      if (proc.exitCode === null) proc.kill();
       await new Promise((r) => { if (proc.exitCode !== null) r(); else proc.once('exit', r); });
-      fs.rmSync(dir, { recursive: true, force: true });
+      if (!userDataDir) fs.rmSync(dir, { recursive: true, force: true });
     },
   };
 }
