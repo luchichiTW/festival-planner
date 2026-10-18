@@ -1,0 +1,12 @@
+// Static site for megaport2027: dist/megaport2027/ served at chiparashi.tw/megaport2027/.
+// Deployed only by .github/workflows/deploy.yml, which builds just this event into a clean dist/.
+{
+  "name": "fp-megaport2027",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "../../dist"
+  },
+  "routes": [
+    { "pattern": "chiparashi.tw/megaport2027*", "zone_name": "chiparashi.tw" }
+  ]
+}
