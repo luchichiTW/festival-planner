@@ -1,6 +1,7 @@
 # Manual deploy of one event: Actions → Deploy → Run workflow → pick the event.
 # Validates and builds only that event into a clean dist/, then deploys its Worker (events/<slug>/wrangler.jsonc).
-# Add new events to the options list below.
+# "site" is the homepage: it checks every event and builds dist-site/index.html, deployed with site/wrangler.jsonc.
+# Add new events to the options list below (the homepage lists them on its next deploy).
 name: Deploy
 
 on:
@@ -13,6 +14,7 @@ on:
         options:
           - vagabond2026
           - megaport2026
+          - site
 
 permissions:
   contents: read
@@ -35,7 +37,9 @@ jobs:
 
       - name: Check the event name
         run: |
-          [[ "$SLUG" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] && [ -f "events/$SLUG/wrangler.jsonc" ] || { echo "unknown event: $SLUG"; exit 1; }
+          if [ "$SLUG" = site ]; then CONFIG=site/wrangler.jsonc; else CONFIG="events/$SLUG/wrangler.jsonc"; fi
+          [[ "$SLUG" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] && [ -f "$CONFIG" ] || { echo "unknown event: $SLUG"; exit 1; }
+          echo "CONFIG=$CONFIG" >> "$GITHUB_ENV"
 
       - name: Validate data
         run: node scripts/validate.mjs "$SLUG"
@@ -45,7 +49,7 @@ jobs:
 
       - name: Build
         run: |
-          rm -rf dist
+          rm -rf dist dist-site
           node scripts/build.mjs "$SLUG"
 
       - name: Deploy
@@ -54,4 +58,4 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           wranglerVersion: "4"
-          command: deploy --config events/${{ inputs.slug }}/wrangler.jsonc
+          command: deploy --config ${{ env.CONFIG }}

@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { loadEvent, listEvents, validate } from '../scripts/validate.mjs';
-import { build } from '../scripts/build.mjs';
+import { build, buildSite } from '../scripts/build.mjs';
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
 const fresh = () => clone(loadEvent('vagabond2026'));
@@ -120,4 +120,31 @@ test('validate catches bad streaming IDs, unknown members and broken venue data'
     const { errors } = validate(ev);
     assert.ok(errors.some((e) => expected.test(e)), `${name}: expected ${expected}, got ${JSON.stringify(errors)}`);
   }
+});
+
+/* ---------------- homepage (site/) ---------------- */
+test('the homepage lists every event with its link, dates and place, and loads nothing from other sites', () => {
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'fp-site-'));
+  buildSite({ out });
+  assert.deepEqual(fs.readdirSync(out), ['index.html'], 'one self-contained page');
+  const html = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
+  for (const slug of listEvents()) {
+    const { event: ev } = loadEvent(slug);
+    assert.match(html, new RegExp(`<a class="ev"[^>]* href="${slug}/"`), `${slug} card links to its page`);
+    assert.ok(html.includes(ev.name) && html.includes(ev.subtitle), `${slug} name and place`);
+  }
+  assert.doesNotMatch(html, /<script[^>]+src=|<link[^>]+href="(https?:)?\/\/|<img[^>]+src="(https?:)?\/\//, 'no scripts, styles or images from other sites');
+  assert.ok(html.includes('https://github.com/luchichiTW/festival-planner'), '自己做一個 links to the repo');
+  fs.rmSync(out, { recursive: true, force: true });
+});
+
+test('deploy.yml offers every event and the homepage, and each has its wrangler config', () => {
+  const yml = fs.readFileSync(path.join(path.dirname(new URL(import.meta.url).pathname), '..', '.github', 'workflows', 'deploy.yml'), 'utf8');
+  const options = [...yml.match(/options:\n((?:\s+- .+\n)+)/)[1].matchAll(/- (\S+)/g)].map((m) => m[1]);
+  assert.deepEqual(options.sort(), [...listEvents(), 'site'].sort());
+  const root = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
+  for (const slug of listEvents()) assert.ok(fs.existsSync(path.join(root, 'events', slug, 'wrangler.jsonc')), slug);
+  const site = fs.readFileSync(path.join(root, 'site', 'wrangler.jsonc'), 'utf8');
+  // Only the homepage itself (with or without a query string such as ?fbclid=…); every other path stays as it is.
+  assert.deepEqual([...site.matchAll(/"pattern": "([^"]+)"/g)].map((m) => m[1]), ['chiparashi.tw/', 'chiparashi.tw/?*']);
 });

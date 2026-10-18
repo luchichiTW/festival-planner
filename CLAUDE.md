@@ -9,6 +9,7 @@
 ```bash
 node scripts/validate.mjs [slug]        # 檢查資料；有錯就 exit 1
 node scripts/build.mjs <slug>           # → dist/<slug>/（網站）與 dist-artifact/<slug>/index.html（單檔）
+node scripts/build.mjs site             # → dist-site/index.html，chiparashi.tw/ 首頁（列出 events/ 下的所有活動）
 node scripts/serve.mjs                  # 本機預覽 http://localhost:8787/<slug>/，轉址與快取標頭和正式站一樣
 npm test                                # 資料／建置檢查＋手機寬度的瀏覽器測試（需要本機的 Chrome；FP_E2E=0 跳過瀏覽器測試）
 node scripts/fonts.mjs <slug>           # 重抓字型子集（藝人名單改了要跑）
@@ -36,6 +37,8 @@ node scripts/icons.mjs <slug>           # 從 assets/icon.html 重畫主畫面�
 | `events/<slug>/data/venue.json` | 選用：地圖熱區（圖的百分比）、舞台座標、官方圖清單 |
 | `events/<slug>/artifact/` | 單檔版本與發佈說明，跟著 git tag 走 |
 | `events/<slug>/CLAUDE.md` | 這個活動的來源、限制、資料規則、待辦 |
+| `site/index.html` | 首頁樣板：列出所有活動（圖示、名稱、日期地點、還有幾天／今天／已結束），單一檔案、不載入其他網站的東西 |
+| `site/wrangler.jsonc` | 首頁的 Worker（`fp-home`），只接 `chiparashi.tw/` 這一頁 |
 | `scripts/` | validate、build、serve、fonts、icons；`lib/chrome.mjs` 是不用套件的無頭 Chrome 驅動 |
 | `tests/` | `node:test`；`e2e.test.mjs` 用無頭 Chrome 跑 |
 
@@ -77,6 +80,7 @@ node scripts/icons.mjs <slug>           # 從 assets/icon.html 重畫主畫面�
 4. `node scripts/fonts.mjs <slug>`、`node scripts/icons.mjs <slug>`。
 5. `node scripts/validate.mjs <slug>`、`node scripts/build.mjs <slug>`、`node scripts/serve.mjs` 實際看過、`npm test`。
 6. 加一份 `events/<slug>/wrangler.jsonc`（照 vagabond2026 的改名稱與路徑），並在 `.github/workflows/deploy.yml` 的選單加上這個活動，再部署。
+7. 活動上線後，再部署一次 `site`，首頁才會列出它。
 
 ## 網站與更新（PWA）
 
@@ -93,6 +97,7 @@ node scripts/icons.mjs <slug>           # 從 assets/icon.html 重畫主畫面�
 - 發版時打 tag `<slug>@<版本>`（例如 `vagabond2026@1.0.0`），並在 `events/<slug>/CHANGELOG.md` 記錄。
 - `events/<slug>/artifact/index.html` 要跟該版本實際發佈的 artifact 一致。重新發佈 artifact 時才用 `node scripts/build.mjs <slug> --release-artifact` 更新它。
 - 部署一個活動只動那個活動，不要順手部署別的活動。
+- 首頁在部署選單選 `site`：會先檢查所有活動的資料，再只部署首頁。首頁沒有版本 tag，內容跟著 `events/` 走。
 
 ## 畫面相關的修改
 

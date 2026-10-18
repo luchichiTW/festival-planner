@@ -57,6 +57,7 @@ export function validate({ slug, dir, event: ev, schedule, artists, venue }) {
   /* ---------- event.json ---------- */
   if (ev.slug !== slug) err(`event.json: slug "${ev.slug}" 跟資料夾名稱 "${slug}" 不一樣`);
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) err(`活動代號 "${slug}" 只能用小寫英文、數字與連字號`);
+  if (slug === 'site') err('活動代號不能叫 "site"，這個名字留給首頁');
   // Each event is served at <slug>* — a slug that starts another one would take over its paths.
   for (const other of listEvents()) {
     if (other !== slug && (other.startsWith(slug) || slug.startsWith(other))) err(`活動代號 "${slug}" 和 "${other}" 開頭相同，網址會互相蓋到，換一個代號`);
@@ -195,7 +196,8 @@ export function validate({ slug, dir, event: ev, schedule, artists, venue }) {
 }
 
 function main() {
-  const slugs = process.argv[2] ? [process.argv[2]] : listEvents();
+  // `site` (the homepage) lists every event, so it checks them all.
+  const slugs = process.argv[2] && process.argv[2] !== 'site' ? [process.argv[2]] : listEvents();
   let failed = false;
   for (const slug of slugs) {
     let res;

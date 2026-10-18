@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { ROOT, loadEvent } from '../scripts/validate.mjs';
-import { build } from '../scripts/build.mjs';
+import { build, buildSite } from '../scripts/build.mjs';
 import { serve } from '../scripts/serve.mjs';
 import { launch, sleep } from '../scripts/lib/chrome.mjs';
 
@@ -40,7 +40,7 @@ const rebuild = (root, buildId) => {
 };
 
 // Page with the festival clock set to `time` and a controllable page visibility (window.__fpSetVis).
-async function open(url, { time = PRE_FESTIVAL, timezone = 'Asia/Taipei', safeArea, theme, width, height, mobile } = {}) {
+async function open(url, { time = PRE_FESTIVAL, timezone = 'Asia/Taipei', safeArea, theme, width, height, mobile, ready = () => document.querySelectorAll('#grid .block').length > 0 } = {}) {
   const page = await chrome.newPage({ timezone, safeArea, width, height, mobile, touch: mobile !== false });
   if (theme) await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: theme }] });
   const t = Date.parse(time);
@@ -55,7 +55,7 @@ async function open(url, { time = PRE_FESTIVAL, timezone = 'Asia/Taipei', safeAr
     Object.defineProperty(Navigator.prototype, 'language', { get: () => 'zh-TW', configurable: true }); // a Taiwanese phone
   })();` });
   await page.goto(url);
-  await page.until(() => document.querySelectorAll('#grid .block').length > 0);
+  await page.until(ready);
   // Let the app's own first-frame scroll (scrollBoard) happen before the test touches anything.
   await page.send('Page.bringToFront');
   await page.eval('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))');
@@ -88,6 +88,7 @@ before(async () => {
   mainRoot = site('main', 'e2e-main');
   process.env.FP_BUILD = 'e2e-main';
   try { build('megaport2026', { out: mainRoot, artifactOut: path.join(tmp, 'main-mp-art') }); } finally { delete process.env.FP_BUILD; }
+  buildSite({ out: mainRoot });
   main = await origin();
 });
 after(async () => { if (main) await main.close(); });
@@ -798,6 +799,67 @@ test('megaport: nothing clipped at 390 and 320 px, in Chinese and English; only 
       assert.deepEqual(foreign, [], `third-party requests (${lng})`);
       await closePage(page);
     }
+  }
+  await main.close();
+});
+
+
+/* ---------------- homepage: chiparashi.tw/ lists the events ---------------- */
+const HOME_READY = () => document.querySelectorAll('.ev').length > 0;
+const homeCards = () => [...document.querySelectorAll('.ev')].map((a) => [a.getAttribute('href'), a.querySelector('.ev-status').textContent]);
+
+test('homepage: upcoming events first with a countdown, today on festival days, ended ones last; a card opens the event', { skip: SKIP }, async () => {
+  const main = await origin();
+  const at = async (time, timezone) => { const p = await open(`${main.base}/`, { time, timezone, ready: HOME_READY }); const c = await p.eval(homeCards); await closePage(p); return c; };
+  assert.deepEqual(await at('2026-10-18T12:00:00+08:00'), [['vagabond2026/', '還有 20 天'], ['megaport2026/', '已結束']]);
+  assert.deepEqual(await at('2026-11-06T09:00:00+08:00'), [['vagabond2026/', '明天開始'], ['megaport2026/', '已結束']]);
+  // 23:30 on day 1 in Tainan, seen from a phone set to New York time (still the 7th in Taipei).
+  assert.deepEqual(await at('2026-11-07T23:30:00+08:00', 'America/New_York'), [['vagabond2026/', '今天 · DAY 1'], ['megaport2026/', '已結束']]);
+  assert.deepEqual(await at('2026-11-09T09:00:00+08:00'), [['vagabond2026/', '已結束'], ['megaport2026/', '已結束']], 'most recent first');
+  assert.deepEqual(await at('2026-03-01T12:00:00+08:00'), [['megaport2026/', '還有 20 天'], ['vagabond2026/', '還有 251 天']], 'soonest first');
+  const page = await open(`${main.base}/`, { ready: HOME_READY });
+  await page.tap('.ev[href="vagabond2026/"]');
+  await page.until(() => location.pathname === '/vagabond2026/' && document.querySelectorAll('#grid .block').length > 0);
+  await closePage(page);
+  await main.close();
+});
+
+test('homepage: theme switch top-right, nothing clipped, no arrows or 前往, only own-origin requests', { skip: SKIP }, async () => {
+  const main = await origin();
+  for (const width of [390, 320]) {
+    const page = await chrome.newPage({ width, height: 844 });
+    const urls = [];
+    chrome.conn.listeners.add((m) => { if (m.sessionId === page.sessionId && m.method === 'Network.requestWillBeSent') urls.push(m.params.request.url); });
+    await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: 'dark' }] });
+    await page.goto(`${main.base}/`);
+    await page.until(HOME_READY);
+    await page.until(() => [...document.images].every((i) => i.complete && i.naturalWidth > 0));
+    const found = await page.eval(() => {
+      const out = [];
+      for (const el of document.querySelectorAll('body *')) {
+        if (el.offsetParent === null || el.tagName === 'SCRIPT') continue;
+        const cs = getComputedStyle(el);
+        const hides = cs.overflowX !== 'visible' || cs.overflowY !== 'visible' || cs.textOverflow === 'ellipsis' || (cs.webkitLineClamp && cs.webkitLineClamp !== 'none');
+        if (hides && el.children.length === 0 && (el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1)) out.push(el.textContent.trim().slice(0, 20));
+        const r = el.getBoundingClientRect();
+        if (r.right > innerWidth + 1) out.push(`overflows: ${el.className || el.tagName}`);
+      }
+      return out;
+    });
+    assert.deepEqual(found, [], `clipped at ${width}px`);
+    assert.doesNotMatch(await page.eval('document.body.innerText'), /前往|→|›|»/);
+    const btn = await page.eval(() => { const r = document.getElementById('themeBtn').getBoundingClientRect(); return { right: innerWidth - r.right < 40, top: r.top < 80, label: document.getElementById('themeBtn').getAttribute('aria-label') }; });
+    assert.deepEqual(btn, { right: true, top: true, label: '切換成淺色模式' });
+    await page.tap('#themeBtn');
+    assert.equal(await page.eval(`document.documentElement.dataset.theme + '|' + getComputedStyle(document.body).backgroundColor`), 'light|rgb(241, 238, 236)');
+    await page.reload();
+    await page.until(HOME_READY);
+    assert.equal(await page.eval('document.documentElement.dataset.theme'), 'light', 'remembered');
+    await page.tap('#themeBtn');
+    assert.equal(await page.eval(`localStorage.getItem('fp:home:theme')`), null, 'back to the system theme forgets the choice');
+    const foreign = urls.filter((u) => !u.startsWith(main.base) && !u.startsWith('data:'));
+    assert.deepEqual(foreign, []);
+    await closePage(page);
   }
   await main.close();
 });

@@ -1,0 +1,13 @@
+// Homepage: dist-site/index.html served at chiparashi.tw/ (also with a query string, e.g. ?fbclid=… from shared links).
+// Deployed only by .github/workflows/deploy.yml (pick "site"), which builds just the homepage into a clean dist-site/.
+{
+  "name": "fp-home",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "../dist-site"
+  },
+  "routes": [
+    { "pattern": "chiparashi.tw/", "zone_name": "chiparashi.tw" },
+    { "pattern": "chiparashi.tw/?*", "zone_name": "chiparashi.tw" }
+  ]
+}

@@ -2,3 +2,4 @@ dist/
 dist-artifact/
 node_modules/
 .DS_Store
+dist-site/

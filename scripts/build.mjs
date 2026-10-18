@@ -2,12 +2,13 @@
 // Assembles one event from core/ and events/<slug>/. Copies and fills templates only — no transpiling, no packages.
 //   node scripts/build.mjs <slug>                     → dist/<slug>/ (website, PWA) and dist-artifact/<slug>/index.html
 //   node scripts/build.mjs <slug> --release-artifact  → also copies the single file to events/<slug>/artifact/index.html
+//   node scripts/build.mjs site                       → dist-site/index.html, the chiparashi.tw/ homepage listing every event
 // The build stops if scripts/validate.mjs finds an error.
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { ROOT, loadEvent, validate } from './validate.mjs';
+import { ROOT, loadEvent, listEvents, validate } from './validate.mjs';
 
 const CORE = path.join(ROOT, 'core');
 const STACKS = {
@@ -225,12 +226,51 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
   return { build, site, artifact: path.join(artDir, 'index.html'), files, report };
 }
 
+/* ---------- homepage: one self-contained page listing every event under events/ ---------- */
+export function buildSite({ out = path.join(ROOT, 'dist-site') } = {}) {
+  const events = listEvents().map((slug) => {
+    const loaded = loadEvent(slug);
+    const report = validate(loaded);
+    if (report.errors.length) throw Object.assign(new Error(`${slug} 的資料有錯，首頁不建置`), { report });
+    return loaded.event;
+  }).sort((a, b) => b.days[0].date.localeCompare(a.days[0].date)); // the page re-sorts by today's date
+  const icon = (ev) => (ev.icons?.png?.['192'] ? 'icon-192.png' : ev.icons?.svg ? 'icon.svg' : null);
+  const cards = events.map((ev) => {
+    const img = icon(ev);
+    return `      <li><a class="ev" href="${ev.slug}/" style="--cd:${esc(ev.theme.dark['accent-text'] || ev.theme.dark.gold)};--cl:${esc(ev.theme.light['accent-text'] || ev.theme.light.gold)}">`
+      + (img ? `<img class="ev-icon" src="${ev.slug}/${img}" alt="" width="60" height="60">` : '<span class="ev-icon"></span>')
+      + `<span class="ev-body"><b class="ev-name">${esc(ev.name)}</b><span class="ev-sub">${esc(ev.subtitle || '')}</span><span class="ev-status"></span></span></a></li>`;
+  }).join('\n');
+  const repo = events.find((ev) => ev.urls?.repo)?.urls.repo || 'https://github.com/luchichiTW/festival-planner';
+  const html = fill(read(path.join(ROOT, 'site', 'index.html')), {
+    description: esc(`音樂祭排團工具：${events.map((ev) => ev.name).join('、')}。看時間表、排出自己的團序、撞團抽籤，離線也能用。非官方工具。`),
+    cards,
+    repo: esc(repo),
+    repoLabel: esc(repo.replace(/^https:\/\//, '')),
+    events: inlineJSON(events.map((ev) => ({ slug: ev.slug, tz: ev.timezone, days: ev.days.map((d) => ({ date: d.date, label: d.label })) }))),
+  });
+  fs.mkdirSync(out, { recursive: true });
+  fs.writeFileSync(path.join(out, 'index.html'), html);
+  return { out, events: events.map((ev) => ev.slug) };
+}
+
 function main() {
   const args = process.argv.slice(2);
   const slug = args.find((a) => !a.startsWith('--'));
   if (!slug) {
-    console.error('用法：node scripts/build.mjs <活動代號> [--release-artifact]');
+    console.error('用法：node scripts/build.mjs <活動代號> [--release-artifact]，或 node scripts/build.mjs site（首頁）');
     process.exit(2);
+  }
+  if (slug === 'site') {
+    try {
+      const r = buildSite();
+      console.log(`✓ 首頁 → ${path.relative(ROOT, r.out)}/index.html（${r.events.join('、')}）`);
+    } catch (e) {
+      console.error(`✗ ${e.message}`);
+      (e.report?.errors || []).forEach((m) => console.error(`  ✗ ${m}`));
+      process.exit(1);
+    }
+    return;
   }
   try {
     const r = build(slug, { releaseArtifact: args.includes('--release-artifact') });
