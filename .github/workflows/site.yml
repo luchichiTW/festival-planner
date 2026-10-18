@@ -1,0 +1,52 @@
+# The chiparashi.tw homepage deploys itself: every push to main that changes the homepage, an event's event.json
+# (the tickets, robots.txt, llms.txt and sitemap come from them) or the build scripts. It can also be run by hand.
+# Events deploy only by hand (deploy.yml).
+name: Deploy homepage
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - 'events/*/event.json'
+      - 'scripts/build.mjs'
+      - 'scripts/validate.mjs'
+      - 'scripts/lib/pages.mjs'
+      - '.github/workflows/site.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-site
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate every event
+        run: node scripts/validate.mjs
+
+      - name: Test (data and build)
+        run: FP_E2E=0 npm test
+
+      - name: Build
+        run: |
+          rm -rf dist-site
+          node scripts/build.mjs site
+
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4"
+          command: deploy --config site/wrangler.jsonc
