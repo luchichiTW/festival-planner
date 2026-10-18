@@ -407,6 +407,8 @@ test('iPhone layout: glass header under the status bar, floating tab bar, conten
       strip: css(document.body, '::before').content,
       bar: { top: Math.round(br.top), bottom: Math.round(br.bottom), left: Math.round(br.left), right: Math.round(br.right), radius: parseFloat(css(bar).borderTopLeftRadius), blur: /blur/.test(css(bar).backdropFilter || css(bar).webkitBackdropFilter) },
       boardBottom: Math.round(board.bottom),
+      seam: Math.round(board.top - tr.bottom),
+      sameColour: css(top).backgroundColor === css(document.querySelector('.sh')).backgroundColor,
       scrollbars: ['.board', '.mine', '.sp-res', '.sheet', '.lp-card'].map((sel) => css(document.querySelector(sel)).scrollbarWidth),
       w: innerWidth, h: innerHeight,
     };
@@ -417,7 +419,8 @@ test('iPhone layout: glass header under the status bar, floating tab bar, conten
   assert.deepEqual(d.rootPad, ['0px', '0px'], 'no padding around the whole page');
   assert.equal(d.strip, 'none', 'no solid strip painted under the status bar');
   assert.deepEqual([d.header.top, d.header.left, d.header.right], [0, 0, d.w], 'glass header runs edge to edge from the top');
-  assert.ok(d.header.radius >= 16, 'header panel has rounded bottom corners');
+  assert.equal(d.seam, 0, 'header and stage-name row meet with no gap');
+  assert.ok(d.sameColour, 'header and stage-name row are one colour');
   assert.ok(!d.header.sticky, 'header is not sticky (iOS 26 blurs sticky top bars, wordmark included)');
   assert.ok(d.header.pageColour, 'header is painted in the page colour, matching the band iOS draws under the clock');
   assert.ok(d.wordmarkTop >= IPHONE.top, `header content clears the status bar (${d.wordmarkTop})`);

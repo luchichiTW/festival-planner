@@ -67,12 +67,13 @@ button { font: inherit; color: inherit; }
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 0 calc(-1 * max(16px, env(safe-area-inset-right, 0px))) 8px calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
+  margin: 0 calc(-1 * max(16px, env(safe-area-inset-right, 0px))) 0 calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
   padding: calc(10px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
-  border-radius: 0 0 22px 22px;
   background: var(--bg);
-  box-shadow: var(--glass-shadow, none), inset 0 -.5px 0 var(--line);
 }
+/* On 排團 the header and the stage-name row read as one top area (same colour, one hairline under the stage names).
+   On 我的團序 the header gets that hairline itself. */
+.app[data-view="mine"] .top { box-shadow: inset 0 -1px 0 var(--line-2); }
 .top-sub { flex: 1; min-width: 0; margin: 0; text-align: right; font-size: 12px; line-height: 1.35; color: var(--muted); }
 .hdr-btn {
   flex: none;
@@ -202,7 +203,7 @@ button { font: inherit; color: inherit; }
   min-width: calc(var(--tw) + var(--ns, 7) * var(--cw));
   padding-bottom: var(--dock-space); /* the latest show can scroll above the floating tab bar */
 }
-.corner, .sh { position: sticky; top: 0; background: var(--bg-2); border-bottom: 1px solid var(--line-2); }
+.corner, .sh { position: sticky; top: 0; background: var(--bg); border-bottom: 1px solid var(--line-2); }
 .corner { left: 0; z-index: 5; }
 .sh {
   z-index: 4;
@@ -341,12 +342,13 @@ button { font: inherit; color: inherit; }
   font: 700 9.5px/1 var(--body);
 }
 
+@media (min-width: 701px) { .board { margin-top: 12px; } }
 /* Phones: the board runs edge to edge, with a slimmer time rail and narrower stages. */
 @media (max-width: 700px) {
   .board {
     margin-left: calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
     margin-right: calc(-1 * max(16px, env(safe-area-inset-right, 0px)));
-    border-width: 1px 0 0;
+    border-width: 0;
     border-radius: 0;
   }
   .grid { --tw: 40px; --cw: 88px; }

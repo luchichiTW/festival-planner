@@ -547,6 +547,7 @@
 
   function setView(v) {
     state.view = v;
+    document.querySelector('.app').dataset.view = v;
     pickView.hidden = v !== 'pick';
     mineView.hidden = v !== 'mine';
     markTabs();
