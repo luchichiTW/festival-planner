@@ -7,10 +7,27 @@
 html {
   height: 100%;
   box-sizing: border-box;
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
   -webkit-text-size-adjust: 100%;
 }
+/* Safe areas belong to the parts that touch the screen edges (header, tab bar, sheets), not to padding around the
+   whole page — so backgrounds reach under the status bar and the home indicator. :root also cancels the padding
+   Claude's artifact frame puts there. */
+:root { padding-top: 0; padding-bottom: 0; }
+/* The status bar text is white (black-translucent). Behind it: the page in dark themes, --status-bar in light ones.
+   Top layer, so overlays never hide the time; transparent, so in dark themes they still dim the area. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px);
+  z-index: 50;
+  background: var(--status-bar, transparent);
+  pointer-events: none;
+}
+/* Scroll without visible scrollbars. */
+.board, .mine, .sp-res, .sheet, .lp-card, .lp-tabs { scrollbar-width: none; }
+.board::-webkit-scrollbar, .mine::-webkit-scrollbar, .sp-res::-webkit-scrollbar,
+.sheet::-webkit-scrollbar, .lp-card::-webkit-scrollbar, .lp-tabs::-webkit-scrollbar { display: none; }
 [hidden]:not([hidden=until-found i]) { display: none !important; }
 img { max-width: 100%; }
 *, *::before, *::after { box-sizing: inherit; }
@@ -45,7 +62,7 @@ button { font: inherit; color: inherit; }
   display: flex;
   align-items: center;
   gap: 10px;
-  padding-block: 10px 8px;
+  padding-block: calc(10px + env(safe-area-inset-top, 0px)) 8px;
 }
 .wordmark {
   flex: none;
@@ -141,6 +158,21 @@ button { font: inherit; color: inherit; }
 /* ---------- board ---------- */
 .view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .pick { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+/* More stages off to the right: the board's right edge fades out. */
+.pick::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 5;
+  width: 36px;
+  background: linear-gradient(to right, transparent, var(--bg) 92%);
+  opacity: 0;
+  transition: opacity .2s;
+  pointer-events: none;
+}
+.pick.more-right::after { opacity: 1; }
 .coach {
   position: absolute;
   left: 50%;
@@ -339,6 +371,7 @@ button { font: inherit; color: inherit; }
   .block .nm.sm { font-size: 11px; }
   .block .tm { font-size: 10px; letter-spacing: -.03em; white-space: nowrap; }
   .hl { right: 6px; }
+  .pick::after { right: calc(-1 * max(16px, env(safe-area-inset-right, 0px))); }
 }
 
 /* ---------- my schedule ---------- */
@@ -554,6 +587,7 @@ button { font: inherit; color: inherit; }
   margin-right: calc(-1 * max(16px, env(safe-area-inset-right, 0px)));
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   border-top: 1px solid var(--line);
   background: var(--bg-2);
 }
@@ -654,7 +688,7 @@ button { font: inherit; color: inherit; }
   appearance: none;
   width: 100%;
   display: grid;
-  grid-template-columns: 4px minmax(0, 1fr) auto;
+  grid-template-columns: 4px minmax(0, 1fr);
   gap: 2px 10px;
   align-items: center;
   padding: 10px 12px 10px 10px;
@@ -671,7 +705,6 @@ button { font: inherit; color: inherit; }
 .sp-en { margin-left: 6px; font: 500 12px var(--body); color: var(--muted); }
 .sp-meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--muted); }
 .sp-meta .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
-.sp-go { grid-row: span 2; font: 700 12px var(--body); color: var(--accent-text); white-space: nowrap; }
 .sp-tag { margin-left: 6px; padding: 1px 5px; border-radius: 4px; font: 700 10.5px/1.4 var(--body); border: 1px solid var(--line-2); color: var(--muted); }
 .sp-tag.on { border-color: transparent; background: var(--gold); color: var(--ink); }
 .sp-item mark { background: color-mix(in srgb, var(--gold) 38%, transparent); color: inherit; border-radius: 2px; }
@@ -823,8 +856,6 @@ button { font: inherit; color: inherit; }
 .lp-plat a:first-child { border-radius: 9px 0 0 9px; }
 @media (hover: hover) { .lp-plat a:hover { background: var(--surface-2); } }
 .lp-plat a:active { background: var(--surface-2); }
-.lp-plat a span { font-size: 11px; color: var(--muted); }
-.lp-hint { margin: 0; font-size: 11.5px; color: var(--faint); text-align: center; }
 .lp-bio { display: flex; flex-direction: column; gap: 8px; margin-top: 2px; padding-top: 12px; border-top: 1px solid var(--line); }
 .lp-bio p { margin: 0; font-size: 13.5px; line-height: 1.75; color: color-mix(in srgb, var(--fg) 82%, var(--bg)); }
 .lp-bio p.lp-none { font-size: 12.5px; color: var(--faint); }
@@ -916,7 +947,6 @@ button { font: inherit; color: inherit; }
   text-decoration: none;
 }
 .about-links a b { font: 700 14px/1.3 var(--body); }
-.about-links a b::after { content: " ↗"; color: var(--muted); font-weight: 400; }
 .about-links a span { font-size: 12px; color: var(--muted); }
 @media (hover: hover) { .about-links a:hover { border-color: var(--muted); } }
 .about-meta { margin: 0; text-align: center; font: 500 11.5px var(--mono); color: var(--faint); }

@@ -48,7 +48,8 @@
       "ray": "rgb(255 236 220 / .025)",
       "glow": "rgb(241 190 72 / .08)",
       "scrim": "rgb(10 7 7 / .62)",
-      "lp-scrim": "rgb(0 0 0 / .3)"
+      "lp-scrim": "rgb(0 0 0 / .3)",
+      "status-bar": "transparent"
     },
     "light": {
       "bg": "#F1EEEC",
@@ -75,7 +76,8 @@
       "ray": "rgb(120 60 40 / .035)",
       "glow": "rgb(235 179 60 / .16)",
       "scrim": "rgb(35 22 20 / .35)",
-      "lp-scrim": "rgb(40 25 20 / .18)"
+      "lp-scrim": "rgb(40 25 20 / .18)",
+      "status-bar": "#1A1617"
     }
   },
   "fonts": {

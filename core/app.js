@@ -233,7 +233,15 @@
     placeNowLine();
     refreshMarks();
     refreshBoardStatus();
+    updateEdge();
   }
+
+  // Fade the board's right edge while more stages are off to the right.
+  function updateEdge() {
+    pickView.classList.toggle('more-right', board.scrollLeft + board.clientWidth < board.scrollWidth - 2);
+  }
+  board.addEventListener('scroll', updateEdge, { passive: true });
+  addEventListener('resize', updateEdge);
 
   // Festival-day status on the board — ended shows fade, the playing ones get a progress bar.
   function refreshBoardStatus() {
@@ -521,7 +529,7 @@
     $('tabMine').setAttribute('aria-pressed', v === 'mine' ? 'true' : 'false');
     pickView.hidden = v !== 'pick';
     mineView.hidden = v !== 'mine';
-    if (v === 'pick') markDay(state.day);
+    if (v === 'pick') { markDay(state.day); updateEdge(); }
     if (v === 'mine') renderMine();
     saveView();
   }
@@ -690,7 +698,7 @@
     const tag = !picks.has(s.id) ? '' : isAlt(s.id) ? '<span class="sp-tag">備選</span>' : '<span class="sp-tag on">已選</span>';
     const en = s.en && !s.name.toLowerCase().includes(s.en.toLowerCase()) ? `<span class="sp-en">${mark(s.en, raw)}</span>` : '';
     return `<button type="button" class="sp-item" data-loc="${s.id}" style="--c:${s.stage.c}">
-      <i></i><span class="sp-nm">${mark(s.name, raw)}${en}</span><span class="sp-go">前往 →</span>
+      <i></i><span class="sp-nm">${mark(s.name, raw)}${en}</span>
       <span class="sp-meta">${d.label} · <span class="mono">${fmt(s.start)}</span> · ${esc(s.stage.short)}${tag}</span></button>`;
   }
   const spRes = $('spRes');
@@ -700,7 +708,7 @@
     const raw = spInput.value.trim();
     const q = norm(raw);
     spFirst = null;
-    if (!q) { spRes.innerHTML = '<p class="sp-hint">輸入團名，中文、英文都可以，例如「落日」或「Sorry Youth」。</p>'; return; }
+    if (!q) { spRes.innerHTML = ''; return; } // the placeholder already says what to type
     const hits = getIndex().filter((x) => x.hay.includes(q))
       .map((x) => ({ x, rank: x.main.startsWith(q) || x.en.startsWith(q) ? 0 : x.main.includes(q) || x.en.includes(q) ? 1 : 2 }))
       .sort((a, b) => a.rank - b.rank || a.x.s.day - b.x.s.day || a.x.s.start - b.x.s.start);
@@ -980,12 +988,9 @@
     const links = (ARTISTS[a] && ARTISTS[a].links) || {};
     const avail = PLATFORMS.filter((p) => /^https:\/\//.test(links[p.key] || ''));
     const plat = $('lpPlat');
-    const hint = $('lpHint');
     plat.innerHTML = avail.map((p) =>
-      `<a href="${esc(links[p.key])}" target="_blank" rel="noopener">${p.label}<span aria-hidden="true">↗</span></a>`).join('');
+      `<a href="${esc(links[p.key])}" target="_blank" rel="noopener">${p.label}</a>`).join('');
     plat.hidden = !avail.length;
-    hint.hidden = !avail.length;
-    hint.textContent = '開啟藝人頁面，手機上會直接跳 App';
     lpCard.querySelectorAll('[data-lp-tab]').forEach((b) => b.setAttribute('aria-selected', String(Number(b.dataset.lpTab) === i)));
     renderBio(a);
   }
@@ -1024,7 +1029,7 @@
       <h2 class="lp-name" id="lpName">${esc(s.name)}</h2>
       ${s.note ? `<p class="lp-note">${esc(s.note)}</p>` : ''}
       <div class="lp-act" id="lpAct"></div>
-      ${lpArtists.length ? `${tabs}<div class="lp-plat" id="lpPlat"></div><p class="lp-hint" id="lpHint"></p>` : ''}
+      ${lpArtists.length ? `${tabs}<div class="lp-plat" id="lpPlat"></div>` : ''}
       <div class="lp-bio" id="lpBio" hidden></div>`;
     lpShowId = s.id;
     renderLpAct();
