@@ -1,0 +1,95 @@
+{
+  "slug": "vagabond2026",
+  "name": "浪人祭 2026",
+  "shortName": "浪人祭",
+  "description": "浪人祭 2026 排團工具：時間表、我的團序、撞團抽籤，離線也能用。非官方工具。",
+  "lang": "zh-Hant-TW",
+  "timezone": "Asia/Taipei",
+  "wordmark": { "text": "浪人祭", "sub": "2026" },
+  "subtitle": "11.07–08 臺南觀夕平臺大草皮",
+  "dataDate": "2026-10-17",
+  "sourceNote": "時間表取自浪人祭官方 Threads 公告（2026/10/17），藝人簡介整理自網路公開資料。非官方工具，演出異動以現場公告為準。",
+  "days": [
+    { "label": "DAY 1", "date": "2026-11-07", "start": "12:00", "end": "22:00" },
+    { "label": "DAY 2", "date": "2026-11-08", "start": "11:00", "end": "22:00" }
+  ],
+  "stages": [
+    { "id": "K", "name": "鯤鯓", "color": { "dark": "#D9474A", "light": "#C9393D" } },
+    { "id": "J", "name": "劍獅", "color": { "dark": "#17A7B4", "light": "#0B8C98" } },
+    { "id": "H", "name": "金鶴廳", "color": { "dark": "#DFA02E", "light": "#C7871A" } },
+    { "id": "X", "name": "小嘻門", "color": { "dark": "#B77AC4", "light": "#9E5FAD" } },
+    { "id": "F", "name": "風獅", "color": { "dark": "#46B57A", "light": "#2B9660" } },
+    { "id": "R", "name": "浪人塾", "color": { "dark": "#E27530", "light": "#D0621E" } },
+    { "id": "L", "name": "Red Bull LUKA", "short": "LUKA", "long": true, "color": { "dark": "#4C64C4", "light": "#3E55B6" } }
+  ],
+  "theme": {
+    "dark": {
+      "bg": "#1A1617",
+      "bg-2": "#221D1D",
+      "surface": "#2A2423",
+      "surface-2": "#362E2B",
+      "block-base": "#221D1D",
+      "line": "rgb(255 236 220 / .08)",
+      "line-2": "rgb(255 236 220 / .15)",
+      "fg": "#F6EEE5",
+      "muted": "#AA9D92",
+      "faint": "#776B63",
+      "ink": "#1A1617",
+      "on-stage": "#FFFFFF",
+      "gold": "#F1BE48",
+      "accent-text": "#F1BE48",
+      "alert": "#F0544A",
+      "ok": "#46B57A",
+      "brand": "#F1BE48",
+      "brand-shadow": "#D9474A",
+      "brand-shadow-2": "rgb(0 0 0 / .35)",
+      "board-bg": "rgb(0 0 0 / .2)",
+      "col-sep": "rgb(0 0 0 / .3)",
+      "ray": "rgb(255 236 220 / .025)",
+      "glow": "rgb(241 190 72 / .08)",
+      "scrim": "rgb(10 7 7 / .62)",
+      "lp-scrim": "rgb(0 0 0 / .3)"
+    },
+    "light": {
+      "bg": "#F1EEEC",
+      "bg-2": "#E6E1DE",
+      "surface": "#FBFAF9",
+      "surface-2": "#FFFFFF",
+      "block-base": "#FBFAF9",
+      "line": "rgb(60 30 25 / .09)",
+      "line-2": "rgb(60 30 25 / .17)",
+      "fg": "#231C1B",
+      "muted": "#6B5F59",
+      "faint": "#998C85",
+      "ink": "#1A1617",
+      "on-stage": "#FFFFFF",
+      "gold": "#EBB33C",
+      "accent-text": "#A3650C",
+      "alert": "#D63A32",
+      "ok": "#2B9660",
+      "brand": "#C9393D",
+      "brand-shadow": "#EBB33C",
+      "brand-shadow-2": "rgb(60 30 25 / .14)",
+      "board-bg": "rgb(255 255 255 / .5)",
+      "col-sep": "rgb(60 30 25 / .08)",
+      "ray": "rgb(120 60 40 / .035)",
+      "glow": "rgb(235 179 60 / .16)",
+      "scrim": "rgb(35 22 20 / .35)",
+      "lp-scrim": "rgb(40 25 20 / .18)"
+    }
+  },
+  "fonts": {
+    "display": { "family": "Chiron GoRound TC", "file": "assets/fonts/display.woff2", "weight": "900" },
+    "mono": { "family": "Chivo Mono", "file": "assets/fonts/mono.woff2", "weight": "400 700" }
+  },
+  "icons": {
+    "png": { "180": "assets/icon-180.png", "192": "assets/icon-192.png", "512": "assets/icon-512.png" },
+    "maskable": "assets/icon-maskable-512.png",
+    "themeColor": "#1A1617"
+  },
+  "urls": {
+    "site": "https://chiparashi.tw/vagabond2026/",
+    "artifact": "https://claude.ai/artifact/7YsJYaYVysmerLRaEzPpcP",
+    "repo": "https://github.com/luchichiTW/festival-planner"
+  }
+}

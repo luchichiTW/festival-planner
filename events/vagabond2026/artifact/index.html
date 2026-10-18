@@ -1,0 +1,2245 @@
+<title>浪人祭 2026</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chiron+GoRound+TC:wght@500;700;900&family=Chivo+Mono:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+/* Layout: one-screen app — a one-row header, a stage × time board that scrolls both ways under a sticky stage row, and a bottom tab bar; 「我的團序」swaps a list in for the board. Dark-first (the poster's charcoal sunburst), with a light paper variant. */
+:root {
+  --bg: #1A1617;
+  --bg-2: #221D1D;
+  --surface: #2A2423;
+  --surface-2: #362E2B;
+  --block-base: #221D1D;
+  --line: rgb(255 236 220 / .08);
+  --line-2: rgb(255 236 220 / .15);
+  --fg: #F6EEE5;
+  --muted: #AA9D92;
+  --faint: #776B63;
+  --ink: #1A1617;
+  --on-stage: #FFFFFF;
+  --gold: #F1BE48;
+  --accent-text: #F1BE48;
+  --alert: #F0544A;
+  --brand: #F1BE48;
+  --brand-shadow: #D9474A;
+  --brand-shadow-2: rgb(0 0 0 / .35);
+  --board-bg: rgb(0 0 0 / .2);
+  --col-sep: rgb(0 0 0 / .3);
+  --ray: rgb(255 236 220 / .025);
+  --glow: rgb(241 190 72 / .08);
+  --scrim: rgb(10 7 7 / .62);
+  --lp-scrim: rgb(0 0 0 / .3);
+  /* stage colours, read off the official timetable */
+  --k: #D9474A;
+  --j: #17A7B4;
+  --h: #DFA02E;
+  --x: #B77AC4;
+  --f: #46B57A;
+  --r: #E27530;
+  --l: #4C64C4;
+  --display: "Chiron GoRound TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  --body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --mono: "Chivo Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #F1EEEC;
+    --bg-2: #E6E1DE;
+    --surface: #FBFAF9;
+    --surface-2: #FFFFFF;
+    --block-base: #FBFAF9;
+    --line: rgb(60 30 25 / .09);
+    --line-2: rgb(60 30 25 / .17);
+    --fg: #231C1B;
+    --muted: #6B5F59;
+    --faint: #998C85;
+    --gold: #EBB33C;
+    --accent-text: #A3650C;
+    --alert: #D63A32;
+    --brand: #C9393D;
+    --brand-shadow: #EBB33C;
+    --brand-shadow-2: rgb(60 30 25 / .14);
+    --board-bg: rgb(255 255 255 / .5);
+    --col-sep: rgb(60 30 25 / .08);
+    --ray: rgb(120 60 40 / .035);
+    --glow: rgb(235 179 60 / .16);
+    --scrim: rgb(35 22 20 / .35);
+    --lp-scrim: rgb(40 25 20 / .18);
+    --k: #C9393D;
+    --j: #0B8C98;
+    --h: #C7871A;
+    --x: #9E5FAD;
+    --f: #2B9660;
+    --r: #D0621E;
+    --l: #3E55B6;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #F1EEEC;
+  --bg-2: #E6E1DE;
+  --surface: #FBFAF9;
+  --surface-2: #FFFFFF;
+  --block-base: #FBFAF9;
+  --line: rgb(60 30 25 / .09);
+  --line-2: rgb(60 30 25 / .17);
+  --fg: #231C1B;
+  --muted: #6B5F59;
+  --faint: #998C85;
+  --gold: #EBB33C;
+  --accent-text: #A3650C;
+  --alert: #D63A32;
+  --brand: #C9393D;
+  --brand-shadow: #EBB33C;
+  --brand-shadow-2: rgb(60 30 25 / .14);
+  --board-bg: rgb(255 255 255 / .5);
+  --col-sep: rgb(60 30 25 / .08);
+  --ray: rgb(120 60 40 / .035);
+  --glow: rgb(235 179 60 / .16);
+  --scrim: rgb(35 22 20 / .35);
+  --lp-scrim: rgb(40 25 20 / .18);
+  --k: #C9393D;
+  --j: #0B8C98;
+  --h: #C7871A;
+  --x: #9E5FAD;
+  --f: #2B9660;
+  --r: #D0621E;
+  --l: #3E55B6;
+  color-scheme: light;
+}
+
+html { height: 100%; box-sizing: border-box; }
+*, *::before, *::after { box-sizing: inherit; }
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(120% 60% at 50% -12%, var(--glow), transparent 62%),
+    repeating-conic-gradient(from -90deg at 50% -25%, var(--ray) 0deg 3deg, transparent 3deg 8deg);
+  color: var(--fg);
+  font: 400 14px/1.5 var(--body);
+  -webkit-tap-highlight-color: transparent;
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+
+.app {
+  height: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- header: one row ---------- */
+.top {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-block: 10px 8px;
+}
+.wordmark {
+  flex: none;
+  margin: 0;
+  font: 900 22px/1 var(--display);
+  letter-spacing: .05em;
+  color: var(--brand);
+  text-shadow: 1.5px 1.5px 0 var(--brand-shadow), 3px 3px 0 var(--brand-shadow-2);
+}
+.wordmark small { margin-left: 5px; font: 500 11px var(--mono); letter-spacing: 0; color: var(--muted); text-shadow: none; }
+.tools { flex: none; display: flex; gap: 6px; }
+.theme-btn {
+  flex: none;
+  appearance: none;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-2);
+  color: var(--muted);
+  cursor: pointer;
+}
+.theme-btn { width: 36px; }
+.theme-btn:hover { color: var(--fg); }
+.theme-btn svg { width: 18px; height: 18px; }
+.theme-btn .i-sun, .theme-btn[data-mode="light"] .i-moon { display: block; }
+.theme-btn .i-moon, .theme-btn[data-mode="light"] .i-sun { display: none; }
+
+.seg {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 11px;
+}
+.seg button {
+  flex: 1;
+  min-width: 0;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: 700 13px/1 var(--body);
+  padding: 9px 4px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.seg button .d { margin-left: 5px; font: 500 11px var(--mono); }
+.seg button[aria-pressed="true"] { background: var(--surface-2); color: var(--fg); box-shadow: inset 0 0 0 1px var(--line-2); }
+@media (max-width: 430px) { .wordmark small { display: none; } }
+@media (max-width: 420px) { .seg button .w { display: none; } }
+@media (max-width: 350px) { .seg button .d { display: none; } }
+.search-btn svg { width: 17px; height: 17px; }
+
+/* ---------- 03 next-up bar (festival days only) ---------- */
+.next { flex: none; display: flex; flex-direction: column; gap: 6px; padding-bottom: 8px; }
+.nx {
+  position: relative;
+  appearance: none;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--fg);
+  text-align: left;
+  overflow: hidden;
+  cursor: pointer;
+}
+.nx-lb { flex: none; font: 700 11px/1 var(--body); letter-spacing: .04em; color: var(--muted); }
+.nx.live { border-color: color-mix(in srgb, var(--alert) 50%, transparent); }
+.nx.live .nx-lb { color: var(--alert); }
+.nx.live .nx-lb::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 5px; border-radius: 50%; background: var(--alert); vertical-align: 1px; animation: livePulse 1.6s ease-in-out infinite; }
+.nx .pill { flex: none; }
+.nx-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 14px/1.3 var(--body); }
+.nx-left { flex: none; font: 700 12px var(--mono); font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
+.nx.tight .nx-left, .nx.tight .nx-t { color: var(--accent-text); }
+.nx-stack { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.nx-sub { display: flex; flex-wrap: wrap; gap: 0 10px; font: 500 12px/1.35 var(--body); font-variant-numeric: tabular-nums; color: var(--muted); }
+.nx-warn { color: var(--alert); font-weight: 700; }
+.nx-prog { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--line); }
+.nx-prog i { display: block; height: 100%; background: var(--c); }
+.nx-more { flex: none; padding: 2px 5px; border-radius: 5px; border: 1px solid var(--line-2); font: 700 10px/1.2 var(--body); color: var(--muted); }
+
+/* ---------- board ---------- */
+.view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.pick { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.coach {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  z-index: 6;
+  width: min(calc(100% - 8px), 460px);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 12px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--line-2);
+  background: var(--surface-2);
+  box-shadow: 0 10px 30px rgb(0 0 0 / .28);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.coach p { margin: 0; flex: 1; min-width: 0; }
+.coach button {
+  flex: none;
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 14px;
+  background: var(--gold);
+  color: var(--ink);
+  font: 800 13px/1 var(--body);
+  cursor: pointer;
+}
+
+.board {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--board-bg);
+}
+.grid {
+  --tw: 48px;
+  --cw: 104px;
+  display: grid;
+  grid-template-columns: var(--tw) repeat(7, minmax(var(--cw), 1fr));
+  grid-template-rows: auto var(--H);
+  min-width: calc(var(--tw) + 7 * var(--cw));
+  padding-bottom: 10px;
+}
+.corner, .sh { position: sticky; top: 0; background: var(--bg-2); border-bottom: 1px solid var(--line-2); }
+.corner { left: 0; z-index: 5; }
+.sh {
+  z-index: 4;
+  min-height: 42px;
+  padding: 8px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.sh b { font: 900 17px/1.1 var(--display); color: var(--c); letter-spacing: .04em; }
+.sh.long b { font-size: 13px; letter-spacing: .02em; }
+
+.times { position: sticky; left: 0; z-index: 3; height: var(--H); background: var(--bg-2); border-right: 1px solid var(--line); }
+.hl {
+  position: absolute;
+  right: 7px;
+  transform: translateY(-50%);
+  font: 500 10.5px/1 var(--mono);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.hl.first { transform: translateY(4px); }
+.hl.last { transform: translateY(-120%); }
+
+.col {
+  position: relative;
+  height: var(--H);
+  border-left: 1px solid var(--col-sep);
+  background-color: color-mix(in srgb, var(--c) 9%, transparent);
+  background-image:
+    repeating-linear-gradient(to bottom, var(--line-2) 0 1px, transparent 1px var(--hour)),
+    repeating-linear-gradient(to bottom, transparent 0 calc(var(--hour) / 2), var(--line) calc(var(--hour) / 2) calc(var(--hour) / 2 + 1px), transparent calc(var(--hour) / 2 + 1px) var(--hour));
+}
+
+.block {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  z-index: 1;
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 5px 5px 4px;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, var(--c) 55%, transparent);
+  background: color-mix(in srgb, var(--c) 18%, var(--block-base));
+  color: var(--fg);
+  text-align: center;
+  cursor: pointer;
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+  transition: opacity .16s, background-color .16s, transform .1s;
+}
+.block.pressing { transform: scale(.95); }
+@media (hover: hover) { .block:hover { border-color: var(--c); } }
+.block:active { transform: scale(.97); }
+.block .nm, .block .nt { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.block .nm { -webkit-line-clamp: 3; font: 700 13px/1.22 var(--body); }
+.block .nm.sm { font-size: 11.5px; }
+.block .nt { -webkit-line-clamp: 2; font: 500 9.5px/1.25 var(--body); opacity: .78; }
+.block .tm { font: 400 10.5px/1.2 var(--mono); font-variant-numeric: tabular-nums; color: var(--muted); }
+
+.block.sel {
+  background: linear-gradient(180deg, var(--c), color-mix(in srgb, var(--c) 72%, black));
+  border-color: color-mix(in srgb, var(--c) 55%, white);
+  color: var(--on-stage);
+  text-shadow: 0 1px 1px rgb(0 0 0 / .35);
+  box-shadow: 0 6px 18px -8px var(--c);
+}
+.block.sel .tm { color: rgb(255 255 255 / .85); }
+.block.clash { opacity: .3; }
+/* 06 festival-day status on the board */
+.block.ended { opacity: .32; }
+.block.playing { border-color: var(--c); box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 40%, transparent); }
+.block.sel.playing { box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 40%, transparent), 0 6px 18px -8px var(--c); }
+.bprog { position: absolute; left: 6px; right: 6px; bottom: 3px; height: 3px; border-radius: 2px; background: color-mix(in srgb, var(--fg) 16%, transparent); }
+.bprog i { display: block; height: 100%; border-radius: inherit; background: var(--c); }
+.block.sel .bprog { background: rgb(255 255 255 / .3); }
+.block.sel .bprog i { background: #fff; }
+/* 05 located by search or the next-up bar */
+.located { outline: 3px solid var(--gold); outline-offset: 2px; animation: locate 1.2s ease-out 1; }
+@keyframes locate { 0% { outline-offset: 10px; } 100% { outline-offset: 2px; } }
+.block.alt {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--c) 75%, transparent);
+  background: color-mix(in srgb, var(--c) 10%, var(--block-base));
+  color: var(--muted);
+}
+.hit-tag.alt-tag { background: var(--surface-2); color: var(--muted); border: 1px solid var(--line-2); }
+.hit-tag {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  padding: 2px 4px;
+  border-radius: 5px;
+  background: var(--alert);
+  color: var(--on-stage);
+  font: 900 9.5px/1 var(--body);
+  text-shadow: none;
+}
+
+.nowline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  margin-top: -1px;
+  z-index: 2;
+  background: var(--alert);
+  box-shadow: 0 0 8px var(--alert);
+  pointer-events: none;
+}
+.nowtag {
+  position: absolute;
+  right: 4px;
+  z-index: 3;
+  transform: translateY(-50%);
+  padding: 3px 4px;
+  border-radius: 4px;
+  background: var(--alert);
+  color: var(--on-stage);
+  font: 700 9.5px/1 var(--body);
+}
+
+/* Phones: the board runs edge to edge, with a slimmer time rail and narrower stages. */
+@media (max-width: 700px) {
+  .board {
+    margin-left: calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
+    margin-right: calc(-1 * max(16px, env(safe-area-inset-right, 0px)));
+    border-width: 1px 0 0;
+    border-radius: 0;
+  }
+  .grid { --tw: 40px; --cw: 88px; }
+  .sh { min-height: 38px; padding: 6px 2px; }
+  .sh b { font-size: 15px; }
+  .sh.long b { font-size: 12px; }
+  .block { padding-inline: 3px; }
+  .block .nm { font-size: 12.5px; }
+  .block .nm.sm { font-size: 11px; }
+  .block .tm { font-size: 10px; letter-spacing: -.03em; white-space: nowrap; }
+  .hl { right: 6px; }
+}
+
+/* ---------- my schedule ---------- */
+.mine-head { display: flex; align-items: center; gap: 12px; padding-top: 4px; }
+.mine-sum { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.mine-sum b { font: 900 19px/1.2 var(--display); letter-spacing: .04em; color: var(--accent-text); }
+.mine-sum span { font-size: 12.5px; color: var(--muted); }
+.mine-sum .warn {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--alert);
+  font: 700 12.5px var(--body);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.mine { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.mine-in { max-width: 640px; margin: 0 auto; padding-block: 4px 24px; display: flex; flex-direction: column; gap: 24px; }
+.mday { display: flex; flex-direction: column; gap: 8px; scroll-margin-top: 8px; }
+.mday h2 { margin: 0 0 2px; display: flex; align-items: baseline; gap: 10px; font-weight: 400; }
+.dl { font: 900 21px/1 var(--display); letter-spacing: .04em; color: var(--accent-text); }
+.dd { font-size: 14px; color: var(--fg); }
+.dn { margin-left: auto; font: 500 12px var(--mono); color: var(--muted); }
+.empty { margin: 0; padding: 14px 16px; border: 1px dashed var(--line-2); border-radius: 12px; font-size: 13px; color: var(--muted); }
+
+.item {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  padding: 12px 8px 12px 14px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--c) 30%, var(--line));
+  background: linear-gradient(100deg, color-mix(in srgb, var(--c) 18%, var(--surface)) 0%, var(--surface) 55%);
+}
+.it b { display: block; font: 700 16px/1.15 var(--mono); font-variant-numeric: tabular-nums; }
+.it span { font: 400 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.im { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.imeta { display: flex; align-items: center; gap: 8px; }
+.pill {
+  display: inline-block;
+  padding: 4px 7px 3px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--c) 85%, black);
+  color: var(--on-stage);
+  font: 700 11px/1 var(--body);
+  letter-spacing: .05em;
+  white-space: nowrap;
+}
+.dur { font: 500 11px var(--mono); color: var(--muted); }
+.item h3 { margin: 0; font: 700 17px/1.3 var(--body); overflow-wrap: anywhere; text-wrap: balance; }
+.item { position: relative; overflow: hidden; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; transition: transform .1s, opacity .2s; }
+.item.pressing { transform: scale(.98); }
+.item.playing { border-color: color-mix(in srgb, var(--c) 75%, transparent); }
+.item.ended { opacity: .45; }
+.st { display: inline-flex; align-items: center; gap: 5px; font: 700 11px/1 var(--body); white-space: nowrap; }
+.st.live { padding: 4px 7px 3px; border-radius: 6px; background: color-mix(in srgb, var(--alert) 16%, transparent); color: var(--alert); }
+.st.live::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--alert); animation: livePulse 1.6s ease-in-out infinite; }
+.st.done { font-weight: 500; color: var(--faint); }
+@keyframes livePulse { 50% { opacity: .3; } }
+.prog { position: absolute; left: 14px; right: 14px; bottom: 6px; height: 3px; border-radius: 2px; background: var(--line-2); }
+.prog i { display: block; height: 100%; border-radius: inherit; background: var(--c); }
+.note { margin: 0; font-size: 12.5px; color: var(--muted); }
+.rm {
+  appearance: none;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.rm:hover { background: var(--line); color: var(--fg); }
+
+.cluster {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--alert) 45%, transparent);
+  background: color-mix(in srgb, var(--alert) 8%, transparent);
+}
+.ch { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 2px 0 4px; font-size: 12.5px; color: color-mix(in srgb, var(--alert) 55%, var(--fg)); }
+.ch b { margin-right: 6px; font-weight: 900; color: var(--alert); }
+.draw {
+  appearance: none;
+  flex: none;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--alert) 60%, transparent);
+  background: color-mix(in srgb, var(--alert) 18%, transparent);
+  color: var(--fg);
+  font: 700 13px/1 var(--body);
+  cursor: pointer;
+}
+.cluster.done { border-color: var(--line-2); background: color-mix(in srgb, var(--f) 6%, transparent); }
+.ch.done { color: var(--muted); }
+.ch.done b { color: var(--f); }
+.redo {
+  appearance: none;
+  flex: none;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line-2);
+  background: transparent;
+  color: var(--fg);
+  font: 700 12.5px/1 var(--body);
+  cursor: pointer;
+}
+.item.choosable { cursor: pointer; }
+@media (hover: hover) { .item.choosable:hover { border-color: var(--c); } }
+.choose, .go-tag { margin-left: auto; flex: none; white-space: nowrap; }
+.choose {
+  appearance: none;
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--c) 65%, transparent);
+  background: color-mix(in srgb, var(--c) 16%, transparent);
+  color: var(--fg);
+  font: 700 12px/1 var(--body);
+  cursor: pointer;
+}
+.go-tag {
+  padding: 4px 8px 3px;
+  border-radius: 6px;
+  background: var(--f);
+  color: var(--on-stage);
+  font: 700 11px/1 var(--body);
+}
+.alt-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: 12px;
+  border: 1px dashed color-mix(in srgb, var(--c) 50%, var(--line-2));
+  background: color-mix(in srgb, var(--c) 6%, transparent);
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.alt-main {
+  flex: 1;
+  min-width: 0;
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 4px 10px 12px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  text-align: left;
+  cursor: pointer;
+}
+.alt-label { flex: none; padding: 3px 5px 2px; border: 1px solid var(--line-2); border-radius: 5px; font: 700 10.5px/1 var(--body); color: var(--faint); }
+.alt-time { flex: none; font: 500 12px var(--mono); font-variant-numeric: tabular-nums; }
+.alt-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 14px/1.3 var(--body); color: var(--fg); }
+.alt-act { flex: none; font: 700 12px/1 var(--body); color: var(--accent-text); }
+.alt-row .rm { width: 32px; height: 32px; font-size: 18px; }
+@media (max-width: 380px) { .alt-time { display: none; } }
+.gap { display: flex; align-items: center; gap: 10px; font-size: 11.5px; color: var(--faint); }
+.gap::before, .gap::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.gap.tight { color: var(--accent-text); }
+
+.keep {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.sync { margin: 0; display: flex; gap: 8px; align-items: baseline; font-size: 13px; color: var(--muted); }
+.sync::before {
+  content: "";
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--faint);
+  transform: translateY(-1px);
+}
+.sync[data-state="synced"]::before { background: var(--f); }
+.sync[data-state="syncing"]::before { background: var(--gold); }
+.sync[data-state="error"]::before { background: var(--alert); }
+.keep-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.pill-btn {
+  appearance: none;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--line-2);
+  background: transparent;
+  color: var(--fg);
+  font: 600 13px/1 var(--body);
+  cursor: pointer;
+}
+.pill-btn.quiet { color: var(--muted); }
+.pill-btn.armed { color: var(--alert); border-color: var(--alert); }
+.src { margin: 0; text-align: center; font-size: 11.5px; color: var(--faint); }
+
+/* ---------- tab bar ---------- */
+.tabbar {
+  flex: none;
+  display: flex;
+  margin-left: calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
+  margin-right: calc(-1 * max(16px, env(safe-area-inset-right, 0px)));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  border-top: 1px solid var(--line);
+  background: var(--bg-2);
+}
+.tabbar button {
+  position: relative;
+  flex: 1;
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px 7px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: 700 11px/1 var(--body);
+  cursor: pointer;
+}
+.tabbar button[aria-pressed="true"] { color: var(--accent-text); }
+.tabbar svg { width: 22px; height: 22px; }
+.tb-badges { position: absolute; top: 3px; left: calc(50% + 9px); display: flex; gap: 3px; }
+.tb-badges span {
+  min-width: 17px;
+  height: 17px;
+  padding: 0 5px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: var(--fg);
+  color: var(--bg);
+  font: 700 10px/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+.tb-badges .tb-clash { background: var(--alert); color: var(--on-stage); font-family: var(--body); }
+
+/* ---------- sheet ---------- */
+.scrim { position: fixed; inset: 0; z-index: 20; background: var(--scrim); backdrop-filter: blur(6px); }
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 21;
+  max-width: 540px;
+  max-height: 86%;
+  margin-inline: auto;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 10px;
+  padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  border: 1px solid var(--line-2);
+  border-bottom: 0;
+  border-radius: 20px 20px 0 0;
+  background: var(--surface);
+  animation: rise .22s ease-out;
+}
+@keyframes rise { from { transform: translateY(28px); opacity: 0; } }
+
+/* ---------- 05 search ---------- */
+.sp-scrim { position: fixed; inset: 0; z-index: 24; background: var(--scrim); backdrop-filter: blur(6px); }
+.sp {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 25;
+  max-width: 560px;
+  max-height: 78%;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  padding-top: calc(10px + env(safe-area-inset-top, 0px));
+  padding-bottom: 10px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  border: 1px solid var(--line-2);
+  border-top: 0;
+  border-radius: 0 0 20px 20px;
+  background: var(--surface);
+  animation: drop .2s ease-out;
+}
+@keyframes drop { from { transform: translateY(-16px); opacity: 0; } }
+.sp-bar { flex: none; display: flex; align-items: center; gap: 8px; }
+.sp-field { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--bg-2); }
+.sp-field svg { flex: none; width: 16px; height: 16px; color: var(--muted); }
+.sp-field input { flex: 1; min-width: 0; height: 42px; border: 0; outline: 0; background: transparent; color: var(--fg); font: 500 16px var(--body); }
+.sp-field input::-webkit-search-cancel-button { display: none; }
+.sp-field:focus-within { border-color: var(--accent-text); }
+.sp-x { flex: none; appearance: none; padding: 10px 6px; border: 0; background: none; color: var(--accent-text); font: 700 14px var(--body); cursor: pointer; }
+.sp-res { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 6px; padding-top: 10px; }
+.sp-hint { margin: 4px 2px; font-size: 13px; color: var(--muted); }
+.sp-sec { margin: 6px 2px 0; font: 700 11px/1.4 var(--body); letter-spacing: .06em; color: var(--faint); }
+.sp-item {
+  appearance: none;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 4px minmax(0, 1fr) auto;
+  gap: 2px 10px;
+  align-items: center;
+  padding: 10px 12px 10px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+}
+.sp-item:focus-visible, .sp-item:hover { border-color: var(--line-2); }
+.sp-item > i { grid-row: span 2; align-self: stretch; border-radius: 2px; background: var(--c); }
+.sp-nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 15px/1.3 var(--body); }
+.sp-en { margin-left: 6px; font: 500 12px var(--body); color: var(--muted); }
+.sp-meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--muted); }
+.sp-meta .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.sp-go { grid-row: span 2; font: 700 12px var(--body); color: var(--accent-text); white-space: nowrap; }
+.sp-tag { margin-left: 6px; padding: 1px 5px; border-radius: 4px; font: 700 10.5px/1.4 var(--body); border: 1px solid var(--line-2); color: var(--muted); }
+.sp-tag.on { border-color: transparent; background: var(--gold); color: var(--ink); }
+.sp-item mark { background: color-mix(in srgb, var(--gold) 38%, transparent); color: inherit; border-radius: 2px; }
+.grab { width: 40px; height: 4px; margin: 0 auto 4px; border-radius: 2px; background: var(--line-2); }
+.sheet h2 { margin: 0; text-align: center; font: 900 21px/1.2 var(--display); letter-spacing: .04em; color: var(--accent-text); }
+.sub { margin: 0; text-align: center; font-size: 13px; color: var(--muted); }
+.cands { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.cand {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  transition: background-color .08s, border-color .08s, opacity .25s;
+}
+.cand .cn { font-weight: 700; overflow-wrap: anywhere; }
+.cand .ct { font: 500 12px var(--mono); color: var(--muted); }
+.cand.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 28%, var(--bg-2)); }
+.cand.win { border-color: var(--c); background: color-mix(in srgb, var(--c) 36%, var(--bg-2)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 32%, transparent); }
+.cand.lose { opacity: .38; }
+.lot-result { display: flex; flex-direction: column; gap: 2px; padding-block: 6px 2px; text-align: center; }
+.lot-result span { font-size: 12px; color: var(--muted); }
+.lot-result b { font: 900 23px/1.25 var(--display); color: var(--fg); overflow-wrap: anywhere; }
+.lot-result small { font: 500 12px var(--mono); color: var(--muted); }
+.sheet-actions { display: flex; gap: 8px; margin-top: 4px; }
+.sheet-actions button { flex: 1; appearance: none; padding: 13px 10px; border-radius: 12px; font: 800 15px/1 var(--body); cursor: pointer; }
+.sheet-actions button:disabled { opacity: .45; cursor: default; }
+.primary { border: 0; background: var(--gold); color: var(--ink); }
+.ghost { border: 1px solid var(--line-2); background: transparent; color: var(--fg); }
+#copyText {
+  width: 100%;
+  min-height: 200px;
+  padding: 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  background: var(--bg-2);
+  color: var(--fg);
+  font: 13px/1.65 var(--body);
+  resize: vertical;
+}
+
+/* ---------- long-press artist card (same shape as 大港撞團) ---------- */
+.lp-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--lp-scrim);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: lpFade .28s ease-out both;
+}
+.lp-card {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  z-index: 41;
+  width: min(85vw, 340px);
+  max-height: 80%;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  box-shadow: 0 12px 48px rgb(0 0 0 / .35), 0 2px 8px rgb(0 0 0 / .12);
+  transform: translate(-50%, -50%);
+  -webkit-user-select: none;
+  user-select: none;
+  animation: lpIn .35s cubic-bezier(.175, .885, .32, 1.275) both;
+}
+.lp-backdrop.out { animation: lpFade .22s ease-in reverse forwards; }
+.lp-card.out { animation: lpOut .2s ease-in forwards; }
+@keyframes lpFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes lpIn { from { transform: translate(-50%, -50%) scale(.4); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+@keyframes lpOut { from { transform: translate(-50%, -50%) scale(1); opacity: 1; } to { transform: translate(-50%, -50%) scale(.6); opacity: 0; } }
+.lp-head { display: flex; align-items: center; gap: 8px; }
+.lp-head .pill { padding: 5px 10px 4px; border-radius: 8px; font-size: 11.5px; }
+.lp-time { font: 600 13px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.lp-dur { font-size: 11.5px; color: var(--faint); }
+.lp-x {
+  appearance: none;
+  margin-left: auto;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.lp-x:hover { background: var(--line); color: var(--fg); }
+.lp-name { margin: 0; font: 700 18px/1.4 var(--body); color: var(--fg); overflow-wrap: anywhere; text-wrap: balance; }
+.lp-note { margin: -4px 0 0; font-size: 13px; line-height: 1.6; color: var(--muted); }
+/* 04 decide clashes right from the card */
+.lp-act { display: flex; flex-direction: column; gap: 8px; }
+.lp-warn { padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--alert) 12%, transparent); color: color-mix(in srgb, var(--alert) 55%, var(--fg)); font-size: 12.5px; line-height: 1.55; }
+.lp-warn b { color: var(--alert); margin-right: 4px; }
+.lp-state { font-size: 12.5px; color: var(--muted); }
+.lp-state b { color: var(--fg); }
+.lp-state .go { display: inline-block; margin-right: 6px; padding: 3px 7px 2px; border-radius: 6px; background: var(--f); color: var(--on-stage); font: 700 11px/1.3 var(--body); }
+.lp-btns { display: flex; gap: 8px; }
+.lp-btns button { flex: 1; appearance: none; padding: 11px 8px; border-radius: 11px; font: 800 13.5px/1.1 var(--body); cursor: pointer; }
+.lp-btns .primary { border: 0; background: var(--gold); color: var(--ink); }
+.lp-btns .ghost { border: 1px solid var(--line-2); background: transparent; color: var(--fg); }
+.lp-tabs { display: flex; gap: 18px; overflow-x: auto; border-bottom: 1px solid var(--line); scrollbar-width: none; }
+.lp-tabs button {
+  appearance: none;
+  flex: none;
+  margin-bottom: -1px;
+  padding: 0 0 8px;
+  border: 0;
+  border-bottom: 2.5px solid transparent;
+  background: transparent;
+  color: var(--faint);
+  font: 400 15px/1.3 var(--body);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.lp-tabs button[aria-selected="true"] { color: var(--fg); font-weight: 700; border-bottom-color: var(--fg); }
+.lp-plat {
+  display: flex;
+  padding: 2px;
+  border-radius: 11px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+}
+.lp-plat a {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 11px 4px;
+  border-radius: 9px;
+  color: var(--fg);
+  font: 600 12.5px/1 var(--body);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.lp-plat a + a { border-left: 1px solid var(--line); border-radius: 0 9px 9px 0; }
+.lp-plat a:not(:first-child):not(:last-child) { border-radius: 0; }
+.lp-plat a:first-child { border-radius: 9px 0 0 9px; }
+@media (hover: hover) { .lp-plat a:hover { background: var(--surface-2); } }
+.lp-plat a:active { background: var(--surface-2); }
+.lp-plat a span { font-size: 11px; color: var(--muted); }
+.lp-hint { margin: 0; font-size: 11.5px; color: var(--faint); text-align: center; }
+.lp-bio { display: flex; flex-direction: column; gap: 8px; margin-top: 2px; padding-top: 12px; border-top: 1px solid var(--line); }
+.lp-bio p { margin: 0; font-size: 13.5px; line-height: 1.75; color: color-mix(in srgb, var(--fg) 82%, var(--bg)); }
+.lp-bio p.lp-none { font-size: 12.5px; color: var(--faint); }
+.lp-src { font-size: 11px; color: var(--faint); }
+.lp-src a { color: var(--faint); text-decoration: underline; text-underline-offset: 2px; }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  z-index: 30;
+  max-width: calc(100% - 32px);
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--fg);
+  color: var(--bg);
+  font: 700 13px/1.3 var(--body);
+  opacity: 0;
+  transform: translate(-50%, 10px);
+  pointer-events: none;
+  transition: opacity .2s, transform .2s;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+</style>
+
+<div class="app">
+  <header class="top" id="top">
+    <h1 class="wordmark">浪人祭<small>2026</small></h1>
+    <div class="seg days" id="dayTabs" aria-label="日期">
+      <button type="button" id="day1" aria-pressed="true">DAY 1<span class="d">11/7<span class="w"> 六</span></span></button>
+      <button type="button" id="day2" aria-pressed="false">DAY 2<span class="d">11/8<span class="w"> 日</span></span></button>
+    </div>
+    <div class="tools">
+      <button type="button" class="theme-btn search-btn" id="searchBtn" aria-label="搜尋藝人">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none"/><path d="M20 20l-4.2-4.2"/></svg>
+      </button>
+      <button type="button" class="theme-btn" id="themeBtn" aria-label="切換成淺色模式">
+        <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
+        <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="next" id="nextBar" aria-live="polite" hidden></div>
+
+  <main class="view">
+    <section class="pick" id="pickView" aria-label="時間表">
+      <div class="board" id="board"><div class="grid" id="grid"></div></div>
+      <div class="coach" id="coach" hidden>
+        <p>點一下把表演加進團序，再點一次取消。長按可以看藝人介紹和試聽；變淡的是跟已選時段重疊的團。</p>
+        <button type="button" id="coachOk">知道了</button>
+      </div>
+    </section>
+    <section class="mine" id="mineView" aria-label="我的團序" hidden>
+      <div class="mine-in" id="mineIn"></div>
+    </section>
+  </main>
+
+  <nav class="tabbar" aria-label="頁面">
+    <button type="button" id="tabPick" aria-pressed="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="2.5" fill="none"/><path d="M9.5 4v16M15 4v16M3.5 9h17"/></svg>
+      排團
+    </button>
+    <button type="button" id="tabMine" aria-pressed="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="5" cy="6.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="5" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="5" cy="17.5" r="1.3" fill="currentColor" stroke="none"/></svg>
+      我的團序
+      <span class="tb-badges"><span id="tabCount" hidden>0</span><span class="tb-clash" id="tabClash" hidden>撞</span></span>
+    </button>
+  </nav>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden></div>
+<div class="sp-scrim" id="spScrim" hidden></div>
+<div class="sp" id="sp" role="dialog" aria-modal="true" aria-label="搜尋藝人" hidden>
+  <div class="sp-bar">
+    <label class="sp-field">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none"/><path d="M20 20l-4.2-4.2"/></svg>
+      <input id="spInput" type="search" placeholder="團名，中英文都可以" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" aria-label="搜尋團名">
+    </label>
+    <button type="button" class="sp-x" id="spClose">取消</button>
+  </div>
+  <div class="sp-res" id="spRes"></div>
+</div>
+<div class="lp-backdrop" id="lpBackdrop" hidden></div>
+<div class="lp-card" id="lpCard" role="dialog" aria-modal="true" aria-labelledby="lpName" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  const PX = 2; // px per minute
+  const KEY_HINT = 'vagabond26:hint-seen';
+  const ART_URL = 'https://claude.ai/artifact/7YsJYaYVysmerLRaEzPpcP';
+  const KEY_PICKS = 'vagabond26:picks';
+  const KEY_VIEW = 'vagabond26:view';
+  const KEY_THEME = 'vagabond26:theme';
+  const KEY_SEEN = 'vagabond26:seen-link';
+
+  const DAYS = {
+    1: { label: 'DAY 1', date: '11/7', dow: '六', iso: '2026-11-07', start: 12 * 60, end: 22 * 60 },
+    2: { label: 'DAY 2', date: '11/8', dow: '日', iso: '2026-11-08', start: 11 * 60, end: 22 * 60 },
+  };
+
+  const STAGES = [
+    { id: 'K', name: '鯤鯓', short: '鯤鯓', c: 'var(--k)' },
+    { id: 'J', name: '劍獅', short: '劍獅', c: 'var(--j)' },
+    { id: 'H', name: '金鶴廳', short: '金鶴廳', c: 'var(--h)' },
+    { id: 'X', name: '小嘻門', short: '小嘻門', c: 'var(--x)' },
+    { id: 'F', name: '風獅', short: '風獅', c: 'var(--f)' },
+    { id: 'R', name: '浪人塾', short: '浪人塾', c: 'var(--r)' },
+    { id: 'L', name: 'Red Bull LUKA', short: 'LUKA', c: 'var(--l)', long: true },
+  ];
+
+  // [start, end, name, note?]  — from the official timetable posted 2026/10/17
+  // Order matters: backup links encode picks by position. Append only.
+  const RAW = {
+    1: {
+      K: [['12:50','13:30','B&ZAI'], ['14:30','15:10','Been Stellar'], ['16:10','16:50','雀斑 Freckles'], ['17:50','18:30','Sunny Day Service'], ['19:30','20:10','拍謝少年 ft. 謝銘祐'], ['21:10','21:50','ano']],
+      J: [['12:00','12:40','淺堤 ft. Kim Sawol'], ['13:40','14:20','こっちのけんと Kocchi no Kento'], ['15:20','16:00','紫今'], ['17:00','17:40','血肉果汁機 Flesh Juicer'], ['18:40','19:20','理想混蛋'], ['20:20','21:00','NELL']],
+      H: [['12:50','13:30','溫室雜草'], ['14:30','15:10','Laura day romance'], ['16:10','16:50','Band Nah'], ['17:50','18:30','公館青少年'], ['19:30','20:10','君島大空'], ['21:10','21:50','無妄合作社']],
+      X: [['12:50','13:30','Vuize 王鍾惟'], ['14:30','15:10','禁藥王'], ['16:10','16:50','Andy Maker'], ['17:50','18:30','Multiverse Music'], ['19:30','20:10','Srirajah Rockers ft. Leo王'], ['21:10','21:50','0WAVE']],
+      F: [['12:00','12:40','庸俗救星'], ['13:40','14:20','薄暮'], ['15:20','16:00','RIBINGU'], ['17:00','17:40','上山'], ['18:40','19:20','粉內'], ['20:20','21:00','Tickle Tickle 癢癢']],
+      R: [['13:50','14:30','小尾巴 ft. 怡岑','音樂祭上台南不難'], ['15:10','16:00','高小糕','反叛與臣服：龐克妖女靈性昇華瑜珈塾'], ['18:30','19:30','倒車入庫 R.I.G × COMMON PEOPLE LIKE YOU'], ['20:10','21:10','SADOG × ONE CLICK STRAIGHT']],
+      L: [['16:50','17:50','DJ Drug The Beat'], ['18:30','19:30','安豬 ANJUWU'], ['20:10','21:10','高小糕']],
+    },
+    2: {
+      K: [['11:10','11:50','大象體操 ft. someshiit 山姆'], ['12:50','13:30','鄭宜農'], ['14:30','15:10','國蛋 GorDoN'], ['16:10','16:50','美秀集團'], ['17:50','18:30','孫淑媚'], ['19:30','20:10','盧廣仲']],
+      J: [['12:00','12:40','傷心欲絕'], ['13:40','14:20','溫蒂漫步 ft. JABBERLOOP'], ['15:20','16:00','我是機車少女'], ['17:00','17:40','A_Root同根生 × 三牲獻藝 ft. 柔米'], ['18:40','19:20','coldrain'], ['20:20','21:20','落日飛車']],
+      H: [['11:10','11:50','永井琳子'], ['12:50','13:30','椅子樂團'], ['14:30','15:10','DSPS'], ['16:10','16:50','呂允'], ['17:50','18:30','OGRE YOU ASSHOLE'], ['19:30','20:10','Milena']],
+      X: [['11:10','11:50','ana'], ['12:50','13:30','袁語笙'], ['14:30','15:10','ผ้าอ้อม99999'], ['16:10','16:50','C.Holly'], ['17:50','18:30','YaMon Social Club 壓滿俱樂部'], ['19:30','20:10','Azikazin Magic World']],
+      F: [['12:00','12:40','白頻率'], ['13:40','14:20','好日HoNi'], ['15:20','16:00','Iga Nana'], ['17:00','17:40','普通隊長'], ['18:40','19:20','貓膽汁'], ['20:20','21:00','INFERNAL CHAOS']],
+      R: [['13:30','14:20','童話裡都是騙人的 Nana&Eddie × A_Root同根生 智博&小綠','永續聽團計畫：實現你的聽團自由'], ['15:10','16:00','壯壯（陳彥壯）','Action！壯壯老ㄙ帶你上鏡頭演戲！'], ['18:30','19:30','Robot Swing (¾ trio) × JABBERLOOP'], ['20:30','21:30','VOOID × ZAZEN BOYS']],
+      L: [['16:50','17:50','馬摳'], ['18:30','19:30','YΣNBøï'], ['20:10','21:10','官靖剛']],
+    },
+  };
+
+  // English billing from the official English timetable (2026/10/17), for search.
+  const EN = {"拍謝少年 ft. 謝銘祐": "Sorry Youth ft. MING YU HSIEH", "淺堤 ft. Kim Sawol": "Shallow Levée ft. Kim Sawol", "紫今": "Mulasaki Ima", "理想混蛋": "Bestards", "溫室雜草": "Easy Weeds", "公館青少年": "GGteens", "君島大空": "Ohzora Kimishima", "無妄合作社": "No-nonsense Collective", "Vuize 王鍾惟": "Wang Chung Wei", "禁藥王": "Asiaboy", "Srirajah Rockers ft. Leo王": "Srirajah Rockers ft. Leo Wang", "庸俗救星": "Vulgar Savior", "薄暮": "EVENFALL", "上山": "Over The Top", "粉內": "Fi-Né", "高小糕": "Gao Xiao Gao", "倒車入庫 R.I.G × COMMON PEOPLE LIKE YOU": "Reversing into Garage × COMMON PEOPLE LIKE YOU", "大象體操 ft. someshiit 山姆": "Elephant Gym ft. someshiit", "鄭宜農": "Enno Cheng", "美秀集團": "Amazing Show", "孫淑媚": "May Sun", "盧廣仲": "Crowd Lu", "傷心欲絕": "Wayne's So Sad", "溫蒂漫步 ft. JABBERLOOP": "Wendy Wander ft. JABBERLOOP", "我是機車少女": "I'mdifficult", "A_Root同根生 × 三牲獻藝 ft. 柔米": "A_Root × Sam-Seng-Hiàn-Gē ft. Zoomie", "落日飛車": "Sunset Rollercoaster", "永井琳子": "Rinko Nagai", "椅子樂團": "The Chairs", "呂允": "Lu Yun", "袁語笙": "Yuan Yu Sheng", "ผ้าอ้อม99999": "Pa-Om 99999", "白頻率": "White Frequency", "普通隊長": "Captain Ordinary", "貓膽汁": "Cat's Bile", "童話裡都是騙人的 Nana&Eddie × A_Root同根生 智博&小綠": "whateveryousay × A_Root", "壯壯（陳彥壯）": "STRONGSTRONG", "馬摳": "Mako", "官靖剛": "King Kong Kuan"};
+  // Extra spellings people might type; matched but never shown.
+  const ALIAS = {"YΣNBøï": "YENBOI yenboy"};
+
+  // Artist bios, compiled and cross-checked from public sources on 2026/10/17: name → [bio, [source urls]]
+  const BIOS = {"Been Stellar": ["來自美國紐約的獨立搖滾樂團，曲風帶有後龐克色彩。核心成員高中時在密西根相識，後來一起到紐約大學就讀並在紐約發展。2024年透過廠牌Dirty Hit發行首張專輯《Scream from New York, NY》，也曾跟著The 1975巡演歐洲，2025年推出EP《Breakaway》。", ["https://www.pastemagazine.com/music/been-stellar/been-stellar-announces-debut-album-scream-from-new-york-ny", "https://www.qobuz.com/de-de/interpreter/been-stellar/11485158", "https://en.wikipedia.org/wiki/Been_Stellar"]], "雀斑 Freckles": ["台灣獨立流行樂團，由主唱林以樂（斑斑）領軍，歌曲以輕快俏皮的風格著稱，2017年發行專輯《不標準情人》。樂團沉寂多年，這次在浪人祭限定合體演出。", ["https://today.line.me/tw/v3/article/RB5PvJ3", "https://vocus.cc/article/671ef344fd89780001d0140b", "https://uptogo.com.tw/?p=135386"]], "Sunny Day Service": ["1992年成軍的日本搖滾樂團，核心成員是主唱兼吉他手曾我部惠一與貝斯手田中貴，1996年發行專輯《東京》。樂團2000年解散、2008年重組，2023年曾登上浪人祭，這次再度來台演出。", ["https://en.wikipedia.org/wiki/Sunny_Day_Service", "https://natalie.mu/eiga/film/192689", "https://www.marieclaire.com.tw/entertainment/music/73047"]], "拍謝少年": ["以台語演唱的台灣三人搖滾樂團，成員是吉他手維尼、貝斯手薑薑與鼓手宗翰。2012年發行首張專輯《海口味》，2017年的《兄弟沒夢不應該》拿下金曲獎最佳專輯裝幀設計獎與金音創作獎最佳搖滾專輯，最新專輯是2024年的《噪音公寓》。2026年曾受邀到美國SXSW演出。", ["https://www.sorryyouth.com", "https://streetvoice.com/sorryyouth/", "https://www.setn.com/klist/333559"]], "謝銘祐": ["台南在地的台語創作歌手，曾兩度獲得金曲獎最佳台語男歌手。這次以嘉賓身分與台語搖滾樂團拍謝少年限定同台。", ["https://zh.wikipedia.org/wiki/%E8%AC%9D%E9%8A%98%E7%A5%90", "https://n.yam.com/Article/20260615944487"]], "ano": ["日本歌手，同時也是演員，2020年起以「ano」名義展開個人音樂活動。2022年演唱動畫《鏈鋸人》片尾曲〈ちゅ、多様性。〉，2023年首次登上NHK紅白歌合戰，2025年在日本武道館舉辦個人首場公演。這次是她第一次以個人身分站上台灣大型音樂祭。", ["https://www.toysfactory.co.jp/artist/ano/bio", "https://en.wikipedia.org/wiki/Ano_(singer)", "https://ano-official.com/live_information/detail/45923"]], "淺堤": ["來自高雄的樂團，2016年起以「淺堤」為名活動，用華語和台語演唱，詞曲多由主唱兼吉他手依玲創作。首張專輯《不完整的村莊》（2020）入圍金音創作獎最佳搖滾專輯，之後發行《婚禮之途》（2021），2026年推出新專輯《沈默的鉅作》。", ["https://shallowlevee.com/#/home", "https://zh.wikipedia.org/wiki/淺堤", "https://streetvoice.com/shallowlevee/"]], "Kim Sawol": ["韓國民謠創作歌手김사월，2014年與김해원組成雙人組合，發行EP《비밀》，之後展開個人創作，發行《수잔》（2015）、《로맨스》（2018）、《헤븐》（2020）等專輯，其中《수잔》拿下韓國大眾音樂獎最佳民謠專輯。這次以嘉賓身分與淺堤同台。", ["https://ko.wikipedia.org/wiki/김사월", "https://en.wikipedia.org/wiki/Kim_Sa-wol", "https://thekmeal.com/indie-pick-kim-sawol/"]], "こっちのけんと Kocchi no Kento": ["日本創作歌手，本名菅生健人，是演員菅田將暉的弟弟。2019年開始在YouTube發表翻唱，2022年正式出道；2024年的〈はいよろこんで〉在各平台累積數億次播放，同年年底首次以歌手身分登上NHK紅白歌合戰。", ["https://en.wikipedia.org/wiki/Kocchi_no_Kento", "https://blowout.co.jp/en/?p=2145", "https://www.setn.com/news/1869448"]], "紫今": ["日本創作歌手，詞曲、編曲到MV多由本人包辦，自幼受福音與非洲音樂影響，擁有五個八度音域。2023年以單曲〈ゴールデンタイム〉開始發表作品，〈魔性の女A〉與〈ウワサのあの子〉在社群累積逾10億次播放，2025年推出首張專輯《eMulsion》，也曾為ILLIT日文單曲作詞。", ["https://www.sonymusic.co.jp/artist/mulasakiima/profile/", "https://summersonic.com/en/artist/artist-41843/", "https://magazine.weverse.io/article/view/1855?lang=e"]], "血肉果汁機 Flesh Juicer": ["2006年在台中成軍的重金屬樂團，以死核、金屬核為基底，融入嗩吶、五聲音階與廟會信仰文化，主唱GIGO頭戴的豬頭面具是招牌形象。2022年以專輯《GOLDEN太子BRO》拿下第33屆金曲獎最佳樂團。", ["https://www.thenewslens.com/article/169087", "https://www.cna.com.tw/news/amov/202207020241.aspx", "https://streetvoice.com/fleshjuicer/about/"]], "理想混蛋": ["2017年成軍的台灣民謠流行樂團，2020年首張專輯《愚者》入圍第32屆金曲獎最佳新人。代表作包括〈不是因為天氣晴朗才愛你〉，〈離開的一路上〉曾登上Spotify台灣排行榜冠軍。", ["https://en.wikipedia.org/wiki/Bestards", "https://streetvoice.com/Bestards/about/", "https://kworb.net/spotify/country/tw_weekly.html"]], "NELL": ["來自韓國首爾的另類搖滾樂團，2001年發表首張專輯，2012年專輯《Slip Away》曾登上韓國專輯榜冠軍。〈Time Walking on Memories〉是樂團最受歡迎的代表曲之一，2026年發行正規專輯《X》。", ["https://en.wikipedia.org/wiki/Nell_(band)", "https://www.qobuz.com/us-en/interpreter/nell/136589", "https://sports.khan.co.kr/en/article/202607202319007"]], "溫室雜草": ["台灣另類搖滾樂團，英文名Easy Weeds，2019年開始活動，成員包括主唱暨吉他手阿J、貝斯手正約與鼓手小康。發行過EP《春天有腳》，專輯《Intro_鞋》入圍第15屆金音創作獎最佳搖滾專輯。", ["https://streetvoice.com/easyweeds/about/", "https://www.thenewslens.com/article/164077", "https://n.yam.com/Article/20240919871795"]], "Laura day romance": ["日本三人樂團，由主唱井上花月、吉他手鈴木迅與鼓手礒本雄太組成，歌曲多由鈴木迅創作。曾發行專輯《farewell your town》、《roman candles》，2025年推出第三張專輯《合歓る - walls》與《合歓る - bridges》二部作。", ["https://lauradayromance.com/discography", "https://niewmedia.com/en/specials/lauradayromance_edsbt_wramn/", "https://ja.wikipedia.org/wiki/Laura_day_romance"]], "Band Nah": ["韓國獨立搖滾三人樂團，韓文團名나상현씨밴드，2014年由首爾大學作曲社團成員組成，隸屬唱片公司January。曾參與韓劇《柔美的細胞小將》原聲帶。", ["https://www.nownews.com/news/6876601", "https://namu.wiki/w/나상현씨밴드", "https://ko.wikipedia.org/wiki/나상현씨밴드"]], "公館青少年": ["台灣五人樂團，英文名GGteens，2021年成軍，主唱為Adam與Lucy。代表歌曲有〈要不要跟我出去走一走〉與〈一個人默默的酷〉，2026年7月在Zepp New Taipei舉辦專場《青少年之後》，吸引約2000名樂迷。", ["https://streetvoice.com/ggteens_/about/", "https://today.line.me/tw/v3/article/5y1Q7jr"]], "君島大空": ["東京出身的創作歌手暨吉他手，1995年生，2019年以EP《午後の反射光》正式展開個人活動。2023年接連推出專輯《映帶する煙》與《no public sounds》，2026年發行新專輯《花落知多少》。", ["https://www.fujipacific.co.jp/artists/artists/post_23.html", "https://ja.wikipedia.org/wiki/君島大空", "https://open.spotify.com/artist/5rjahCZtY8h4y2EHCnpgtQ"]], "無妄合作社": ["台灣搖滾樂團，成員包括郭力瑋與謝碩元。2021年EP《No Mercy》入圍第33屆金曲獎最佳樂團，2024年發行專輯《開往天堂的海盜船》。", ["https://www.thenewslens.com/article/169087", "https://en.wikipedia.org/wiki/33rd_Golden_Melody_Awards", "https://streetvoice.com/nononsensecollective/"]], "Vuize 王鍾惟": ["台灣客語饒舌創作者，以客語結合嘻哈與多元節奏。2022 年發行首張 EP《GO MODE》，入圍第 34 屆金曲獎最佳客語歌手，也曾經由全球客家流行音樂大賽嶄露頭角；2024 年推出單曲〈Inception〉。", ["https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第四波演出陣容", "https://www.marieclaire.com.tw/entertainment/music/72685", "https://liftedasia.com/article/vuize-inception"]], "禁藥王": ["台灣饒舌歌手，也以 Asiaboy 之名活動，曾與 Lizi 栗子搭檔合作。近期單曲〈100%〉是浪人祭官方介紹選出的代表曲。", ["https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第四波演出陣容", "https://today.line.me/tw/v3/article/QeQNr3", "https://www.marieclaire.com.tw/entertainment/music/80379"]], "Andy Maker": ["DSPS 貝斯手鐘奕安以 Andy Maker 為名推出的個人音樂計畫，浪人祭官方介紹選出的代表曲是〈山裡面〉。", ["https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第六波演出陣容", "https://www.setn.com/news/1901980", "https://streetvoice.com/dsps/"]], "Multiverse Music": ["台灣嘻哈團體，核心成員為 Macdella、EyeballRay 與 SheATH，三人都曾參加饒舌選秀節目《大嘻哈時代》。近期作品〈NONSTOP 2026〉為浪人祭官方介紹選出的代表曲。", ["https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第四波演出陣容", "https://www.taiwannews.com.tw/zh/news/4453025", "https://today.line.me/tw/v2/article/wnWwqR"]], "Srirajah Rockers": ["來自泰國東部的雷鬼樂團，以 roots reggae 為核心並融入大量 Dub 元素，是泰國雷鬼／Dub 圈具代表性的樂團之一。這次在浪人祭與金曲歌王 Leo王限定合演。", ["https://www.esplanade.com/whats-on/festivals-and-series/baybeats/2026/srirajah-rockers", "https://www.houyhnhnm.jp/en/news/1120140/", "https://www.setn.com/news/1901980"]], "Leo王": ["台灣饒舌歌手，本名王之佑，曾就讀台大社會系，曾任搖滾樂團巨大的轟鳴主唱，也與春艷組成嘻哈雙人組夜貓組，隸屬顏社。2019 年以專輯《無病呻吟有情抒情》拿下第 30 屆金曲獎最佳國語男歌手。", ["https://www.cna.com.tw/news/firstnews/201906295007.aspx?topic=1662", "https://www.mirrormedia.mg/story/amp/20190712ent009", "https://kao-inc.com/artist.php"]], "0WAVE": ["南韓五人另類 R&B／嘻哈團體，成員為 VIIN、yukon、Aiboy、MODS、wooseojun，隸屬歌手 Colde 創立的廠牌 PYRAT。2022 年 12 月以 EP《off the wall》出道，代表曲〈with me〉；本次由韓國文化產業振興院（KOCCA）推薦來台。", ["https://www.vagabondfest.com/blog/posts/-2026-浪人祭｜第七波演出陣容", "https://rollingstoneindia.com/song-you-need-to-know-0wave-with-me", "https://sports.khan.co.kr/article/202504022133003/"]], "庸俗救星": ["2020 年底成軍的台灣四人另類搖滾樂團，成員為阿雷、晧宇、家耘、允祈，曲風融合 R&B、放克、迷幻與 City Pop。2021 年發行首張專輯《末日倒數的庸俗週記》，2025 年推出《Little Battle》，〈Marry Me〉則以求婚為題。", ["https://streetvoice.com/VulgarSavior/", "https://www.vulgarsavior.com", "https://realsound.jp/2024/05/post-1652597.html"]], "薄暮": ["來自台中的四人金屬樂團，英文團名 EVENFALL。2019 年以迷你專輯《State of Mind》出道，2025 年發行首張概念專輯《第二星系》，2026 年陸續推出單曲〈千呎之下〉與〈一事無成的勇氣〉。", ["https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第三波演出陣容", "https://streetvoice.com/evenfallelapsed/", "https://today.line.me/tw/v3/article/3NYpe0W"]], "RIBINGU": ["由 Yu 與 Melet 組成的客語雙人組合，團名源自 Living（客廳），以客語結合日系流行等曲風。〈Know You So Well〉獲 2025 全球客家流行音樂大賽第三名，2026 年 6 月發行首張專輯《Living》，收錄 12 首歌。", ["https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第五波演出陣容", "https://today.line.me/tw/v3/article/5y1JjQv", "https://music.apple.com/tw/album/living/6783596675"]], "上山": ["上山 Over The Top 是獨立搖滾樂團，作品包括〈得到平靜 Inner Peace〉，並曾登上 2026 年諸羅搖滾音樂祭。", ["https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第三波演出陣容", "https://streetvoice.com/overthetop_officials/", "https://www.housefeel.com.tw/article/音樂祭-台灣祭-大港開唱-獨立樂團/"]], "Tickle Tickle 癢癢": ["Tickle Tickle 癢癢是走荒誕路線的台式日搖樂團，常以搞笑音效與戲劇化唱腔入歌。2025 年初推出抒情單曲〈神岡〉，同年 3 月發行首張專輯《成人料理亭》。", ["https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第三波演出陣容", "https://today.line.me/tw/v2/article/7N7Qp6P", "https://streetvoice.com/tickle2tw/about/"]], "倒車入庫 R.I.G": ["倒車入庫 R.I.G（Reversing into Garage）是來自台北的車庫搖滾樂團，主唱為里鳳 Lyvon，歌詞多取材自日常生活。作品包括專輯《未履莫勸》與歌曲〈門禁〉。", ["https://www.vagabondfest.com/blog/posts/2026-浪人祭｜樂團大車拚-b2b-stage", "https://streetvoice.com/RIGband/", "https://today.line.me/tw/v3/article/oqYzW1N"]], "COMMON PEOPLE LIKE YOU": ["COMMON PEOPLE LIKE YOU 是來自泰國的搖滾樂團，曲風帶有後龐克色彩。本屆浪人祭在「樂團大車拚」與台北車庫搖滾樂團倒車入庫 R.I.G 同台演出。", ["https://www.vagabondfest.com/blog/posts/2026-浪人祭｜樂團大車拚-b2b-stage", "https://younevergivemeyourmusic.substack.com/p/the-joke-is-on-us-2024-common-people"]], "SADOG": ["SADOG 是龐克搖滾樂團，曲風粗獷中帶有柔情。2022 年發行專輯《十週年》，作品還包括單曲〈我是海浪〉。", ["https://www.vagabondfest.com/blog/posts/2026-浪人祭｜樂團大車拚-b2b-stage", "https://streetvoice.com/SADOG/", "https://www.last.fm/music/SADOG/+albums"]], "ONE CLICK STRAIGHT": ["ONE CLICK STRAIGHT 是來自菲律賓的獨立樂團，由 Marquez 三兄弟與吉他手 Joel Cartera 組成，曲風融合另類搖滾與電子元素。2018 年發行專輯《The Midnight Emotion》，2023 年推出同名專輯，人氣歌曲有〈MRT〉。", ["https://www.vagabondfest.com/blog/posts/2026-浪人祭｜樂團大車拚-b2b-stage", "https://en.wikipedia.org/wiki/One_Click_Straight", "https://www.therealcosmos.com/?p=4370"]], "高小糕": ["高小糕是台灣龐克音樂人，曾任白目樂隊主唱，參與該團首張專輯《Kiss Your Eyes》。現以「龐克妖女」之名個人創作，作品常觸及女性情慾，同時也是瑜珈老師。", ["https://www.vagabondfest.com/blog/posts/2026-浪人祭｜仙手指鼓・刮盤轉運", "https://www.hk01.com/article/278881/高小糕-的9-1-歌詞雞掰穿著雞掰-要像-bikini-kill-無不挑釁才行", "https://www.taipeitimes.com/News/feat/archives/2010/11/28/2003489610"]], "大象體操": ["來自高雄的三人數學搖滾樂團，2012 年成立，成員為貝斯手張凱婷、吉他手張凱翔與鼓手涂嘉欽。2019 年獲金音獎最佳樂團，2024 年以專輯《世界 World》拿下第 35 屆金曲獎評審團獎；休團一段時間後，今年以新單曲〈公路 Highway〉回歸。", ["https://elephantgym.co/bio/", "https://en.wikipedia.org/wiki/Elephant_Gym", "https://www.setn.com/klist/144678"]], "someshiit 山姆": ["台灣饒舌創作者，以臥室饒舌結合樂團編制的自省風格受到注意，早期作品〈那些勸我別抽菸的人都死了〉累積超過五百萬次觀看。2024 年發行首張專輯《愚公》，並以此拿下第 36 屆金曲獎最佳新人與金音獎最佳嘻哈專輯。", ["https://www.thenewslens.com/article/254767", "https://www.billboardlivetaipei.tw/ko/events/someshiit2026/", "https://en.wikipedia.org/wiki/36th_Golden_Melody_Awards"]], "鄭宜農": ["台灣創作歌手，2007 年主演電影《夏天的尾巴》並入圍金馬獎最佳新人，2011 年發行首張專輯《海王星》。2022 年推出首張台語專輯《水逆》，拿下第 34 屆金曲獎最佳台語女歌手與最佳台語專輯；2025 年的台語專輯《圓缺》也入圍第 37 屆金曲獎。", ["https://www.mirrormedia.mg/story/20250625star001", "https://en.wikipedia.org/wiki/Enno_Cheng", "https://www.nownews.com/news/6850594"]], "國蛋 GorDoN": ["台南出身的饒舌歌手，高中時期就組過嘻哈團體竹幫，2007 年加入嘻哈廠牌顏社 KAO!INC，此後一直是旗下歌手。發表過多張混音帶，作品包括〈嘻哈囝〉。", ["https://kao-inc.com/artist.php", "https://en.wikipedia.org/wiki/GorDoN"]], "美秀集團": ["來自嘉義的樂團，2016 年成軍，以自製的低科技實驗樂器搭配搖滾編制，混合搖滾、民謠與電子聲響。發行過《電火王》、《多色寶山大王》與同名專輯，和盧廣仲合作的〈手機錢包鑰匙菸〉入圍第 36 屆金曲獎年度歌曲；今年 5 月在嘉義舉辦十週年演唱會。", ["https://www.nownews.com/news/6700252", "https://en.wikipedia.org/wiki/36th_Golden_Melody_Awards", "https://www.thenewslens.com/article/265860"]], "孫淑媚": ["台灣台語流行歌手，2005 年拿下金曲獎最佳台語女演唱人獎，媒體常以「台語金曲歌后」稱呼她。除了唱歌，也跨足戲劇演出。", ["https://zh.wikipedia.org/wiki/%E5%AD%AB%E6%B7%91%E5%AA%9A", "https://en.wikipedia.org/wiki/Sun_Shu-mei", "https://www.nownews.com/news/6378845"]], "盧廣仲": ["台南出身的創作歌手，2008 年發行首張專輯《100種生活》，隔年拿下第 20 屆金曲獎最佳新人與最佳作曲人。2017 年主演影集《花甲男孩轉大人》並演唱主題曲〈魚仔〉；今年以專輯《HeartBreakFast 傷心早餐店》入圍第 37 屆金曲獎最佳華語男歌手。", ["https://en.wikipedia.org/wiki/Crowd_Lu", "https://www.bandwagon.asia/articles/crowd-lu-55fec2a3-45a1-4e0e-8f49-aede87089afa", "https://www.nownews.com/news/6850594"]], "傷心欲絕": ["2008 年成立的台灣搖滾樂團，主唱為許正泰，作品帶有龐克與另類搖滾色彩。2013 年一度停團、2015 年重新啟動，2019 年專輯《遜到簡直是個藝術品》入圍第 31 屆金曲獎最佳樂團，2023 年再推出《無名氏敬上》。", ["https://zh.wikipedia.org/wiki/%E5%82%B7%E5%BF%83%E6%AC%B2%E7%B5%95", "https://packer.streetvoice.com/726", "https://blow.streetvoice.com/67742/"]], "溫蒂漫步": ["台灣獨立樂團，2020 年發行首張專輯《Spring Spring》，2026 年與日本俱樂部爵士樂團 JABBERLOOP 合作推出單曲〈Floating City〉，本屆浪人祭也以「溫蒂漫步 ft. JABBERLOOP」的組合同台演出。", ["https://global.hk01.com/艺文/60380537/台湾独立乐团温蒂漫步宣布-将于圣诞节正日来港于麦花臣献唱", "https://n.yam.com/Article/20260708861679"]], "JABBERLOOP": ["2004 年在京都成軍的日本俱樂部爵士樂團，之後以東京為據點活動。2024 年推出重新錄製歷年作品的專輯《NOW》迎接成軍 20 週年，2026 年與台灣樂團溫蒂漫步合作單曲〈Floating City〉。", ["https://ja.wikipedia.org/wiki/JABBERLOOP", "https://ototoy.jp/_/default/p/1812909"]], "我是機車少女": ["來自台北的實驗流行樂團，成員為元耕、芷瑄、沂紳與仲林，特色是男女雙主唱。專輯《I'mdifficult》拿下金音獎最佳另類流行專輯，樂團也入選韓國《DAZED KOREA》亞洲100名單，並曾赴日本、韓國巡演。最新單曲是〈Flipper〉。", ["https://www.marieclaire.com.tw/entertainment/music/83775/imdifficult-band", "https://www.setn.com/news/1889417", "https://www.thenewslens.com/article/244049"]], "A_Root同根生": ["2015年在宜蘭成軍的跨界樂團，用笙、中阮、柳琴等傳統樂器搭配爵士與電子聲響。2022年專輯《邊緣轉生術》以台灣鬼怪傳說為題，入圍第34屆金曲獎最佳樂團、年度專輯等四項，並拿下最佳專輯製作人獎。2025年推出第三張專輯《不小心降臨了》。", ["https://www.cna.com.tw/news/acul/202406230126.aspx", "https://www.windmusiclabel.com/post/a_root-a-time-travel-band-shuttling-between-the-modern-and-the-past-as-storytellers", "https://en.wikipedia.org/wiki/34th_Golden_Melody_Awards"]], "三牲獻藝": ["由柯智豪、鄭各均（Sonic Deadhorse）和VJ邱智群組成的台灣電子音樂團體，把台灣廟宇文化與採集到的聲音融進電子音樂。2024年在巴黎文化奧運台灣館演出，以已故團員fish.the（黃凱宇）的作品為主軸向他致敬。", ["https://newtalk.tw/news/view/2024-07-30/930220", "https://www.marieclaire.com.tw/entertainment/story/80957", "https://today.line.me/tw/v3/article/RB5PvJ3"]], "coldrain": ["2007年在日本名古屋成軍的五人搖滾樂團，曲風以後硬蕊、金屬蕊為主，成軍至今陣容沒有變動，並主辦BLARE FEST.音樂祭。代表專輯有《The Revelation》、《Nonnegative》等。", ["https://coldrain.jp/", "https://en.wikipedia.org/wiki/Coldrain", "https://koubo.jp/article/53826"]], "落日飛車": ["來自台北、由主唱曾國宏帶領的五人樂團，音樂融合爵士、合成器流行、City Pop與迷幻搖滾。2016年作品《Jinji Kikko》裡的〈My Jinji〉在國際走紅，2023年成為第一組登上美國Coachella的台灣樂團。2021年與2026年兩度拿下金曲獎最佳樂團，最新專輯是2025年的《Quit Quietly》。", ["https://en.wikipedia.org/wiki/Sunset_Rollercoaster", "https://www.taiwannews.com.tw/zh/news/4274230", "https://www.thenewslens.com/article/268930"]], "永井琳子": ["來自日本的女性歌手，透過浪人祭與日本SYNCHRONICITY合辦的日本藝人徵選，取得2026年浪人祭的演出資格。個人作品有〈Halo〉、〈恋の面影〉與〈雨宿らず〉等單曲。", ["https://vagabondfestival.bitfan.id", "https://www.ticketjam.jp/tickets/nagai-rinko"]], "椅子樂團": ["由裘詠靖、陳仲穎與孫伯元組成的台灣三人樂團，三人是高中吉他社的同學，用復古旋律結合民謠與迷幻搖滾。2016年發行首張專輯《Cheers!Land》，2018年的《Lovely Sunday 樂芙莉聖代》拿下第30屆金曲獎最佳演唱組合。2025年專輯《愛的對白》再度入圍第37屆金曲獎同一獎項。", ["https://zh.wikipedia.org/wiki/椅子樂團", "https://www.storm.mg/article/11144155", "https://en.wikipedia.org/wiki/30th_Golden_Melody_Awards"]], "DSPS": ["2014年在台北成軍的獨立樂團，由主唱曾稔文帶領。第二張專輯《yolk on rice》由日本Big Romantic Records發行黑膠，樂團也為此前往大阪、名古屋、東京巡演。", ["https://www.dspstw.com/", "https://www.bigromanticrecords.com/single-post/dsps_yolkonrice", "https://streetvoice.com/dsps/"]], "呂允": ["2000年出生的台灣創作歌手，2023年加入經紀公司添翼。同年4月發行實體單曲〈你睡了之後〉，其他作品還有〈夏夕夏景〉、〈到底為什麼我會暈成這樣〉。", ["https://zh.wikipedia.org/wiki/呂允", "https://www.chinatimes.com/realtimenews/20230214004309-260404?chdtv"]], "OGRE YOU ASSHOLE": ["來自日本長野的搖滾樂團，2005 年發行首張專輯，曲風以迷幻搖滾為主。《homely》（2011）、《100年後》（2012）、《ペーパークラフト》（2014）由石原洋製作，2010 年起活動也延伸到海外；最新錄音室專輯是 2024 年的《自然とコンピューター》。", ["https://ja.wikipedia.org/wiki/OGRE_YOU_ASSHOLE", "https://ogreyouasshole.com/profile/", "https://ototoy.jp/_/default/p/2277135"]], "Milena": ["南韓創作歌手兼製作人，畢業於首爾大學音樂學院，自幼學習小提琴與古典音樂。2021 年 11 月以單曲〈Night Train〉在廠牌 WAVY 出道，是該廠牌首位女性藝人，曲風結合 R&B 與爵士；2026 年 6 月發行 EP《Mongolian spot》。", ["https://namu.moe/w/Milena", "https://www.elle.co.kr/article/66176", "https://sports.khan.co.kr/en/article/202606121824007"]], "ana": ["創作者 ana 的作品融入客語演唱，已發行專輯《the final girl》，並推出單曲〈1111〉的音樂錄影帶。", ["https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第五波演出陣容", "https://www.youtube.com/watch?v=BzHSlvmTjKQ", "https://streetvoice.com/grlonfire666/songs/834360/"]], "ผ้าอ้อม99999": ["以東京為據點的樂團，自稱曲風為「Junk Pop」，以電子節拍搭配 CG 質感的影像。2026 年發行 EP《pop slop》；這次是浪人祭與東京 SYNCHRONICITY 音樂祭合作跨國徵選的入選者。", ["https://www.youtube.com/watch?v=sn0Hvbkx9LE", "https://www.setn.com/news/1901980", "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第六波演出陣容"]], "C.Holly": ["台灣饒舌歌手，曾參加饒舌對戰《地下八英里》，並透過選秀節目《菱格世代 DD52》以女團成員身分出道，之後也參加《大嘻哈時代 2》。歌曲〈三不娶〉在網路上爆紅。", ["https://www.marieclaire.com.tw/entertainment/music/92394", "https://www.mirrormedia.mg/story/20221025ent001", "https://www.marieclaire.com.tw/entertainment/story/72014"]], "YaMon Social Club 壓滿俱樂部": ["來自屏東恆春的樂團，曲風以雷鬼律動為主，歌曲多取材自日常生活，代表作包括〈怪怪的人都在那邊〉。", ["https://streetvoice.com/YaMonSocialClub/", "https://www.youtube.com/watch?v=YYGtbb9Fmd0", "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第五波演出陣容"]], "Azikazin Magic World": ["以首爾為據點的創作團體，作品橫跨音樂、角色動畫與遊戲，音樂以 drum and bass（鼓打貝斯）等電子節拍為主。團名取自韓文「아직까진」（意為「到目前為止」），2026 年 1 月發行專輯《Memory Overdrive》。", ["https://rollingstonejapan.com/articles/detail/45096/1/1/1", "https://design.co.kr/article/123017/", "https://open.spotify.com/album/2S4rRUJ3l7IIKbSeDPCJGM"]], "白頻率": ["來自台南的獨立搖滾樂團，作品以清晰的旋律為主軸，代表曲包括〈迷航〉〈浪花〉。2025 年 10 月發行 EP《日全蝕》。", ["https://streetvoice.com/whitefrequency2016/", "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第六波演出陣容", "https://www.setn.com/news/1901980"]], "好日HoNi": ["現代客家民謠樂團，由主唱憶慈、吉他手美帆與大提琴手之之組成，以客語書寫生活記憶。2024 年發行同名專輯《好日HoNi》，也與三峽國小合作客語校歌〈像山共樣〉。", ["https://www.nownews.com/news/6507049", "https://today.line.me/tw/v3/article/gz5JwKN", "https://www.cna.com.tw/news/acul/202511060233.aspx"]], "Iga Nana": ["新生代創作歌手，2026年6月30日發行EP《Hi》，並為〈Good Together〉推出官方MV；浪人祭官方介紹也以這首歌作為她的代表曲。", ["https://www.vagabondfest.com/blog/posts/-2026-浪人祭｜第七波演出陣容", "https://www.youtube.com/watch?v=nhwcxVAX3W4", "https://open.spotify.com/album/6JDYIbesRVJDMSD9tYmPwN"]], "普通隊長": ["來自高雄的龐克樂團，2020年發行EP《愛與勇氣》，2024年推出首張專輯、同名的《普通隊長》，也曾登上滅火器主辦的火球祭。", ["https://captainpu.ryzm.jp/biography", "https://www.thenewslens.com/article/195508", "https://n.yam.com/Article/20260708861679"]], "貓膽汁": ["台灣搖滾樂團，作品常帶戲謔幽默的色彩。2025年以專輯《多汁》中的〈失望〉拿下第16屆金音獎最佳搖滾歌曲，同屆也以《多汁》入圍最佳樂團獎。", ["https://www.thenewslens.com/article/260462", "https://www.mirrormedia.mg/story/20251102ent002", "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜第六波演出陣容"]], "INFERNAL CHAOS": ["2004年成軍的台灣金屬樂團，由閃靈（ChthoniC）吉他手Jesse Liu創立。2021年發表單曲〈Steel Gavel of judgement〉的官方影片，也是浪人祭介紹中的代表曲。", ["https://uniteasia.org/taiwan-metal-band-infernal-chaos-feat-chthonic-member-announce-hong-kong-date", "https://www.invisibleoranges.com/?p=47102", "https://www.vagabondfest.com/blog/posts/-2026-浪人祭｜第七波演出陣容"]], "Robot Swing (¾ trio)": ["2019年成軍的台灣四人樂團，融合Funk、R&B與爵士。首張專輯《SYSTEM BOOTING...》入圍2023年金曲獎最佳樂團，2025年以現場專輯《IS IT ALIVE?》入圍金音獎最佳樂團。本場與日本爵士樂團JABBERLOOP合演。", ["https://www.clockenflap.com/robotswing", "https://www.cna.com.tw/news/asoc/202306300139.aspx", "https://www.vagabondfest.com/blog/posts/2026-浪人祭｜樂團大車拚-b2b-stage"]], "VOOID": ["由洪申豪領軍的台灣樂團。2026年9月先後在東京duo MUSIC EXCHANGE與台北Legacy和ZAZEN BOYS合辦「ZAZEN to VOOID」聯演專場，浪人祭這場是兩團再度同台。", ["https://mukaishutoku.com/main.html", "https://zh.wikipedia.org/wiki/洪申豪", "https://airheadrecords.kktix.cc/events/zazentovooid"]], "ZAZEN BOYS": ["2003年由前NUMBER GIRL主唱向井秀徳在東京組成的日本搖滾樂團，以複雜節奏與現場演出著稱。2024年1月發行睽違12年的專輯《らんど》，同年10月首度在日本武道館舉辦單獨公演。", ["https://en.wikipedia.org/wiki/Zazen_Boys", "https://www.thefirsttimes.jp/?p=852518", "https://natalie.mu/music/news/597238"]], "官靖剛": ["台灣搖滾樂團傷心欲絕（Wayne's So Sad）的吉他手，傷心欲絕曾入圍金曲獎最佳樂團。這次以個人身分登上浪人祭的DJ與指鼓舞台。", ["https://www.vagabondfest.com/blog/posts/2026-浪人祭｜仙手指鼓・刮盤轉運", "https://zh.wikipedia.org/wiki/傷心欲絕"]], "柔米": ["台灣客語創作歌手，英文名 Zoomie。2024年以專輯《鎮妹 Zhin' Moi》拿下第35屆金曲獎最佳客語歌手獎。", ["https://www.gvm.com.tw/article/113736", "https://en.wikipedia.org/wiki/35th_Golden_Melody_Awards", "https://www.marieclaire.com.tw/entertainment/music/80379"]]};
+  // Artist pages checked to be the right act: name → { spotify, apple, youtube }. Missing = not shown.
+  const LINKS = {"Been Stellar": {"spotify": "https://open.spotify.com/artist/3ep1YmatQ8L9UKCGYiJNBh","apple": "https://music.apple.com/tw/artist/been-stellar/1089027566","youtube": "https://www.youtube.com/channel/UCF8MSlk6cm27dndAOJDJE8w"},"Sunny Day Service": {"youtube": "https://www.youtube.com/channel/UCWBzqqjqBtDcncKqIdHPZ0Q"},"拍謝少年": {"spotify": "https://open.spotify.com/artist/6c4IBMTcnFDhsKHXNSBBvp","apple": "https://music.apple.com/tw/artist/%E6%8B%8D%E8%AC%9D%E5%B0%91%E5%B9%B4/546492743","youtube": "https://www.youtube.com/channel/UCThJUmGlTv48y8vdnAPOJSg"},"ano": {"spotify": "https://open.spotify.com/artist/7Il739Q5W4yJUYC3hfnX6z","apple": "https://music.apple.com/tw/artist/ano/1529999013","youtube": "https://www.youtube.com/@anochuru"},"淺堤": {"spotify": "https://open.spotify.com/artist/6xDRh6bnmn1CQhRUntBka9","apple": "https://music.apple.com/tw/artist/%E6%B7%BA%E5%A0%A4/1301801759","youtube": "https://www.youtube.com/@ShallowLevee"},"Kim Sawol": {"spotify": "https://open.spotify.com/artist/08J6v4qHZz06ua0qAicWmE"},"こっちのけんと Kocchi no Kento": {"spotify": "https://open.spotify.com/artist/3qQKrWwcqJlE4OS4e1ox7x","apple": "https://music.apple.com/tw/artist/kocchi-no-kento/1639972219","youtube": "https://www.youtube.com/channel/UC1laSZHo_6VBXU9FmfGNwFA"},"紫今": {"youtube": "https://www.youtube.com/@mulasakiima"},"血肉果汁機 Flesh Juicer": {"youtube": "https://www.youtube.com/@FleshJuicer"},"理想混蛋": {"spotify": "https://open.spotify.com/artist/0Awqm7GXGiBp8fJNGvywra","youtube": "https://www.youtube.com/channel/UC5AUnQFb4CUE2c4rua_zJKw"},"NELL": {"spotify": "https://open.spotify.com/artist/5WY88tCMFA6J6vqSN3MmDZ"},"Laura day romance": {"youtube": "https://www.youtube.com/@lauradayromance"},"君島大空": {"spotify": "https://open.spotify.com/artist/5rjahCZtY8h4y2EHCnpgtQ","apple": "https://music.apple.com/tw/artist/%E5%90%9B%E5%B3%B6%E5%A4%A7%E7%A9%BA/1432423769","youtube": "https://www.youtube.com/channel/UC5mR8Acvi2IbQQyyUBYwzsA"},"Vuize 王鍾惟": {"youtube": "https://www.youtube.com/@vuize_ogm"},"禁藥王": {"youtube": "https://www.youtube.com/channel/UCVi4XNkYPtNpWuk48WfSnFA"},"Andy Maker": {"youtube": "https://www.youtube.com/channel/UCkTiUGYjyrE9qlqc65LhHdw"},"Multiverse Music": {"youtube": "https://www.youtube.com/channel/UCIj79LT0SXxu8vk331qG2Ww"},"Srirajah Rockers": {"spotify": "https://open.spotify.com/artist/6H9q7tvRDibAPvjkIiFaEX","youtube": "https://www.youtube.com/@SrirajahRockers"},"Leo王": {"spotify": "https://open.spotify.com/artist/5Zn94mKQQYVZUvhiIXeXdP","youtube": "https://www.youtube.com/@LeoWangBoat"},"0WAVE": {"apple": "https://music.apple.com/us/artist/0wave/1658931288","youtube": "https://www.youtube.com/@0WAVE"},"庸俗救星": {"spotify": "https://open.spotify.com/artist/0yxKjRdHdfEZvsypUkROaq","apple": "https://music.apple.com/tw/artist/%E5%BA%B8%E4%BF%97%E6%95%91%E6%98%9F/1588200181","youtube": "https://www.youtube.com/@vulgarsavior"},"薄暮": {"spotify": "https://open.spotify.com/artist/778rPzhc5oSLtFOeA3SfyF","apple": "https://music.apple.com/tw/artist/%E8%96%84%E6%9A%AE/1484428220","youtube": "https://www.youtube.com/@evenfall_tw"},"RIBINGU": {"apple": "https://music.apple.com/tw/artist/ribingu/1804056518","youtube": "https://www.youtube.com/@RIBINGU2024"},"上山": {"youtube": "https://www.youtube.com/channel/UCyFB9v1KlC6n1NlvR5ntCmQ"},"粉內": {"spotify": "https://open.spotify.com/artist/6WcKBIz81gaWyTuoGtnTlQ","youtube": "https://www.youtube.com/channel/UCGFL4F6o9U8PoFBL5X2NRZQ"},"Tickle Tickle 癢癢": {"youtube": "https://www.youtube.com/@tickletickletw"},"SADOG": {"youtube": "https://www.youtube.com/channel/UCUw4r2Onp5u-Ec7OJp_creQ"},"ONE CLICK STRAIGHT": {"spotify": "https://open.spotify.com/artist/457BGAQIRpxlvY5gcbDjUQ","apple": "https://music.apple.com/tw/artist/one-click-straight/1052981999","youtube": "https://www.youtube.com/@OneClickStraight"},"高小糕": {"youtube": "https://www.youtube.com/@gaoxiaogao3851"},"大象體操": {"spotify": "https://open.spotify.com/artist/2rqNUPgkBgbhcRabUQ5C9g","apple": "https://music.apple.com/tw/artist/elephant-gym/798537066","youtube": "https://www.youtube.com/channel/UCyCarLRHBVJYXJ3L2uuEEQg"},"someshiit 山姆": {"apple": "https://music.apple.com/tw/artist/someshiit-%E5%B1%B1%E5%A7%86/1749253875","youtube": "https://www.youtube.com/channel/UCkDUey2MDQYQRY8nDaK78ow"},"鄭宜農": {"apple": "https://music.apple.com/tw/artist/%E9%84%AD%E5%AE%9C%E8%BE%B2/981821881"},"國蛋 GorDoN": {"spotify": "https://open.spotify.com/artist/4L4ArdVJzY6Uxbd82fJjqu"},"美秀集團": {"spotify": "https://open.spotify.com/artist/3n16EAnJtz6SZGx2zJssrI","apple": "https://music.apple.com/tw/artist/%E7%BE%8E%E7%A7%80%E9%9B%86%E5%9C%98/1315577977","youtube": "https://www.youtube.com/@amazingshowtw"},"盧廣仲": {"apple": "https://music.apple.com/tw/artist/%E7%9B%A7%E5%BB%A3%E4%BB%B2/477669285"},"傷心欲絕": {"apple": "https://music.apple.com/tw/artist/%E5%82%B7%E5%BF%83%E6%AC%B2%E7%B5%95/1257006599"},"溫蒂漫步": {"apple": "https://music.apple.com/tw/artist/%E6%BA%AB%E8%92%82%E6%BC%AB%E6%AD%A5/1537365067","youtube": "https://www.youtube.com/@wendywanderofficial"},"JABBERLOOP": {"apple": "https://music.apple.com/tw/artist/jabberloop/259530284","youtube": "https://www.youtube.com/channel/UCujb-EoaWLlvMwXcTbWodvQ"},"我是機車少女": {"spotify": "https://open.spotify.com/artist/00RNgtcAow7k32rk5KiUcl","youtube": "https://www.youtube.com/channel/UCdRCQhf8TulRBn_ZeyXLztw"},"A_Root同根生": {"apple": "https://music.apple.com/tw/artist/a-root-%E5%90%8C%E6%A0%B9%E7%94%9F/1846313473","youtube": "https://www.youtube.com/channel/UCLdvHDARXmt2gSqHCqUH1Ig"},"coldrain": {"spotify": "https://open.spotify.com/artist/4pCVGaLWxDe4d8bsjsnmUM","apple": "https://music.apple.com/tw/artist/coldrain/294914748","youtube": "https://www.youtube.com/@coldrain_official"},"落日飛車": {"spotify": "https://open.spotify.com/artist/7BqRcZsHYYQeqMAOp7e532","apple": "https://music.apple.com/tw/artist/%E8%90%BD%E6%97%A5%E9%A3%9B%E8%BB%8A/1230293264","youtube": "https://www.youtube.com/@SunsetRollercoaster"},"永井琳子": {"spotify": "https://open.spotify.com/artist/6lKa4ZKIvgDWO8z87DBa8r","youtube": "https://www.youtube.com/channel/UCBSCGkkx4nJQKhJ5Y8RBxcg"},"椅子樂團": {"spotify": "https://open.spotify.com/artist/4IlxI05VmVDx8ShdgKEnLK","apple": "https://music.apple.com/tw/artist/the-chairs/1096054130","youtube": "https://www.youtube.com/@chairchairmusic"},"DSPS": {"youtube": "https://www.youtube.com/channel/UCcQsz2boxIXHKoZweIzMymw"},"OGRE YOU ASSHOLE": {"spotify": "https://open.spotify.com/artist/0X9vdekJ6sIKcUvwIgVsjW","apple": "https://music.apple.com/tw/artist/ogre-you-asshole/264694006","youtube": "https://www.youtube.com/channel/UCvfz2XrJ_TjR5XVj1N3_cIQ"},"Milena": {"spotify": "https://open.spotify.com/artist/2ODok2cPMF1Z1gZetfaL6n","youtube": "https://www.youtube.com/@wavymilena"},"ana": {"youtube": "https://www.youtube.com/@grlonfire666"},"袁語笙": {"youtube": "https://www.youtube.com/channel/UCSyH51l_xCVqkvG8WDxoEaA"},"ผ้าอ้อม99999": {"spotify": "https://open.spotify.com/artist/5tpfTW6vWImBBePPUQgAq8","apple": "https://music.apple.com/tw/artist/%E0%B8%9C-%E0%B8%B2%E0%B8%AD-%E0%B8%AD%E0%B8%A199999/1721492085","youtube": "https://www.youtube.com/@pa_o_mu_99999"},"YaMon Social Club 壓滿俱樂部": {"youtube": "https://www.youtube.com/channel/UCGX612kccSh7yGJVMy4jirg"},"Azikazin Magic World": {"spotify": "https://open.spotify.com/artist/5qpO9lqejYisjljnDpOuGA","apple": "https://music.apple.com/tw/artist/azikazin-magic-world/1500237251","youtube": "https://www.youtube.com/@azikazinmagicworld"},"白頻率": {"spotify": "https://open.spotify.com/artist/4tREKMNVSLyiI0K6IhgHVc","apple": "https://music.apple.com/tw/artist/%E7%99%BD%E9%A0%BB%E7%8E%87/1428600777","youtube": "https://www.youtube.com/@whitefrequencyofficial"},"好日HoNi": {"youtube": "https://www.youtube.com/@HoNiband"},"Iga Nana": {"spotify": "https://open.spotify.com/artist/5QcVz3aLRolOwZCVc3IpCu","youtube": "https://www.youtube.com/channel/UCX7__l_A2UZboGFLVbPVrlg"},"普通隊長": {"spotify": "https://open.spotify.com/artist/5qJoZTy9eeE8I3U87jtHXo","apple": "https://music.apple.com/tw/artist/%E6%99%AE%E9%80%9A%E9%9A%8A%E9%95%B7/1502533474","youtube": "https://www.youtube.com/@captainpu2016"},"INFERNAL CHAOS": {"youtube": "https://www.youtube.com/channel/UCM55XFaHH6_Sk7gQGjltEog"},"ZAZEN BOYS": {"spotify": "https://open.spotify.com/artist/6oAUOiOlMM5wvNfu2xikvM","apple": "https://music.apple.com/tw/artist/zazen-boys/74456038","youtube": "https://www.youtube.com/@matsuristudio"}};
+
+  /* ---------- helpers ---------- */
+  const $ = (id) => document.getElementById(id);
+  const root = document.documentElement;
+  const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+  const fmt = (m) => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const el = (tag, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; return e; };
+  const dur = (m) => m >= 60 ? `${Math.floor(m / 60)} 小時${m % 60 ? ` ${m % 60} 分` : ''}` : `${m} 分`;
+  const reduceMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const hasBigInt = typeof BigInt === 'function';
+
+  const SHOWS = [];
+  const BYID = new Map();
+  for (const day of [1, 2]) {
+    STAGES.forEach((st, si) => {
+      for (const [a, b, name, note] of (RAW[day][st.id] || [])) {
+        const s = { id: `${day}-${st.id}-${a.replace(':', '')}`, day, stage: st, si, start: toMin(a), end: toMin(b), name, note: note || '', en: EN[name] || '' };
+        SHOWS.push(s);
+        BYID.set(s.id, s);
+      }
+    });
+  }
+  const overlap = (a, b) => a.day === b.day && a.start < b.end && b.start < a.end;
+
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage unavailable */ } },
+  };
+
+  function taipeiNow() {
+    try {
+      const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+      }).formatToParts(new Date()).map((x) => [x.type, x.value]));
+      return { iso: `${p.year}-${p.month}-${p.day}`, min: (Number(p.hour) % 24) * 60 + Number(p.minute) };
+    } catch (e) {
+      return { iso: '', min: 0 };
+    }
+  }
+
+  /* ---------- theme ---------- */
+  const themeBtn = $('themeBtn');
+  const savedTheme = store.get(KEY_THEME);
+  if (savedTheme === 'light' || savedTheme === 'dark') root.setAttribute('data-theme', savedTheme);
+  function effectiveTheme() {
+    const t = root.getAttribute('data-theme');
+    if (t === 'light' || t === 'dark') return t;
+    return window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  }
+  function syncThemeBtn() {
+    const t = effectiveTheme();
+    themeBtn.dataset.mode = t;
+    themeBtn.setAttribute('aria-label', t === 'dark' ? '切換成淺色模式' : '切換成深色模式');
+  }
+  themeBtn.addEventListener('click', () => {
+    const next = effectiveTheme() === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    store.set(KEY_THEME, next);
+    syncThemeBtn();
+  });
+  try { matchMedia('(prefers-color-scheme: light)').addEventListener('change', syncThemeBtn); } catch (e) { /* old Safari */ }
+  try { new MutationObserver(syncThemeBtn).observe(root, { attributes: true, attributeFilter: ['data-theme'] }); } catch (e) { /* ignore */ }
+  syncThemeBtn();
+
+  /* ---------- picks: local copy first ---------- */
+  const picks = new Set();
+  // When picks clash, the show you decide to go to. Every pick it overlaps becomes 備選 (kept, not removed).
+  const prefs = new Set();
+  let stamp = 0; // when these picks last changed (ms)
+  try {
+    const raw = JSON.parse(store.get(KEY_PICKS) || 'null');
+    const arr = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.picks) ? raw.picks : []);
+    arr.forEach((id) => { if (BYID.has(id)) picks.add(id); });
+    if (raw && Array.isArray(raw.prefs)) raw.prefs.forEach((id) => { if (picks.has(id)) prefs.add(id); });
+    if (raw && typeof raw.t === 'number') stamp = raw.t;
+  } catch (e) { /* ignore */ }
+  const savePicks = () => store.set(KEY_PICKS, JSON.stringify({ picks: [...picks], prefs: [...prefs], t: stamp }));
+
+  const state = { view: 'pick', day: 1 };
+  try {
+    const v = JSON.parse(store.get(KEY_VIEW) || '{}');
+    if (v.view === 'mine' || v.view === 'pick') state.view = v.view;
+    if (v.day === 1 || v.day === 2) state.day = v.day;
+  } catch (e) { /* ignore */ }
+  const today = taipeiNow();
+  for (const n of [1, 2]) if (DAYS[n].iso === today.iso) state.day = n;
+  const saveView = () => store.set(KEY_VIEW, JSON.stringify(state));
+
+  function clusters(day) {
+    const list = SHOWS.filter((s) => s.day === day && picks.has(s.id))
+      .sort((a, b) => a.start - b.start || a.si - b.si);
+    const out = [];
+    let cur = null;
+    let maxEnd = -1;
+    for (const s of list) {
+      if (cur && s.start < maxEnd) { cur.push(s); maxEnd = Math.max(maxEnd, s.end); }
+      else { cur = [s]; out.push(cur); maxEnd = s.end; }
+    }
+    return out;
+  }
+  function isAlt(id) {
+    if (!picks.has(id) || prefs.has(id)) return false;
+    const s = BYID.get(id);
+    for (const p of prefs) { if (overlap(s, BYID.get(p))) return true; }
+    return false;
+  }
+  function choose(id) {
+    const s = BYID.get(id);
+    for (const p of [...prefs]) { if (p !== id && overlap(s, BYID.get(p))) prefs.delete(p); }
+    prefs.add(id);
+  }
+  // A new pick that clashes with a decided show reopens that choice.
+  function addPick(id) {
+    picks.add(id);
+    const s = BYID.get(id);
+    for (const p of [...prefs]) { if (p !== id && overlap(s, BYID.get(p))) prefs.delete(p); }
+  }
+  function cleanPrefs() {
+    for (const p of [...prefs]) if (!picks.has(p)) prefs.delete(p);
+  }
+  // going = picks you'll actually attend; clashing = going picks that still overlap each other.
+  function clusterInfo(c) {
+    const going = c.filter((s) => !isAlt(s.id));
+    const alts = c.filter((s) => isAlt(s.id));
+    const clashing = going.filter((s) => going.some((o) => o !== s && overlap(s, o)));
+    return { going, alts, clashing };
+  }
+  const conflictCount = () => [1, 2].reduce((n, d) => n + clusters(d).filter((c) => c.length > 1 && clusterInfo(c).clashing.length).length, 0);
+
+  /* ---------- backup link (#p1-…) ---------- */
+  function encodePicks(set) {
+    let n = 0n;
+    SHOWS.forEach((s, i) => { if (set.has(s.id)) n |= 1n << BigInt(i); });
+    return 'p1-' + n.toString(36);
+  }
+  function decodeToken(tok) {
+    const m = /^p1-([0-9a-z]+)$/.exec(tok || '');
+    if (!m || !hasBigInt) return null;
+    let n = 0n;
+    for (const ch of m[1]) n = n * 36n + BigInt(parseInt(ch, 36));
+    const out = new Set();
+    SHOWS.forEach((s, i) => { if ((n >> BigInt(i)) & 1n) out.add(s.id); });
+    return out;
+  }
+  const sameSet = (a, b) => a.size === b.size && [...a].every((x) => b.has(x));
+
+  /* ---------- board ---------- */
+  const grid = $('grid');
+  const board = $('board');
+  const blockEls = new Map();
+  let nowY = null;
+
+  function renderGrid() {
+    const d = DAYS[state.day];
+    grid.innerHTML = '';
+    blockEls.clear();
+    grid.style.setProperty('--H', (d.end - d.start) * PX + 'px');
+    grid.style.setProperty('--hour', 60 * PX + 'px');
+
+    grid.append(el('div', 'corner'));
+    for (const st of STAGES) {
+      const h = el('div', 'sh' + (st.long ? ' long' : ''));
+      h.style.setProperty('--c', st.c);
+      h.innerHTML = `<b>${esc(st.name)}</b>`;
+      grid.append(h);
+    }
+
+    const times = el('div', 'times');
+    for (let m = Math.ceil(d.start / 60) * 60; m <= d.end; m += 60) {
+      const t = el('span', 'hl');
+      const y = (m - d.start) * PX;
+      t.textContent = String(m / 60);
+      t.style.top = y + 'px';
+      if (y === 0) t.classList.add('first');
+      if (m === d.end) t.classList.add('last');
+      times.append(t);
+    }
+    grid.append(times);
+
+    for (const st of STAGES) {
+      const col = el('div', 'col');
+      col.style.setProperty('--c', st.c);
+      for (const s of SHOWS) {
+        if (s.day !== state.day || s.stage !== st) continue;
+        const b = el('button', 'block');
+        b.type = 'button';
+        b.dataset.id = s.id;
+        b.style.top = (s.start - d.start) * PX + 2 + 'px';
+        b.style.height = (s.end - s.start) * PX - 4 + 'px';
+        b.title = `${s.note ? s.note + '｜' : ''}${s.name}　${fmt(s.start)}–${fmt(s.end)}`;
+        b.setAttribute('aria-label', `${s.name}，${st.short}，${fmt(s.start)} 到 ${fmt(s.end)}`);
+        b.innerHTML =
+          (s.note ? `<span class="nt">${esc(s.note)}</span>` : '') +
+          `<span class="nm${s.name.length > 18 ? ' sm' : ''}">${esc(s.name)}</span>` +
+          `<span class="tm">${fmt(s.start)}–${fmt(s.end)}</span>`;
+        col.append(b);
+        blockEls.set(s.id, b);
+      }
+      grid.append(col);
+    }
+
+    placeNowLine();
+    refreshMarks();
+    refreshBoardStatus();
+  }
+
+  // 06: festival-day status on the board — ended shows fade, the playing ones get a progress bar.
+  function refreshBoardStatus() {
+    const now = taipeiNow();
+    for (const [id, b] of blockEls) {
+      const s = BYID.get(id);
+      const st = showStatus(s, now);
+      b.classList.toggle('ended', st === 'ended');
+      b.classList.toggle('playing', st === 'playing');
+      let pb = b.querySelector('.bprog');
+      if (st === 'playing') {
+        if (!pb) { pb = el('span', 'bprog'); pb.setAttribute('aria-hidden', 'true'); pb.append(el('i')); b.append(pb); }
+        pb.firstChild.style.width = Math.min(100, Math.max(0, ((now.min - s.start) / (s.end - s.start)) * 100)) + '%';
+      } else if (pb) pb.remove();
+    }
+  }
+
+  // Red "now" line: only on the festival day that's showing, within the board's hours.
+  // Re-placed every minute and whenever the page comes back into view.
+  function placeNowLine() {
+    const d = DAYS[state.day];
+    const now = taipeiNow();
+    const show = now.iso === d.iso && now.min >= d.start && now.min <= d.end;
+    nowY = show ? (now.min - d.start) * PX : null;
+    const lines = grid.querySelectorAll('.nowline');
+    let tag = grid.querySelector('.nowtag');
+    if (!show) {
+      lines.forEach((l) => l.remove());
+      if (tag) tag.remove();
+      return;
+    }
+    if (!lines.length) {
+      grid.querySelectorAll('.col').forEach((c) => c.append(el('div', 'nowline')));
+    }
+    if (!tag) {
+      tag = el('span', 'nowtag');
+      tag.textContent = '現在';
+      const times = grid.querySelector('.times');
+      if (times) times.append(tag);
+    }
+    grid.querySelectorAll('.nowline').forEach((l) => { l.style.top = nowY + 'px'; });
+    tag.style.top = nowY + 'px';
+  }
+  const tick = () => { placeNowLine(); refreshBoardStatus(); refreshStatus(); renderNext(); };
+  setInterval(tick, 60 * 1000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+
+  function refreshMarks() {
+    const going = [...picks].filter((id) => !isAlt(id)).map((id) => BYID.get(id));
+    for (const [id, b] of blockEls) {
+      const s = BYID.get(id);
+      const on = picks.has(id);
+      const alt = on && isAlt(id);
+      let touches = false;
+      for (const p of going) { if (p.id !== id && overlap(s, p)) { touches = true; break; } }
+      b.classList.toggle('sel', on && !alt);
+      b.classList.toggle('alt', alt);
+      b.classList.toggle('clash', !on && touches);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      const label = alt ? '備選' : on && touches ? '撞' : '';
+      let tag = b.querySelector('.hit-tag');
+      if (label) {
+        if (!tag) { tag = el('span', 'hit-tag'); tag.setAttribute('aria-hidden', 'true'); b.append(tag); }
+        tag.textContent = label;
+        tag.classList.toggle('alt-tag', alt);
+      } else if (tag) tag.remove();
+    }
+  }
+
+  function scrollBoard() {
+    board.scrollLeft = 0;
+    board.scrollTop = nowY != null ? Math.max(0, nowY - 140) : 0;
+  }
+
+  board.addEventListener('click', (e) => {
+    const b = e.target.closest('.block');
+    if (!b) return;
+    if (consumePress()) return; // the release of a long press is not a tap
+    const id = b.dataset.id;
+    if (picks.has(id)) picks.delete(id);
+    else addPick(id);
+    commit();
+  });
+
+  /* ---------- account sync (db, private per person) ---------- */
+  const cloud = { ref: null, state: 'local', writing: false, dirty: false, timer: null };
+  const SYNC_TEXT = {
+    local: '團序存在這個瀏覽器裡，換裝置或清除瀏覽資料就會不見。建議複製一份備份連結存著。',
+    syncing: '同步到你的 Claude 帳號中…',
+    synced: '團序已同步到你的 Claude 帳號，換手機或電腦登入打開都還在。',
+    error: '暫時連不上，團序先存在這台裝置，下次修改時會再同步。',
+  };
+  function setSync(s) {
+    cloud.state = s;
+    const n = $('syncNote');
+    if (n) { n.dataset.state = s; n.textContent = SYNC_TEXT[s]; }
+  }
+
+  function schedulePush() {
+    if (!cloud.ref) return;
+    clearTimeout(cloud.timer);
+    cloud.timer = setTimeout(flush, 700);
+  }
+  async function flush() {
+    if (!cloud.ref) return;
+    if (cloud.writing) { cloud.dirty = true; return; }
+    cloud.writing = true;
+    setSync('syncing');
+    try {
+      await cloud.ref.set({ v: 1, picks: [...picks], prefs: [...prefs], t: stamp });
+      setSync('synced');
+    } catch (e) {
+      const code = e && e.code;
+      if (['invalid_argument', 'revoked', 'not_granted', 'capability_disabled', 'capability_removed'].includes(code)) {
+        cloud.ref = null;
+        setSync('local');
+      } else {
+        setSync('error');
+      }
+    }
+    cloud.writing = false;
+    if (cloud.dirty) { cloud.dirty = false; flush(); }
+  }
+
+  function adopt(list, t, prefList) {
+    picks.clear();
+    list.forEach((id) => { if (BYID.has(id)) picks.add(id); });
+    prefs.clear();
+    (Array.isArray(prefList) ? prefList : []).forEach((id) => { if (picks.has(id)) prefs.add(id); });
+    stamp = t;
+    savePicks();
+    refreshMarks();
+    updateCounts();
+    renderNext();
+    if (state.view === 'mine') renderMine();
+  }
+
+  async function initCloud() {
+    const c = window.claude;
+    if (!c || typeof c.use !== 'function') return;
+    let db = null;
+    let user = null;
+    try { [db, user] = await Promise.all([c.use('db'), c.use('user')]); } catch (e) { return; }
+    if (!db || !user) return;
+    let uid = null;
+    try { uid = await user.id(); } catch (e) { uid = null; }
+    if (!uid) return;
+    let ref;
+    try { ref = db.doc(`data/users/${uid}/vagabond26`); } catch (e) { return; }
+    let body = null;
+    try {
+      const snap = await ref.get();
+      body = snap.exists ? snap.data() : null;
+    } catch (e) {
+      return;
+    }
+    cloud.ref = ref;
+    const ct = body && typeof body.t === 'number' ? body.t : -1;
+    if (body && Array.isArray(body.picks) && ct > stamp) {
+      adopt(body.picks, ct, body.prefs);
+      setSync('synced');
+    } else if (picks.size && ct < stamp) {
+      await flush();
+    } else {
+      setSync('synced');
+    }
+    if (!cloud.ref) return;
+    ref.onSnapshot((snap) => {
+      if (!snap.exists || snap.metadata.hasPendingWrites) return;
+      const b = snap.data();
+      if (b && Array.isArray(b.picks) && typeof b.t === 'number' && b.t > stamp) adopt(b.picks, b.t, b.prefs);
+    }, () => { /* keep the local copy */ });
+  }
+
+  /* ---------- my schedule ---------- */
+  const mineIn = $('mineIn');
+
+  function itemHTML(s, opt = {}) {
+    const extra = opt.choosable
+      ? `<button type="button" class="choose" data-choose="${s.id}">去這團</button>`
+      : opt.chosen ? '<span class="go-tag">要去</span>' : '';
+    return `<article class="item${opt.choosable ? ' choosable' : ''}" data-id="${s.id}"${opt.choosable ? ` data-choose="${s.id}"` : ''} style="--c:${s.stage.c}">
+      <div class="it"><b>${fmt(s.start)}</b><span>${fmt(s.end)}</span></div>
+      <div class="im">
+        <div class="imeta"><span class="pill">${esc(s.stage.short)}</span><span class="dur">${s.end - s.start} 分</span>${extra}</div>
+        <h3>${esc(s.name)}</h3>
+        ${s.note ? `<p class="note">${esc(s.note)}</p>` : ''}
+      </div>
+      <button type="button" class="rm" data-id="${s.id}" aria-label="移除 ${esc(s.name)}">×</button>
+    </article>`;
+  }
+
+  function altHTML(s) {
+    return `<div class="alt-row" data-id="${s.id}" style="--c:${s.stage.c}">
+      <button type="button" class="alt-main" data-choose="${s.id}" aria-label="改去 ${esc(s.name)}">
+        <span class="alt-label">備選</span>
+        <span class="alt-time">${fmt(s.start)}–${fmt(s.end)}</span>
+        <span class="alt-name">${esc(s.name)}</span>
+        <span class="alt-act">改去這團</span>
+      </button>
+      <button type="button" class="rm" data-id="${s.id}" aria-label="移除 ${esc(s.name)}">×</button>
+    </div>`;
+  }
+
+  function gapHTML(gap) {
+    if (gap <= 0) return `<div class="gap tight">無縫接下一團</div>`;
+    if (gap <= 10) return `<div class="gap tight">${gap} 分鐘換場，提早移動</div>`;
+    return `<div class="gap">空檔 ${dur(gap)}</div>`;
+  }
+
+  function renderMine() {
+    const out = [];
+    const c1 = [...picks].filter((id) => BYID.get(id).day === 1).length;
+    const k = conflictCount();
+    out.push(`<div class="mine-head"><div class="mine-sum"><b>我的團序</b><span>已選 ${picks.size} 團（DAY 1 ${c1}・DAY 2 ${picks.size - c1}）${k ? ` · <button type="button" class="warn">${k} 處撞團</button>` : ''}</span><span>11.07–08 臺南觀夕平臺大草皮</span></div></div>`);
+    for (const day of [1, 2]) {
+      const d = DAYS[day];
+      const cl = clusters(day);
+      const n = cl.reduce((a, c) => a + c.length, 0);
+      out.push(`<section class="mday" id="mday${day}"><h2><span class="dl">${d.label}</span><span class="dd">${d.date}（${d.dow}）</span><span class="dn">${n} 團</span></h2>`);
+      if (!n) out.push(`<p class="empty">這天還沒選。回到「排團」切到 ${d.label}，點表演就會加進來。</p>`);
+      let prevEnd = null;
+      for (const c of cl) {
+        const info = clusterInfo(c);
+        const span = info.going.length ? info.going : c;
+        if (prevEnd !== null) out.push(gapHTML(Math.min(...span.map((s) => s.start)) - prevEnd));
+        if (c.length > 1) {
+          const open = info.clashing.length > 0;
+          const head = open
+            ? `<div class="ch"><span><b>撞團</b>點一團要去的，其他會變成備選</span><button type="button" class="draw" data-ids="${info.clashing.map((s) => s.id).join(',')}">抽籤</button></div>`
+            : `<div class="ch done"><span><b>已決定</b>撞團 ${c.length} 選 ${info.going.length}</span><button type="button" class="redo" data-ids="${c.map((s) => s.id).join(',')}">重新選擇</button></div>`;
+          const cards = info.going.map((s) => itemHTML(s, { choosable: info.clashing.includes(s), chosen: prefs.has(s.id) })).join('');
+          out.push(`<div class="cluster${open ? '' : ' done'}">${head}${cards}${info.alts.map(altHTML).join('')}</div>`);
+        } else {
+          out.push(itemHTML(c[0]));
+        }
+        prevEnd = Math.max(...span.map((s) => s.end));
+      }
+      out.push('</section>');
+    }
+    const actions = [];
+    if (picks.size && hasBigInt) actions.push(`<button type="button" class="pill-btn" id="backupBtn">複製備份連結</button>`);
+    if (picks.size) actions.push(`<button type="button" class="pill-btn quiet" id="clearBtn">清除全部</button>`);
+    out.push(`<div class="keep"><p class="sync" id="syncNote" data-state="${cloud.state}">${SYNC_TEXT[cloud.state]}</p>${actions.length ? `<div class="keep-actions">${actions.join('')}</div>` : ''}</div>`);
+    out.push(`<p class="src">時間表取自浪人祭官方 Threads 公告（2026/10/17），藝人簡介整理自網路公開資料。非官方工具，演出異動以現場公告為準。</p>`);
+    mineIn.innerHTML = out.join('');
+    refreshStatus();
+  }
+
+  // Festival-day status in 我的團序: 演出中 (with progress) and 已結束 (faded). Taipei time.
+  function showStatus(s, now) {
+    const iso = DAYS[s.day].iso;
+    if (!now.iso || now.iso < iso) return '';
+    if (now.iso > iso || now.min >= s.end) return 'ended';
+    return now.min >= s.start ? 'playing' : '';
+  }
+  function refreshStatus() {
+    if (mineView.hidden) return;
+    const now = taipeiNow();
+    mineIn.querySelectorAll('.item[data-id]').forEach((it) => {
+      const s = BYID.get(it.dataset.id);
+      const st = showStatus(s, now);
+      it.classList.toggle('playing', st === 'playing');
+      it.classList.toggle('ended', st === 'ended');
+      let tag = it.querySelector('.st');
+      if (st) {
+        if (!tag) { tag = el('span', 'st'); it.querySelector('.imeta').append(tag); }
+        tag.className = 'st ' + (st === 'playing' ? 'live' : 'done');
+        tag.textContent = st === 'playing' ? '演出中' : '已結束';
+      } else if (tag) tag.remove();
+      let bar = it.querySelector('.prog');
+      if (st === 'playing') {
+        if (!bar) { bar = el('div', 'prog'); bar.setAttribute('aria-hidden', 'true'); bar.append(el('i')); it.append(bar); }
+        const pct = Math.min(100, Math.max(0, ((now.min - s.start) / (s.end - s.start)) * 100));
+        bar.firstChild.style.width = pct + '%';
+      } else if (bar) bar.remove();
+    });
+  }
+
+  let clearTimer = null;
+  mineIn.addEventListener('click', (e) => {
+    if (consumePress()) return;
+    if (e.target.closest('.warn')) {
+      const first = mineIn.querySelector('.cluster');
+      if (first) first.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'center' });
+      return;
+    }
+    const rm = e.target.closest('.rm');
+    if (rm) {
+      const s = BYID.get(rm.dataset.id);
+      picks.delete(rm.dataset.id);
+      commit();
+      toast(`已移除 ${s.name}`);
+      return;
+    }
+    const dr = e.target.closest('.draw');
+    if (dr) { openLottery(dr.dataset.ids.split(','), dr); return; }
+    const rd = e.target.closest('.redo');
+    if (rd) {
+      rd.dataset.ids.split(',').forEach((id) => prefs.delete(id));
+      commit();
+      toast('已重新打開，點一團要去的');
+      return;
+    }
+    const ch = e.target.closest('[data-choose]');
+    if (ch) {
+      const s = BYID.get(ch.dataset.choose);
+      choose(s.id);
+      commit();
+      toast(`要去 ${s.name}，撞到的改成備選`);
+      return;
+    }
+    const bk = e.target.closest('#backupBtn');
+    if (bk) {
+      copyText(`${ART_URL}#${encodePicks(picks)}`, bk, '已複製備份連結，貼到備忘錄存著', '複製備份連結', '打開這個連結就能還原目前的團序。');
+      return;
+    }
+    const cb = e.target.closest('#clearBtn');
+    if (cb) {
+      if (cb.classList.contains('armed')) {
+        clearTimeout(clearTimer);
+        picks.clear();
+        commit();
+        toast('已清除全部');
+      } else {
+        cb.classList.add('armed');
+        cb.textContent = '再按一次確認清除';
+        clearTimer = setTimeout(() => { cb.classList.remove('armed'); cb.textContent = '清除全部'; }, 3000);
+      }
+    }
+  });
+
+  /* ---------- views & counts ---------- */
+  const pickView = $('pickView');
+  const mineView = $('mineView');
+  const dayTabs = $('dayTabs');
+
+  function setView(v) {
+    state.view = v;
+    $('tabPick').setAttribute('aria-pressed', v === 'pick' ? 'true' : 'false');
+    $('tabMine').setAttribute('aria-pressed', v === 'mine' ? 'true' : 'false');
+    pickView.hidden = v !== 'pick';
+    mineView.hidden = v !== 'mine';
+    if (v === 'pick') markDay(state.day);
+    if (v === 'mine') renderMine();
+    saveView();
+  }
+
+  function markDay(n) {
+    $('day1').setAttribute('aria-pressed', n === 1 ? 'true' : 'false');
+    $('day2').setAttribute('aria-pressed', n === 2 ? 'true' : 'false');
+  }
+
+  function setDay(n) {
+    if (state.view === 'mine') {
+      // In 我的團序 the day buttons jump to that day's list.
+      markDay(n);
+      const sec = $('mday' + n);
+      if (sec) sec.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' });
+      return;
+    }
+    state.day = n;
+    markDay(n);
+    renderGrid();
+    scrollBoard();
+    saveView();
+  }
+
+  function updateCounts() {
+    const c = $('tabCount');
+    c.textContent = picks.size;
+    c.hidden = !picks.size;
+    const k = conflictCount();
+    const tc = $('tabClash');
+    tc.textContent = `撞 ${k}`;
+    tc.hidden = !k;
+    $('tabMine').setAttribute('aria-label', `我的團序，已選 ${picks.size} 團${k ? `，${k} 處撞團` : ''}`);
+  }
+
+  function commit(t) {
+    stamp = typeof t === 'number' ? t : Date.now();
+    cleanPrefs();
+    savePicks();
+    refreshMarks();
+    updateCounts();
+    renderNext();
+    if (picks.size) hideCoach();
+    if (!lpCard.hidden && lpShowId) renderLpAct();
+    if (state.view === 'mine') renderMine();
+    schedulePush();
+  }
+
+  $('tabPick').addEventListener('click', () => setView('pick'));
+  $('tabMine').addEventListener('click', () => setView('mine'));
+  $('day1').addEventListener('click', () => setDay(1));
+  $('day2').addEventListener('click', () => setDay(2));
+
+  // One-time hint, replacing the old legend row.
+  const coach = $('coach');
+  function hideCoach() {
+    if (coach.hidden) return;
+    coach.hidden = true;
+    store.set(KEY_HINT, '1');
+  }
+  if (!store.get(KEY_HINT)) coach.hidden = false;
+  $('coachOk').addEventListener('click', hideCoach);
+
+  // Scroll to a show and outline it briefly. Used by search and the next-up bar.
+  function flash(node) {
+    node.classList.remove('located');
+    void node.offsetWidth;
+    node.classList.add('located');
+    setTimeout(() => node.classList.remove('located'), 1700);
+  }
+  function locateShow(id) {
+    const s = BYID.get(id);
+    if (!s) return;
+    if (state.view === 'mine') {
+      const it = mineIn.querySelector(`[data-id="${id}"]`);
+      if (it) {
+        it.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'center' });
+        flash(it);
+        return;
+      }
+      setView('pick');
+    }
+    if (state.day !== s.day) setDay(s.day);
+    const b = blockEls.get(id);
+    if (!b) return;
+    const br = board.getBoundingClientRect();
+    const r = b.getBoundingClientRect();
+    const rail = (grid.querySelector('.times') || { offsetWidth: 48 }).offsetWidth;
+    board.scrollBy({
+      top: r.top - br.top - (br.height - r.height) / 2,
+      left: r.left - br.left - rail - 12,
+      behavior: reduceMotion() ? 'auto' : 'smooth',
+    });
+    flash(b);
+  }
+
+  // 03: on festival days, what's playing now and what's next among the shows you're going to.
+  const nextBar = $('nextBar');
+  function renderNext() {
+    const now = taipeiNow();
+    const day = [1, 2].find((n) => DAYS[n].iso === now.iso);
+    if (!day) { nextBar.hidden = true; nextBar.innerHTML = ''; return; }
+    const list = SHOWS.filter((s) => s.day === day && picks.has(s.id) && !isAlt(s.id)).sort((a, b) => a.start - b.start || a.si - b.si);
+    const live = list.filter((s) => now.min >= s.start && now.min < s.end);
+    const next = list.find((s) => s.start > now.min);
+    if (!live.length && !next) { nextBar.hidden = true; nextBar.innerHTML = ''; return; }
+    const rows = [];
+    if (live.length) {
+      const s = live[0];
+      const pct = ((now.min - s.start) / (s.end - s.start)) * 100;
+      rows.push(`<button type="button" class="nx live" data-go="${s.id}" style="--c:${s.stage.c}">
+        <span class="nx-lb">演出中</span><span class="pill">${esc(s.stage.short)}</span><span class="nx-name">${esc(s.name)}</span>
+        ${live.length > 1 ? `<span class="nx-more">+${live.length - 1} 撞</span>` : ''}
+        <span class="nx-left">剩 ${s.end - now.min} 分</span>
+        <span class="nx-prog" aria-hidden="true"><i style="width:${pct.toFixed(1)}%"></i></span></button>`);
+    }
+    if (next) {
+      const left = next.start - now.min;
+      const liveEnd = live.length ? Math.max(...live.map((s) => s.end)) : null;
+      const tight = left <= 10 || (liveEnd !== null && next.start - liveEnd <= 10);
+      const nextClash = list.filter((o) => o !== next && o.start > now.min && overlap(o, next)).length;
+      rows.push(`<button type="button" class="nx${tight ? ' tight' : ''}" data-go="${next.id}" style="--c:${next.stage.c}">
+        <span class="nx-lb">下一團</span><span class="pill">${esc(next.stage.short)}</span>
+        <span class="nx-stack"><span class="nx-name">${esc(next.name)}</span>
+        <span class="nx-sub"><span class="nx-t">${fmt(next.start)} · 還有 ${dur(left)}</span>${nextClash ? `<span class="nx-warn">撞 ${nextClash} 團還沒決定</span>` : ''}</span></span></button>`);
+    }
+    nextBar.innerHTML = rows.join('');
+    nextBar.hidden = false;
+  }
+  nextBar.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-go]');
+    if (b) locateShow(b.dataset.go);
+  });
+
+  // 05: search by Chinese or English name, plus a "名字相近" row for near misses like ano / ana.
+  const norm = (t) => String(t || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/[\s·・.,_'’"“”()（）×&!?！？:：、\-–]/g, '');
+  let INDEX = null; // built on first search, after every helper it needs exists
+  function getIndex() {
+    if (!INDEX) {
+      INDEX = SHOWS.map((s) => {
+        const parts = [s.name, s.en, s.note, ALIAS[s.name] || '', ...splitArtists(s.name)];
+        return { s, hay: norm(parts.join(' ')), main: norm(s.name), en: norm(s.en) };
+      });
+    }
+    return INDEX;
+  }
+  function lev(a, b) {
+    if (Math.abs(a.length - b.length) > 1) return 2;
+    const dp = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+    for (let j = 1; j <= b.length; j++) dp[0][j] = j;
+    for (let i = 1; i <= a.length; i++) {
+      for (let j = 1; j <= b.length; j++) {
+        dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      }
+    }
+    return dp[a.length][b.length];
+  }
+  function mark(text, q) {
+    if (!q) return esc(text);
+    const i = text.toLowerCase().indexOf(q.toLowerCase());
+    if (i < 0) return esc(text);
+    return esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + q.length)) + '</mark>' + esc(text.slice(i + q.length));
+  }
+  function spItem(s, raw) {
+    const d = DAYS[s.day];
+    const tag = !picks.has(s.id) ? '' : isAlt(s.id) ? '<span class="sp-tag">備選</span>' : '<span class="sp-tag on">已選</span>';
+    const en = s.en && !s.name.toLowerCase().includes(s.en.toLowerCase()) ? `<span class="sp-en">${mark(s.en, raw)}</span>` : '';
+    return `<button type="button" class="sp-item" data-loc="${s.id}" style="--c:${s.stage.c}">
+      <i></i><span class="sp-nm">${mark(s.name, raw)}${en}</span><span class="sp-go">前往 →</span>
+      <span class="sp-meta">${d.label} · <span class="mono">${fmt(s.start)}</span> · ${esc(s.stage.short)}${tag}</span></button>`;
+  }
+  const spRes = $('spRes');
+  const spInput = $('spInput');
+  let spFirst = null;
+  function runSearch() {
+    const raw = spInput.value.trim();
+    const q = norm(raw);
+    spFirst = null;
+    if (!q) { spRes.innerHTML = '<p class="sp-hint">輸入團名，中文、英文都可以，例如「落日」或「Sorry Youth」。</p>'; return; }
+    const hits = getIndex().filter((x) => x.hay.includes(q))
+      .map((x) => ({ x, rank: x.main.startsWith(q) || x.en.startsWith(q) ? 0 : x.main.includes(q) || x.en.includes(q) ? 1 : 2 }))
+      .sort((a, b) => a.rank - b.rank || a.x.s.day - b.x.s.day || a.x.s.start - b.x.s.start);
+    const seen = new Set(hits.map((h) => h.x.s.id));
+    const near = q.length >= 3 && /^[a-z0-9]+$/.test(q)
+      ? getIndex().filter((x) => !seen.has(x.s.id) && [x.main, x.en].some((n) => n && n.length <= 8 && lev(q, n) === 1))
+      : [];
+    const out = hits.slice(0, 12).map((h) => spItem(h.x.s, raw));
+    if (near.length) out.push('<p class="sp-sec">名字相近</p>', ...near.slice(0, 4).map((x) => spItem(x.s, '')));
+    if (!out.length) out.push(`<p class="sp-hint">找不到「${esc(raw)}」。試試別的寫法，或用英文名。</p>`);
+    spRes.innerHTML = out.join('');
+    spFirst = (hits[0] && hits[0].x.s.id) || (near[0] && near[0].s.id) || null;
+  }
+  const sp = $('sp');
+  const spScrim = $('spScrim');
+  function openSearch() {
+    sp.hidden = false;
+    spScrim.hidden = false;
+    spInput.value = '';
+    runSearch();
+    spInput.focus();
+  }
+  function closeSearch() {
+    if (sp.hidden) return;
+    sp.hidden = true;
+    spScrim.hidden = true;
+    spInput.blur();
+  }
+  $('searchBtn').addEventListener('click', openSearch);
+  $('spClose').addEventListener('click', () => { closeSearch(); $('searchBtn').focus(); });
+  spScrim.addEventListener('click', closeSearch);
+  spInput.addEventListener('input', runSearch);
+  spInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && spFirst) { e.preventDefault(); const id = spFirst; closeSearch(); locateShow(id); }
+  });
+  spRes.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-loc]');
+    if (!b) return;
+    closeSearch();
+    locateShow(b.dataset.loc);
+  });
+
+  /* ---------- sheet ---------- */
+  const sheet = $('sheet');
+  const scrim = $('scrim');
+  let lastFocus = null;
+  let lot = null;
+  let pendingLink = null;
+  let spinTimer = null;
+
+  function openSheet(opener) {
+    lastFocus = opener || document.activeElement;
+    scrim.hidden = false;
+    sheet.hidden = false;
+    const f = sheet.querySelector('.primary') || sheet.querySelector('button');
+    if (f) f.focus();
+  }
+  function closeSheet() {
+    clearTimeout(spinTimer);
+    lot = null;
+    pendingLink = null;
+    sheet.hidden = true;
+    scrim.hidden = true;
+    sheet.innerHTML = '';
+    if (lastFocus && document.contains(lastFocus)) lastFocus.focus();
+  }
+  scrim.addEventListener('click', closeSheet);
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (!$('sp').hidden) closeSearch();
+    else if (!$('lpCard').hidden) closeArtist();
+    else if (!sheet.hidden) closeSheet();
+  });
+
+  function openLottery(ids, opener) {
+    lot = { ids, win: null, spinning: false };
+    const cands = ids.map((id) => BYID.get(id));
+    sheet.innerHTML = `<div class="grab"></div>
+      <h2 id="sheetTitle">撞團抽籤</h2>
+      <p class="sub">${cands.length} 團撞在一起，交給運氣決定</p>
+      <div class="cands">${cands.map((s, i) => `<div class="cand" data-i="${i}" style="--c:${s.stage.c}"><span class="pill">${esc(s.stage.short)}</span><span class="cn">${esc(s.name)}</span><span class="ct">${fmt(s.start)}–${fmt(s.end)}</span></div>`).join('')}</div>
+      <div class="lot-result" id="lotResult" hidden></div>
+      <div class="sheet-actions" id="lotActions">
+        <button type="button" class="ghost" data-act="close">取消</button>
+        <button type="button" class="primary" data-act="spin">抽！</button>
+      </div>`;
+    openSheet(opener);
+  }
+
+  function spin() {
+    if (!lot || lot.spinning) return;
+    lot.spinning = true;
+    lot.win = null;
+    const cands = [...sheet.querySelectorAll('.cand')];
+    cands.forEach((c) => c.classList.remove('on', 'win', 'lose'));
+    $('lotResult').hidden = true;
+    $('lotActions').innerHTML = `<button type="button" class="ghost" data-act="close">取消</button><button type="button" class="primary" disabled>抽籤中…</button>`;
+    const n = cands.length;
+    const w = Math.floor(Math.random() * n);
+    const total = reduceMotion() ? 0 : n * 4 + w;
+    let i = reduceMotion() ? w : 0;
+    const step = () => {
+      cands.forEach((c, j) => c.classList.toggle('on', j === i % n));
+      if (i >= total) { finish(w); return; }
+      const t = i / total;
+      i += 1;
+      spinTimer = setTimeout(step, 50 + Math.pow(t, 3) * 360);
+    };
+    step();
+  }
+
+  function finish(w) {
+    if (!lot) return;
+    lot.spinning = false;
+    lot.win = lot.ids[w];
+    const s = BYID.get(lot.win);
+    sheet.querySelectorAll('.cand').forEach((c, j) => {
+      c.classList.remove('on');
+      c.classList.add(j === w ? 'win' : 'lose');
+    });
+    const r = $('lotResult');
+    r.innerHTML = `<span>就決定是你了</span><b>${esc(s.name)}</b><small>${esc(s.stage.short)} · ${fmt(s.start)}–${fmt(s.end)}</small>`;
+    r.hidden = false;
+    $('lotActions').innerHTML = `<button type="button" class="ghost" data-act="spin">再抽一次</button><button type="button" class="primary" data-act="accept">就去這團</button>`;
+    sheet.querySelector('.primary').focus();
+  }
+
+  function accept() {
+    if (!lot || !lot.win) return;
+    const w = BYID.get(lot.win);
+    choose(w.id);
+    closeSheet();
+    commit();
+    toast(`就決定去 ${w.name}，撞到的改成備選`);
+  }
+
+  function openLinkSheet(set) {
+    pendingLink = set;
+    const d1 = [...set].filter((id) => BYID.get(id).day === 1).length;
+    sheet.innerHTML = `<div class="grab"></div>
+      <h2 id="sheetTitle">連結裡有一份團序</h2>
+      <p class="sub">連結帶了 ${set.size} 團（DAY 1 ${d1} 團、DAY 2 ${set.size - d1} 團），你目前選了 ${picks.size} 團。要換成連結裡的嗎？</p>
+      <div class="sheet-actions">
+        <button type="button" class="ghost" data-act="close">保留目前的</button>
+        <button type="button" class="primary" data-act="use-link">換成連結的</button>
+      </div>`;
+    openSheet();
+  }
+
+  sheet.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-act]');
+    if (!b || b.disabled) return;
+    const act = b.dataset.act;
+    if (act === 'close') closeSheet();
+    else if (act === 'spin') spin();
+    else if (act === 'accept') accept();
+    else if (act === 'use-link' && pendingLink) {
+      const set = pendingLink;
+      closeSheet();
+      picks.clear();
+      set.forEach((id) => picks.add(id));
+      commit();
+      toast(`已換成連結裡的 ${set.size} 團`);
+    }
+  });
+
+  /* ---------- copy (used by the backup link) ---------- */
+  function openCopySheet(text, opener, title, sub) {
+    sheet.innerHTML = `<div class="grab"></div>
+      <h2 id="sheetTitle">${esc(title)}</h2>
+      <p class="sub">${esc(sub)} 沒辦法自動複製，請長按下面的文字全選後複製。</p>
+      <textarea id="copyText" readonly rows="8">${esc(text)}</textarea>
+      <div class="sheet-actions"><button type="button" class="primary" data-act="close">完成</button></div>`;
+    openSheet(opener);
+    const ta = $('copyText');
+    ta.focus();
+    ta.select();
+  }
+
+  function copyText(text, opener, okMsg, title, sub) {
+    try {
+      navigator.clipboard.writeText(text).then(
+        () => toast(okMsg),
+        () => openCopySheet(text, opener, title, sub)
+      );
+    } catch (err) {
+      openCopySheet(text, opener, title, sub);
+    }
+  }
+
+
+  /* ---------- toast ---------- */
+  const toastEl = $('toast');
+  let toastTimer = null;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2400);
+  }
+
+  /* ---------- long press → artist card ---------- */
+  const LP_MS = 450;
+  const press = { timer: null, vis: null, x: 0, y: 0, el: null, fired: false, type: '' };
+  const lpCard = $('lpCard');
+  const lpBackdrop = $('lpBackdrop');
+  let lpArtists = [];
+  let lpOpener = null;
+  let lpHold = false;
+  let lpCloseTimer = null;
+  let lpShowId = null;
+
+  const PLATFORMS = [
+    { key: 'spotify', label: 'Spotify' },
+    { key: 'apple', label: 'Apple Music' },
+    { key: 'youtube', label: 'YouTube' },
+  ];
+  const splitArtists = (name) => name.split(/\s+(?:ft\.|×)\s+/).map((a) => a.trim()).filter(Boolean);
+
+  function renderPlat(i) {
+    const a = lpArtists[i];
+    const links = LINKS[a] || {};
+    const avail = PLATFORMS.filter((p) => /^https:\/\//.test(links[p.key] || ''));
+    const plat = $('lpPlat');
+    const hint = $('lpHint');
+    plat.innerHTML = avail.map((p) =>
+      `<a href="${esc(links[p.key])}" target="_blank" rel="noopener">${p.label}<span aria-hidden="true">↗</span></a>`).join('');
+    plat.hidden = !avail.length;
+    hint.hidden = !avail.length;
+    hint.textContent = '開啟藝人頁面，手機上會直接跳 App';
+    lpCard.querySelectorAll('[data-lp-tab]').forEach((b) => b.setAttribute('aria-selected', String(Number(b.dataset.lpTab) === i)));
+    renderBio(a);
+  }
+
+  function renderBio(name) {
+    const box = $('lpBio');
+    if (!box) return;
+    const b = BIOS[name];
+    box.hidden = false;
+    if (!b || !b[0]) { box.innerHTML = '<p class="lp-none">目前沒有找到可靠的介紹資料。</p>'; return; }
+    const srcs = (b[1] || []).map((u) => {
+      let host = '';
+      try { host = new URL(u).hostname.replace(/^www\./, ''); } catch (e) { host = ''; }
+      return host ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(host)}</a>` : '';
+    }).filter(Boolean);
+    box.innerHTML = `<p>${esc(b[0])}</p>${srcs.length ? `<div class="lp-src">資料來源：${srcs.join('、')}</div>` : ''}`;
+    box.hidden = false;
+  }
+
+  function openArtist(id, opener, holding) {
+    const s = BYID.get(id);
+    if (!s) return;
+    clearTimeout(lpCloseTimer);
+    lpOpener = opener || null;
+    // Talks (entries with a session title) only get a card section when we have data for the host.
+    lpArtists = s.note ? ((BIOS[s.name] || LINKS[s.name]) ? [s.name] : []) : splitArtists(s.name);
+    const tabs = lpArtists.length > 1
+      ? `<div class="lp-tabs" role="tablist" aria-label="演出者">${lpArtists.map((a, i) => `<button type="button" role="tab" data-lp-tab="${i}" aria-selected="${i === 0}">${esc(a)}</button>`).join('')}</div>`
+      : '';
+    lpCard.innerHTML = `
+      <div class="lp-head" style="--c:${s.stage.c}">
+        <span class="pill">${esc(s.stage.short)}</span>
+        <span class="lp-time">${fmt(s.start)} – ${fmt(s.end)}</span>
+        <span class="lp-dur">${s.end - s.start} 分鐘</span>
+        <button type="button" class="lp-x" data-lp="close" aria-label="關閉">×</button>
+      </div>
+      <h2 class="lp-name" id="lpName">${esc(s.name)}</h2>
+      ${s.note ? `<p class="lp-note">${esc(s.note)}</p>` : ''}
+      <div class="lp-act" id="lpAct"></div>
+      ${lpArtists.length ? `${tabs}<div class="lp-plat" id="lpPlat"></div><p class="lp-hint" id="lpHint"></p>` : ''}
+      <div class="lp-bio" id="lpBio" hidden></div>`;
+    lpShowId = s.id;
+    renderLpAct();
+    if (lpArtists.length) renderPlat(0);
+    else renderBio(s.name);
+    lpBackdrop.classList.remove('out');
+    lpCard.classList.remove('out');
+    // While the finger that opened the card is still down, let its release fall through
+    // so it can't hit a link or the backdrop by accident.
+    lpHold = !!holding;
+    const pe = holding ? 'none' : '';
+    lpBackdrop.style.pointerEvents = pe;
+    lpCard.style.pointerEvents = pe;
+    if (holding) setTimeout(releaseHold, 1500);
+    lpBackdrop.hidden = false;
+    lpCard.hidden = false;
+    lpCard.setAttribute('tabindex', '-1');
+    lpCard.focus({ preventScroll: true });
+  }
+
+  // 04: add, decide or switch a clash straight from the card.
+  function renderLpAct() {
+    const box = $('lpAct');
+    const s = BYID.get(lpShowId);
+    if (!box || !s) return;
+    const on = picks.has(s.id);
+    const alt = on && isAlt(s.id);
+    const others = [...picks].filter((id) => id !== s.id && !isAlt(id)).map((id) => BYID.get(id)).filter((o) => overlap(o, s));
+    const names = (list) => list.map((o) => `${fmt(o.start)} ${esc(o.name)}`).join('、');
+    const btn = (act, label, cls) => `<button type="button" class="${cls}" data-lp-act="${act}">${label}</button>`;
+    let html;
+    if (!on && others.length) {
+      html = `<div class="lp-warn"><b>撞時段</b>你選了 ${names(others)}</div>
+        <div class="lp-btns">${btn('add', '也加入，之後再選', 'ghost')}${btn('choose-add', '改去這團', 'primary')}</div>`;
+    } else if (!on) {
+      html = `<div class="lp-btns">${btn('add', '加入團序', 'primary')}</div>`;
+    } else if (alt) {
+      const chosen = [...prefs].map((id) => BYID.get(id)).filter((p) => overlap(p, s));
+      html = `<div class="lp-state">目前是<b>備選</b>，要去的是 ${names(chosen)}</div>
+        <div class="lp-btns">${btn('remove', '移出團序', 'ghost')}${btn('choose', '改去這團', 'primary')}</div>`;
+    } else if (others.length) {
+      html = `<div class="lp-warn"><b>撞時段，還沒決定</b>同時選了 ${names(others)}</div>
+        <div class="lp-btns">${btn('remove', '移出團序', 'ghost')}${btn('choose', '就去這團', 'primary')}</div>`;
+    } else {
+      html = `<div class="lp-state">${prefs.has(s.id) ? '<span class="go">要去</span>撞團已決定' : '<b>已在團序</b>'}</div>
+        <div class="lp-btns">${btn('remove', '移出團序', 'ghost')}</div>`;
+    }
+    box.innerHTML = html;
+  }
+  function lpAct(act) {
+    const s = BYID.get(lpShowId);
+    if (!s) return;
+    if (act === 'add') { addPick(s.id); commit(); toast(`已加入 ${s.name}`); }
+    else if (act === 'choose-add') { addPick(s.id); choose(s.id); commit(); toast(`要去 ${s.name}，撞到的改成備選`); }
+    else if (act === 'choose') { choose(s.id); commit(); toast(`要去 ${s.name}，撞到的改成備選`); }
+    else if (act === 'remove') { picks.delete(s.id); commit(); toast(`已移除 ${s.name}`); }
+  }
+
+  function releaseHold() {
+    if (!lpHold) return;
+    lpHold = false;
+    setTimeout(() => { lpBackdrop.style.pointerEvents = ''; lpCard.style.pointerEvents = ''; }, 80);
+  }
+  document.addEventListener('pointerup', releaseHold, true);
+  document.addEventListener('pointercancel', releaseHold, true);
+
+  function closeArtist() {
+    if (lpCard.hidden) return;
+    const done = () => {
+      lpBackdrop.hidden = true;
+      lpCard.hidden = true;
+      lpCard.innerHTML = '';
+      lpShowId = null;
+      if (lpOpener && document.contains(lpOpener)) lpOpener.focus({ preventScroll: true });
+    };
+    if (reduceMotion()) { done(); return; }
+    lpBackdrop.classList.add('out');
+    lpCard.classList.add('out');
+    lpCloseTimer = setTimeout(done, 200);
+  }
+  lpBackdrop.addEventListener('click', closeArtist);
+  lpCard.addEventListener('click', (e) => {
+    if (e.target.closest('[data-lp="close"]')) { closeArtist(); return; }
+    const act = e.target.closest('[data-lp-act]');
+    if (act) { lpAct(act.dataset.lpAct); return; }
+    const tab = e.target.closest('[data-lp-tab]');
+    if (tab) renderPlat(Number(tab.dataset.lpTab));
+  });
+
+  const pressTarget = (e) => e.target.closest('.block, .item, .alt-row');
+  function cancelPress() {
+    clearTimeout(press.timer);
+    clearTimeout(press.vis);
+    press.timer = null;
+    if (press.el) press.el.classList.remove('pressing');
+  }
+  function startPress(e) {
+    press.type = e.pointerType;
+    const t = pressTarget(e);
+    if (!t || e.target.closest('.rm, .draw, .choose, .alt-main')) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    cancelPress();
+    press.fired = false;
+    press.el = t;
+    press.x = e.clientX;
+    press.y = e.clientY;
+    press.vis = setTimeout(() => t.classList.add('pressing'), 140);
+    press.timer = setTimeout(() => {
+      press.timer = null;
+      press.fired = true;
+      t.classList.remove('pressing');
+      try { if (navigator.vibrate) navigator.vibrate(12); } catch (err) { /* no haptics */ }
+      openArtist(t.dataset.id, t, true);
+    }, LP_MS);
+  }
+  function movePress(e) {
+    if (press.timer && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 8) cancelPress();
+  }
+  function consumePress() {
+    if (!press.fired) return false;
+    press.fired = false;
+    return true;
+  }
+  for (const host of [board, mineIn]) {
+    host.addEventListener('pointerdown', startPress);
+    host.addEventListener('pointermove', movePress);
+    host.addEventListener('pointerup', cancelPress);
+    host.addEventListener('pointercancel', cancelPress);
+    host.addEventListener('pointerleave', cancelPress);
+    host.addEventListener('contextmenu', (e) => {
+      const t = pressTarget(e);
+      if (!t) return;
+      e.preventDefault();
+      // Desktop: right-click opens the card. Touch long presses are handled by the timer.
+      if (press.type === 'mouse' && !e.target.closest('.rm, .draw')) openArtist(t.dataset.id, t, false);
+    });
+  }
+
+  /* ---------- boot ---------- */
+  $('day1').setAttribute('aria-pressed', state.day === 1 ? 'true' : 'false');
+  $('day2').setAttribute('aria-pressed', state.day === 2 ? 'true' : 'false');
+  renderGrid();
+  setView(state.view);
+  updateCounts();
+  renderNext();
+  requestAnimationFrame(scrollBoard);
+
+  // A backup link (#p1-…) restores picks. Each link is handled once per browser.
+  const tok = (location.hash || '').slice(1);
+  if (tok && tok !== store.get(KEY_SEEN)) {
+    const set = decodeToken(tok);
+    if (set && set.size) {
+      store.set(KEY_SEEN, tok);
+      if (!sameSet(set, picks)) {
+        if (!picks.size) {
+          // Empty browser (new device, cleared data): take the link, but stamp it old
+          // so a newer copy saved in the account still wins.
+          picks.clear();
+          set.forEach((id) => picks.add(id));
+          commit(1);
+          toast(`已從連結還原 ${set.size} 團`);
+        } else {
+          openLinkSheet(set);
+        }
+      }
+    }
+  }
+
+  initCloud();
+})();
+</script>
