@@ -1,0 +1,56 @@
+# Manual deploy of one event: Actions → Deploy → Run workflow → pick the event.
+# Validates and builds only that event into a clean dist/, then deploys its Worker (events/<slug>/wrangler.jsonc).
+# Add new events to the options list below.
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: 活動代號
+        required: true
+        type: choice
+        options:
+          - vagabond2026
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ inputs.slug }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SLUG: ${{ inputs.slug }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check the event name
+        run: |
+          [[ "$SLUG" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] && [ -f "events/$SLUG/wrangler.jsonc" ] || { echo "unknown event: $SLUG"; exit 1; }
+
+      - name: Validate data
+        run: node scripts/validate.mjs "$SLUG"
+
+      - name: Test (data and build)
+        run: FP_E2E=0 npm test
+
+      - name: Build
+        run: |
+          rm -rf dist
+          node scripts/build.mjs "$SLUG"
+
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4"
+          command: deploy --config events/${{ inputs.slug }}/wrangler.jsonc
