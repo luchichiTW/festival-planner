@@ -138,6 +138,15 @@ test('the homepage lists every event with its link, dates and place, and loads n
   fs.rmSync(out, { recursive: true, force: true });
 });
 
+test('site and home are kept for the homepage and cannot be event names', () => {
+  for (const name of ['site', 'home']) {
+    const ev = fresh();
+    ev.slug = name;
+    ev.event.slug = name;
+    assert.ok(validate(ev).errors.some((e) => /留給首頁/.test(e)), name);
+  }
+});
+
 test('deploy.yml offers every event and the homepage, and each has its wrangler config', () => {
   const yml = fs.readFileSync(path.join(path.dirname(new URL(import.meta.url).pathname), '..', '.github', 'workflows', 'deploy.yml'), 'utf8');
   const options = [...yml.match(/options:\n((?:\s+- .+\n)+)/)[1].matchAll(/- (\S+)/g)].map((m) => m[1]);
