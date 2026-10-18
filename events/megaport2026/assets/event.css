@@ -1,0 +1,17 @@
+/* megaport2026 only: the gradient wordmark and the soft coloured glow behind the page (from the original 大港撞團). */
+.wordmark {
+  background: linear-gradient(135deg, #FF6B6B 0%, #F4A261 50%, #FFD93D 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-family: var(--body);
+  font-weight: 800;
+  letter-spacing: -.01em;
+}
+.wordmark small { -webkit-text-fill-color: var(--faint); }
+body {
+  background-image:
+    radial-gradient(60% 40% at 0% 0%, rgb(230 57 70 / .22), transparent 70%),
+    radial-gradient(50% 35% at 100% 40%, rgb(244 162 97 / .16), transparent 70%),
+    radial-gradient(60% 40% at 30% 100%, rgb(108 123 216 / .14), transparent 70%);
+}

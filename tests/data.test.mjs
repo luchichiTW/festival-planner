@@ -45,7 +45,7 @@ test('validate catches broken schedules', () => {
 
 test('validate catches bad artist data', () => {
   const cases = [
-    ['one source', (a) => { a['ano'].sources = a['ano'].sources.slice(0, 1); }, /至少要兩個不同網站/],
+    ['one source', (a) => { a['ano'].sources = a['ano'].sources.slice(0, 1); }, /至少要 2 個不同網站/],
     ['search page link', (a) => { a['ano'].links.spotify = 'https://open.spotify.com/search/ano'; }, /不是藝人頁格式/],
     ['unknown platform', (a) => { a['ano'].links.tiktok = 'https://www.tiktok.com/@ano'; }, /不支援的平台/],
     ['http source', (a) => { a['ano'].sources[0] = 'http://example.com/ano'; }, /https/],
@@ -58,7 +58,7 @@ test('validate catches bad artist data', () => {
   }
   const ev = fresh();
   ev.artists['ano'].sources = ['https://www.last.fm/music/ano', 'https://en.wikipedia.org/wiki/Ano_(singer)'];
-  assert.ok(validate(ev).errors.some((e) => /至少要兩個不同網站的來源（現在 1 個）/.test(e)), 'Last.fm does not count as a source');
+  assert.ok(validate(ev).errors.some((e) => /至少要 2 個不同網站的來源（現在 1 個）/.test(e)), 'Last.fm does not count as a source');
 });
 
 test('build writes the website, the service worker file list and the single-file artifact', () => {
@@ -94,4 +94,30 @@ test('a slug may not start another event\'s slug (routes are <slug>*)', () => {
   ev.slug = 'vaga';
   ev.event.slug = 'vaga';
   assert.ok(validate(ev).errors.some((e) => /開頭相同/.test(e)));
+});
+
+test('megaport2026 keeps all 121 shows, the original ids, and every stage but KIDS on the map', () => {
+  const mp = loadEvent('megaport2026');
+  assert.equal(mp.schedule.length, 121);
+  assert.ok(mp.schedule.every((s) => /^d[12]-[a-z]{2}-\d+$/.test(s.id)));
+  assert.deepEqual(Object.keys(mp.venue.map.regions).sort(), mp.event.stages.map((s) => s.id).filter((id) => id !== 'KD').sort());
+});
+
+test('validate catches bad streaming IDs, unknown members and broken venue data', () => {
+  const freshMp = () => clone(loadEvent('megaport2026'));
+  const cases = [
+    ['bad spotify id', (ev) => { ev.artists['椅子樂團'].embeds.spotify = 'nope'; }, /spotify 的 ID "nope" 格式不對/],
+    ['unknown platform', (ev) => { ev.artists['椅子樂團'].embeds.soundcloud = '123'; }, /不支援的內嵌平台/],
+    ['unknown member', (ev) => { ev.artists['LAWA ft. Angie安吉'].members.push('Nobody'); }, /members 裡的 "Nobody"/],
+    ['hotspot on a missing stage', (ev) => { ev.venue.map.regions.ZZ = { x: 1, y: 1, w: 1, h: 1 }; }, /熱區 "ZZ" 不是/],
+    ['hotspot outside the image', (ev) => { ev.venue.map.regions.SO.w = 140; }, /0–100 的百分比/],
+    ['missing image', (ev) => { ev.venue.images[1].src = 'assets/img/none.webp'; }, /找不到圖片/],
+    ['favourite not in the schedule', (ev) => { ev.event.lottery.favorite = '不存在的團'; }, /lottery\.favorite/],
+  ];
+  for (const [name, breakIt, expected] of cases) {
+    const ev = freshMp();
+    breakIt(ev);
+    const { errors } = validate(ev);
+    assert.ok(errors.some((e) => expected.test(e)), `${name}: expected ${expected}, got ${JSON.stringify(errors)}`);
+  }
 });

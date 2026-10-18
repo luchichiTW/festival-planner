@@ -52,6 +52,7 @@ async function open(url, { time = PRE_FESTIVAL, timezone = 'Asia/Taipei', safeAr
     Object.defineProperty(Document.prototype, 'visibilityState', { get: () => v, configurable: true });
     Object.defineProperty(Document.prototype, 'hidden', { get: () => v === 'hidden', configurable: true });
     window.__fpSetVis = (x) => { v = x; document.dispatchEvent(new Event('visibilitychange')); };
+    Object.defineProperty(Navigator.prototype, 'language', { get: () => 'zh-TW', configurable: true }); // a Taiwanese phone
   })();` });
   await page.goto(url);
   await page.until(() => document.querySelectorAll('#grid .block').length > 0);
@@ -85,6 +86,8 @@ before(async () => {
   if (SKIP) return;
   chrome = await launch();
   mainRoot = site('main', 'e2e-main');
+  process.env.FP_BUILD = 'e2e-main';
+  try { build('megaport2026', { out: mainRoot, artifactOut: path.join(tmp, 'main-mp-art') }); } finally { delete process.env.FP_BUILD; }
   main = await origin();
 });
 after(async () => { if (main) await main.close(); });
@@ -644,5 +647,157 @@ test('no × buttons: tap a 我的團序 item for its card (remove from there); t
   await page.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: 8, y: 120, button: 'left', clickCount: 1 });
   await page.until(() => document.getElementById('lpCard').hidden);
   await closePage(page);
+  await main.close();
+});
+
+
+/* ---------------- megaport2026: map, players, English, the 巧虎 draw ---------------- */
+const MP = 'megaport2026';
+const mp = loadEvent(MP);
+
+test('megaport: 12 stages, both days, and vagabond keeps no map or language buttons', { skip: SKIP }, async () => {
+  const main = await origin();
+  const page = await open(`${main.base}/${MP}/`, { time: '2026-03-01T12:00:00+08:00' });
+  for (const day of [1, 2]) {
+    await page.tap(`#day${day}`);
+    const n = await page.eval(`[document.querySelectorAll('#grid .sh').length, document.querySelectorAll('#grid .block').length]`);
+    assert.deepEqual(n, [12, mp.schedule.filter((x) => x.day === day).length], `day ${day}`);
+  }
+  assert.equal(await page.eval(`!!document.getElementById('mapBtn') && !!document.getElementById('langBtn')`), true);
+  await closePage(page);
+  const vb = await open(`${main.base}/${SLUG}/`);
+  assert.equal(await vb.eval(`!!document.getElementById('mapBtn') || !!document.getElementById('langBtn')`), false, 'vagabond unchanged: no map, no EN');
+  await closePage(vb);
+  await main.close();
+});
+
+test('megaport map: official images, stage hotspots with what is on and walking directions', { skip: SKIP }, async () => {
+  const main = await origin();
+  const page = await open(`${main.base}/${MP}/`, { time: '2026-03-21T15:00:00+08:00' });
+  await page.tap('#mapBtn');
+  await page.until(() => { const i = document.getElementById('mvImg'); return i && i.complete && i.naturalWidth > 0 && document.getElementById('mvPan').offsetWidth > 0; });
+  const spots = await page.eval(`[...document.querySelectorAll('[data-spot]')].map((b) => b.dataset.spot)`);
+  assert.deepEqual(spots.sort(), Object.keys(mp.venue.map.regions).sort(), 'one hotspot per stage on the map');
+  await page.tap('[data-spot="SO"]');
+  await page.until(() => !document.getElementById('mvPop').hidden);
+  const pop = await page.eval(() => ({ text: document.getElementById('mvPop').innerText, go: document.querySelector('.mv-go')?.getAttribute('href') || '' }));
+  assert.match(pop.text, /南霸天/);
+  assert.match(pop.text, /接下來/, 'festival day: what is next on that stage');
+  assert.match(pop.go, /22\.61653,120\.28367/, 'directions to the stage coordinates');
+  // An upcoming show in the popup jumps to it on the board.
+  await page.tap('#mvPop [data-go]');
+  await page.until(() => document.querySelector('.mv').hidden && document.querySelector('.block.located'));
+  // The day timetables are plain images, no hotspots.
+  await page.tap('#mapBtn');
+  await page.tap('[data-mv="1"]');
+  await page.until(() => /day_1/.test(document.getElementById('mvImg').getAttribute('src')));
+  assert.equal(await page.eval(`document.querySelectorAll('[data-spot]').length`), 0);
+  await page.tap('[data-mv-close]');
+  await page.until(() => document.querySelector('.mv').hidden);
+  await closePage(page);
+  await main.close();
+});
+
+test('megaport card: players from the streaming IDs, tabs per member, intro kept', { skip: SKIP }, async () => {
+  const main = await origin();
+  const page = await open(`${main.base}/${MP}/`, { time: '2026-03-01T12:00:00+08:00' });
+  await page.longPress('.block[data-id="d1-so-1"]');
+  await page.until(() => !document.getElementById('lpCard').hidden && document.querySelector('#lpEmbed iframe'));
+  await sleep(300); // the card ignores touches for a moment after the long press lifts
+  const one = await page.eval(() => ({ src: document.querySelector('#lpEmbed iframe').src, tabs: [...document.querySelectorAll('[data-emb]')].map((b) => b.textContent) }));
+  assert.match(one.src, /open\.spotify\.com\/embed\/artist\/4IlxI05VmVDx8ShdgKEnLK/);
+  assert.deepEqual(one.tabs, ['Spotify', 'Apple Music', 'YouTube']);
+  await page.tap('[data-emb="appleMusic"]');
+  assert.match(await page.eval(`document.querySelector('#lpEmbed iframe').src`), /embed\.music\.apple\.com\/tw\/album\//);
+  await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+  await page.until(() => document.getElementById('lpCard').hidden);
+  await page.longPress('.block[data-id="d1-ct-2"]');
+  await page.until(() => !document.getElementById('lpCard').hidden);
+  assert.deepEqual(await page.eval(`[...document.querySelectorAll('[data-lp-tab]')].map((b) => b.textContent)`), ['LAWA', 'Angie安吉']);
+  await closePage(page);
+  await main.close();
+});
+
+test('megaport in English: labels, stage and artist names switch, and it is remembered', { skip: SKIP }, async () => {
+  const main = await origin();
+  const page = await open(`${main.base}/${MP}/`, { time: '2026-03-01T12:00:00+08:00' });
+  await page.tap('#langBtn');
+  await page.waitFor('Page.loadEventFired').catch(() => {});
+  await page.until(() => document.documentElement.lang === 'en' && document.querySelectorAll('#grid .block').length > 0);
+  const en = await page.eval(() => ({
+    tab: document.querySelector('#tabMine b').textContent,
+    stage: document.querySelector('#grid .sh b').textContent,
+    block: document.querySelector('.block[data-id="d1-so-1"] .nm').textContent,
+    word: document.getElementById('wordmarkText').textContent,
+    sub: document.getElementById('topSub').textContent,
+    btn: document.getElementById('langBtn').textContent,
+  }));
+  assert.deepEqual(en, { tab: 'My Schedule', stage: 'SOUTHERN OVERLORD', block: 'The Chairs', word: 'Megaport', sub: 'Mar 21–22 · Kaohsiung Pier-2', btn: '中' });
+  await page.reload();
+  await page.until(() => document.querySelectorAll('#grid .block').length > 0);
+  assert.equal(await page.eval(`document.documentElement.lang`), 'en', 'language is remembered');
+  await page.tap('#langBtn');
+  await page.until(() => document.documentElement.lang !== 'en' && document.querySelectorAll('#grid .block').length > 0);
+  assert.equal(await page.eval(`document.querySelector('#tabMine b').textContent`), '我的團序');
+  await closePage(page);
+  await main.close();
+});
+
+test('megaport lottery: 巧虎 always wins, and drawing again earns a telling-off', { skip: SKIP }, async () => {
+  const main = await origin();
+  const page = await open(`${main.base}/${MP}/`, { time: '2026-03-01T12:00:00+08:00' });
+  await page.tap('.block[data-id="d1-kd-1"]');
+  await page.tap('.block[data-id="d1-dg-4"]');
+  await page.tap('#tabMine');
+  await page.until(() => document.querySelector('.cluster .draw'));
+  for (let round = 0; round < 3; round++) {
+    await page.tap('.cluster .draw');
+    await page.tap('[data-act="spin"]');
+    await page.until(() => document.querySelector('[data-act="accept"]'), { ms: 15000 });
+    const r = await page.eval(`document.getElementById('lotResult').innerText`);
+    assert.match(r, /小朋友就是要看[\s\S]*巧虎/, `round ${round}: 巧虎 wins`);
+    if (round < 2) {
+      await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+      await page.until(() => document.getElementById('sheet').hidden);
+      continue;
+    }
+    await page.tap('[data-act="spin"]');
+    await page.until(() => document.querySelector('.lot-scold'));
+    assert.equal(await page.eval(`document.querySelector('.lot-scold').textContent`), '小朋友就是要看巧虎！');
+    assert.deepEqual(await page.eval(`[...document.querySelectorAll('#lotActions button')].map((b) => b.textContent)`), ['接受結果']);
+    await page.tap('[data-act="accept"]');
+  }
+  assert.equal(await page.eval(`document.querySelector('.go-tag') && document.querySelector('.go-tag').closest('.item').dataset.id`), 'd1-kd-1');
+  await closePage(page);
+  await main.close();
+});
+
+test('megaport: nothing clipped at 390 and 320 px, in Chinese and English; only own-origin requests on load', { skip: SKIP }, async () => {
+  const main = await origin();
+  for (const width of [390, 320]) {
+    for (const lng of ['zh', 'en']) {
+      const page = await chrome.newPage({ width, height: 844 });
+      const urls = [];
+      chrome.conn.listeners.add((m) => { if (m.sessionId === page.sessionId && m.method === 'Network.requestWillBeSent') urls.push(m.params.request.url); });
+      await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `try { localStorage.setItem('fp:${MP}:lang', '${lng}'); } catch (e) {}` });
+      await page.goto(`${main.base}/${MP}/`);
+      await page.until(() => document.querySelectorAll('#grid .block').length > 0);
+      await page.eval('document.fonts.ready');
+      const found = [];
+      for (const d of [1, 2]) {
+        await page.tap(`#day${d}`);
+        await page.eval('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))');
+        found.push(...await page.eval(CLIPPED));
+      }
+      await page.tap('.block[data-id="d2-dx-1"]');
+      await page.tap('#tabMine');
+      await page.until(() => document.getElementById('aboutBtn'));
+      found.push(...await page.eval(CLIPPED));
+      assert.deepEqual([...new Set(found)], [], `clipped at ${width}px (${lng})`);
+      const foreign = urls.filter((u) => !u.startsWith(main.base) && !u.startsWith('data:'));
+      assert.deepEqual(foreign, [], `third-party requests (${lng})`);
+      await closePage(page);
+    }
+  }
   await main.close();
 });

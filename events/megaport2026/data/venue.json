@@ -1,0 +1,147 @@
+{
+  "map": {
+    "image": "assets/img/megaport_festival_2026_map.jpg",
+    "imageEn": "assets/img/megaport_festival_2026_map_EN.webp",
+    "regions": {
+      "SO": {
+        "x": 6.4,
+        "y": 33.2,
+        "w": 9.8,
+        "h": 41.4
+      },
+      "DK": {
+        "x": 72.4,
+        "y": 85.2,
+        "w": 7.9,
+        "h": 7.1
+      },
+      "DG": {
+        "x": 46.8,
+        "y": 80.8,
+        "w": 11.6,
+        "h": 12
+      },
+      "HB": {
+        "x": 58.2,
+        "y": 55.7,
+        "w": 9.3,
+        "h": 2.3
+      },
+      "KM": {
+        "x": 12.4,
+        "y": 19.1,
+        "w": 3.5,
+        "h": 6.8
+      },
+      "CT": {
+        "x": 54.3,
+        "y": 41.8,
+        "w": 7.8,
+        "h": 2.5
+      },
+      "DX": {
+        "x": 42.1,
+        "y": 60.7,
+        "w": 4.9,
+        "h": 3.6
+      },
+      "BS": {
+        "x": 51.4,
+        "y": 55.6,
+        "w": 6.1,
+        "h": 2.4
+      },
+      "QC": {
+        "x": 66.3,
+        "y": 73.3,
+        "w": 5.7,
+        "h": 4.6
+      },
+      "XG": {
+        "x": 24.3,
+        "y": 14.6,
+        "w": 4.9,
+        "h": 3.5
+      },
+      "DS": {
+        "x": 41.3,
+        "y": 33,
+        "w": 4.2,
+        "h": 4.1
+      }
+    },
+    "locations": {
+      "SO": {
+        "lat": 22.61653,
+        "lng": 120.28367
+      },
+      "DK": {
+        "lat": 22.61833,
+        "lng": 120.28913
+      },
+      "DG": {
+        "lat": 22.61725,
+        "lng": 120.28829
+      },
+      "HB": {
+        "lat": 22.61853,
+        "lng": 120.2858
+      },
+      "KM": {
+        "lat": 22.6173,
+        "lng": 120.28167
+      },
+      "CT": {
+        "lat": 22.61856,
+        "lng": 120.2849
+      },
+      "DX": {
+        "lat": 22.61749,
+        "lng": 120.2856
+      },
+      "BS": {
+        "lat": 22.61816,
+        "lng": 120.28553
+      },
+      "QC": {
+        "lat": 22.61839,
+        "lng": 120.28764
+      },
+      "XG": {
+        "lat": 22.61789,
+        "lng": 120.28184
+      },
+      "DS": {
+        "lat": 22.61844,
+        "lng": 120.28357
+      }
+    }
+  },
+  "images": [
+    {
+      "label": "地圖",
+      "en": "Map",
+      "src": "assets/img/megaport_festival_2026_map.jpg",
+      "srcEn": "assets/img/megaport_festival_2026_map_EN.webp",
+      "map": true
+    },
+    {
+      "label": "DAY 1",
+      "en": "DAY 1",
+      "src": "assets/img/megaport_festival_2026_day_1.webp",
+      "srcEn": "assets/img/megaport_festival_2026_day_1_EN.webp"
+    },
+    {
+      "label": "DAY 2",
+      "en": "DAY 2",
+      "src": "assets/img/megaport_festival_2026_day_2.webp",
+      "srcEn": "assets/img/megaport_festival_2026_day_2_EN.webp"
+    },
+    {
+      "label": "大樹下",
+      "en": "Cube Stage",
+      "src": "assets/img/megaport_festival_2026_free_stage.jpg",
+      "srcEn": "assets/img/megaport_festival_2026_free_stage_EN.webp"
+    }
+  ]
+}
