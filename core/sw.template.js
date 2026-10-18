@@ -3,7 +3,7 @@
    - Page (HTML): network first, ~3 s, so online opens reach the server; but only a page of THIS version is used.
      A newer page means a new deploy: start downloading it in the background and keep serving the cached page,
      so old and new files never mix. Offline or slow → the cached page.
-   - Everything else: from this version's cache.
+   - Everything else: from this version's cache. Other pages under the scope (artist pages, …) are left to the network.
    - A waiting new version takes over only when the page asks (pwa.js sends SKIP_WAITING while nobody's using it). */
 const VERSION = '__VERSION__';
 const CACHE = '__CACHE__';
@@ -35,7 +35,13 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin || !url.pathname.startsWith(SCOPE_PATH)) return;
-  e.respondWith(req.mode === 'navigate' ? page(req) : asset(req));
+  if (req.mode === 'navigate') {
+    // Only the app page itself. Other pages under the scope (artist pages, the Claude page) are separate
+    // documents: they go to the network as usual and are never answered with the app.
+    if (url.pathname === SCOPE_PATH || url.pathname === `${SCOPE_PATH}index.html`) e.respondWith(page(req));
+    return;
+  }
+  e.respondWith(asset(req));
 });
 
 function within(promise, ms) {

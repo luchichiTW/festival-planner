@@ -150,6 +150,20 @@ export function validate({ slug, dir, event: ev, schedule, artists, venue }) {
     if (!s.note) splitArtists(s.name).forEach((a) => performers.add(a));
     (artists?.[s.name]?.members || []).forEach((m) => performers.add(m));
   }
+  // Pages that read without JavaScript (features.pages): the organizer and venue go into the structured data, and
+  // every artist with an intro or links gets a page at artists/<slug>/ — a web name that never changes once live.
+  if (ev.features?.pages) {
+    if (!ev.organizer?.name) err('event.json: features.pages 需要 organizer.name（主辦單位）');
+    if (!ev.venue?.name) err('event.json: features.pages 需要 venue.name（場地）');
+    const slugs = new Map();
+    for (const [name, a] of Object.entries(artists || {})) {
+      if (!a.bio && !Object.keys(a.links || {}).length) continue;
+      if (!a.slug) { err(`artists.json "${name}": 有簡介或連結的藝人要有 slug（藝人頁網址，例如 sorry-youth）`); continue; }
+      if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(a.slug)) err(`artists.json "${name}": slug "${a.slug}" 只能用小寫英文、數字與連字號`);
+      if (slugs.has(a.slug)) err(`artists.json "${name}": slug "${a.slug}" 跟 "${slugs.get(a.slug)}" 重複`);
+      slugs.set(a.slug, name);
+    }
+  }
   const minSources = ev.rules?.minBioSources ?? 2;
   for (const [name, a] of Object.entries(artists || {})) {
     const at = `artists.json "${name}"`;

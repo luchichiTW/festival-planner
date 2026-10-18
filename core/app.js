@@ -1319,8 +1319,14 @@
   renderNext();
   requestAnimationFrame(scrollBoard);
 
+  // #show-<id> (from an artist page's 在時間表上看): open on that show, then drop it from the address.
+  const showLink = /^#show-(.+)$/.exec(location.hash || '');
+  if (showLink && BYID.has(showLink[1])) {
+    requestAnimationFrame(() => requestAnimationFrame(() => locateShow(showLink[1])));
+    if (EVT.mode !== 'artifact') { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* keep the hash */ } }
+  }
   // A backup link (#p1-…) restores picks. Each link is handled once per browser.
-  const tok = (location.hash || '').slice(1);
+  const tok = showLink ? '' : (location.hash || '').slice(1);
   if (tok && tok !== store.get(KEY_SEEN)) {
     const set = decodeToken(tok);
     if (set && set.size) {

@@ -9,6 +9,7 @@ import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { ROOT, loadEvent, listEvents, validate } from './validate.mjs';
+import { makePages } from './lib/pages.mjs';
 
 const CORE = path.join(ROOT, 'core');
 const STACKS = {
@@ -172,7 +173,15 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
     for (const rel of rels) copy(rel, imgName(rel));
   }
   const scripts = ['data.js', ...CORE_JS].map((f) => `<script src="${f}"></script>`).join('\n');
-  fs.writeFileSync(path.join(site, 'index.html'), fill(template, { ...common, head, scripts }).replace(/ *<!-- \/?fp:(web|body) -->\n/g, ''));
+  // features.pages: the timetable as text in the page, artist pages, the Claude page, metadata (scripts/lib/pages.mjs).
+  const pg = ev.features?.pages
+    ? makePages({ ev, schedule, artists, site, out, pageCSS: themeCSS(ev, fontName) + '\n' + read(path.join(CORE, 'page.css')) })
+    : null;
+  if (pg && ev.ogImage) fs.copyFileSync(path.join(dir, ev.ogImage), path.join(site, 'og.png'));
+  const page = pg
+    ? { title: esc(pg.appTitle), description: esc(pg.appDesc), head: `${head}\n${pg.appHead}`, static: pg.staticBlock, boardNote: `<p class="board-note">${esc(pg.dataLine)}</p>` }
+    : { static: '', boardNote: '' };
+  fs.writeFileSync(path.join(site, 'index.html'), fill(template, { ...common, head, scripts, ...page }).replace(/ *<!-- \/?fp:(web|body) -->\n/g, ''));
   fs.writeFileSync(path.join(site, 'styles.css'), themeCSS(ev, fontName) + '\n' + styles + eventCSS);
   fs.writeFileSync(path.join(site, 'data.js'), dataJS('web', imgName));
   fs.writeFileSync(path.join(site, 'app.js'), app);
@@ -198,6 +207,12 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
   const built = fs.readdirSync(out, { withFileTypes: true })
     .filter((d) => d.isDirectory() && fs.existsSync(path.join(out, d.name, 'sw.js'))).map((d) => d.name).sort();
   fs.writeFileSync(path.join(out, '_redirects'), built.map((s) => `/${s} /${s}/ 301`).join('\n') + '\n');
+  // Each page that has a Markdown copy says so in its response headers too (events built with features.pages).
+  const withPages = built.filter((s) => fs.existsSync(path.join(out, s, 'sitemap.xml')));
+  const headerRules = withPages.map((s) => [`/${s}/`, `/${s}/claude/`, `/${s}/artists/*`]
+    .map((r) => `${r}\n  Link: <index.md>; rel="alternate"; type="text/markdown"`).join('\n'));
+  if (headerRules.length) fs.writeFileSync(path.join(out, '_headers'), headerRules.join('\n') + '\n');
+  else fs.rmSync(path.join(out, '_headers'), { force: true });
 
   /* ---------- single-file artifact ---------- */
   const dataURI = (rel) => `data:font/woff2;base64,${fs.readFileSync(path.join(dir, rel)).toString('base64')}`;
@@ -207,7 +222,7 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
     if (!imgURIs.has(rel)) imgURIs.set(rel, `data:${MIME[path.extname(rel).toLowerCase()] || 'application/octet-stream'};base64,${fs.readFileSync(path.join(dir, rel)).toString('base64')}`);
     return imgURIs.get(rel);
   };
-  const body = /<!-- fp:body -->\n([\s\S]*?)<!-- \/fp:body -->/.exec(fill(template, { ...common, head: '', scripts: '' }))[1]
+  const body = /<!-- fp:body -->\n([\s\S]*?)<!-- \/fp:body -->/.exec(fill(template, { ...common, head: '', scripts: '', static: '', boardNote: '' }))[1]
     .replace(/ *<!-- fp:web -->[\s\S]*?<!-- \/fp:web -->\n/g, '');
   const single = [
     `<title>${esc(ev.name)}</title>`,

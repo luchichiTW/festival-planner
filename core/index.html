@@ -1,11 +1,12 @@
 <!doctype html>
-<html lang="{{lang}}">
+<html lang="{{lang}}" class="nojs">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>{{title}}</title>
 <meta name="description" content="{{description}}">
 <meta name="fp-build" content="{{build}}">
+<script>document.documentElement.classList.remove('nojs')</script>
 {{head}}
 </head>
 <body>
@@ -23,7 +24,7 @@
 
   <main class="view">
     <section class="pick" id="pickView" aria-label="時間表" data-i18n-attr="aria-label">
-      <div class="board" id="board"><div class="grid" id="grid"></div></div>
+      <div class="board" id="board"><div class="grid" id="grid"></div>{{boardNote}}</div>
       <div class="coach" id="coach" hidden>
         <p data-i18n>點一下把表演加進團序，再點一次取消。長按可以看藝人介紹和試聽；變淡的是跟已選時段重疊的團。</p>
         <button type="button" id="coachOk" data-i18n>知道了</button>
@@ -32,6 +33,7 @@
     <section class="mine" id="mineView" aria-label="我的團序" data-i18n-attr="aria-label" hidden>
       <div class="mine-in" id="mineIn"></div>
     </section>
+{{static}}
   </main>
 
   <!-- Everything you tap often sits here, in reach of the thumb. -->

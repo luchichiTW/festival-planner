@@ -12,8 +12,23 @@ import { ROOT } from './validate.mjs';
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.svg': 'image/svg+xml',
-  '.woff2': 'font/woff2', '.woff': 'font/woff', '.txt': 'text/plain; charset=utf-8',
+  '.woff2': 'font/woff2', '.woff': 'font/woff', '.txt': 'text/plain; charset=utf-8', '.md': 'text/markdown; charset=utf-8',
+  '.xml': 'application/xml',
 };
+
+// _headers, as Cloudflare reads it: a path line (\`*\` matches the rest), then indented "Name: value" lines.
+function headerRules(root) {
+  const file = path.join(root, '_headers');
+  if (!fs.existsSync(file)) return [];
+  const rules = [];
+  for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
+    if (!line.trim() || line.trim().startsWith('#')) continue;
+    if (!/^\s/.test(line)) { rules.push({ re: new RegExp(`^${line.trim().replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*')}$`), headers: [] }); continue; }
+    const m = /^\s+([^:]+):\s*(.*)$/.exec(line);
+    if (m && rules.length) rules.at(-1).headers.push([m[1].toLowerCase(), m[2]]);
+  }
+  return rules;
+}
 
 export function serve({ root = path.join(ROOT, 'dist'), port = 8787, log = false } = {}) {
   const server = http.createServer((req, res) => {
@@ -35,6 +50,7 @@ export function serve({ root = path.join(ROOT, 'dist'), port = 8787, log = false
     if (!st || !st.isFile()) { res.writeHead(404, { 'content-type': 'text/plain' }).end('not found'); return; }
     const etag = `"${st.size.toString(36)}-${st.mtimeMs.toString(36)}"`;
     const headers = { 'content-type': TYPES[path.extname(target)] || 'application/octet-stream', 'cache-control': 'public, max-age=0, must-revalidate', etag };
+    for (const r of headerRules(root)) if (r.re.test(rel)) for (const [k, v] of r.headers) headers[k] = v;
     if (req.headers['if-none-match'] === etag) { res.writeHead(304, headers).end(); return; }
     res.writeHead(200, headers);
     if (req.method === 'HEAD') res.end();

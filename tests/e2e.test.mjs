@@ -187,18 +187,19 @@ test('AC-03 picks, clashes, deciding, lottery, search, card, theme — and they 
   assert.match(await page.eval(`document.getElementById('spRes').innerText`), /拍謝少年/);
   await page.tap('#spClose');
 
-  // Long press → artist card with bio, sources and the verified platform links.
+  // Long press → artist card with bio, sources and a recommended song per platform (players, not loaded here).
+  await page.send('Network.setBlockedURLs', { urls: ['*open.spotify.com*', '*embed.music.apple.com*', '*youtube-nocookie.com*'] });
   await page.tap('#day1');
   await page.longPress('.block[data-id="d1-ano"]');
   await page.until(() => !document.getElementById('lpCard').hidden);
   const card = await page.eval(() => ({
     name: document.getElementById('lpName').textContent,
     bio: document.querySelector('#lpBio p').textContent,
-    plats: [...document.querySelectorAll('#lpPlat a')].map((a) => a.href),
+    players: [...document.querySelectorAll('#lpEmbed [data-emb]')].map((b) => b.dataset.emb),
   }));
   assert.equal(card.name, 'ano');
   assert.equal(card.bio, artists.ano.bio);
-  assert.deepEqual(card.plats.sort(), Object.values(artists.ano.links).sort());
+  assert.deepEqual(card.players, Object.keys(artists.ano.embeds));
   assert.equal(await page.eval(`document.querySelector('.block[data-id="d1-ano"]').classList.contains('sel')`), false, 'a long press is not a tap');
   await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
   await page.until(() => document.getElementById('lpCard').hidden);
@@ -220,9 +221,14 @@ test('AC-03 picks, clashes, deciding, lottery, search, card, theme — and they 
   await main.close();
 });
 
-test('AC-04 every card: no-bio message where data is missing, only verified platform links', { skip: SKIP }, async () => {
+// Third-party players stay out of the tests: the cards still build their iframes, nothing loads.
+const PLAYER_HOSTS = ['*open.spotify.com*', '*embed.music.apple.com*', '*youtube-nocookie.com*', '*streetvoice.com*'];
+const EMBED_LINK = { spotify: 'spotify', spotifyTrack: 'spotify', appleMusic: 'apple', appleMusicSong: 'apple', youtube: 'youtube' };
+
+test('AC-04 every card: no-bio message where data is missing, a player or a verified link per platform', { skip: SKIP }, async () => {
   const main = await origin();
   const page = await open(`${main.base}/${SLUG}/`);
+  await page.send('Network.setBlockedURLs', { urls: PLAYER_HOSTS });
   const split = (n) => n.split(/\s+(?:ft\.|×)\s+/).map((a) => a.trim()).filter(Boolean);
   for (const day of [1, 2]) {
     await page.tap(`#day${day}`);
@@ -241,6 +247,8 @@ test('AC-04 every card: no-bio message where data is missing, only verified plat
             bio: document.querySelector('#lpBio p')?.textContent || '',
             none: !!document.querySelector('#lpBio .lp-none'),
             links: [...document.querySelectorAll('#lpPlat a')].map((a) => a.getAttribute('href')),
+            players: [...document.querySelectorAll('#lpEmbed [data-emb]')].map((b) => b.dataset.emb),
+            frame: document.querySelector('#lpEmbed iframe')?.getAttribute('src') || '',
           });
         }
         return out;
@@ -252,7 +260,13 @@ test('AC-04 every card: no-bio message where data is missing, only verified plat
         const a = artists[name];
         if (a?.bio) assert.equal(seen[i].bio, a.bio, `${s.id} / ${name}: bio`);
         else assert.ok(seen[i].none, `${s.id} / ${name}: no-bio message`);
-        assert.deepEqual(seen[i].links.sort(), Object.values(a?.links || {}).sort(), `${s.id} / ${name}: links`);
+        const played = Object.keys(a?.embeds || {});
+        const covered = new Set(played.map((k) => EMBED_LINK[k]));
+        const links = Object.entries(a?.links || {}).filter(([k]) => !covered.has(k)).map(([, u]) => u);
+        assert.deepEqual(seen[i].links.sort(), links.sort(), `${s.id} / ${name}: links for platforms without a player`);
+        if (played.length > 1) assert.deepEqual(seen[i].players, played, `${s.id} / ${name}: one tab per player`);
+        if (played.length) assert.ok(seen[i].frame.includes(a.embeds[played[0]].split('?i=')[0]), `${s.id} / ${name}: first player shows the picked song`);
+        else assert.equal(seen[i].frame, '', `${s.id} / ${name}: no player without picks`);
       });
       await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
       await page.until(() => document.getElementById('lpCard').hidden);
@@ -491,7 +505,7 @@ test('no redundant cues on things that are obviously tappable (no 前往, no arr
   await page.tap('#spClose');
   await page.longPress('.block[data-id="d1-ano"]');
   await page.until(() => !document.getElementById('lpCard').hidden);
-  const card = await page.eval(() => ({ plats: [...document.querySelectorAll('#lpPlat a')].map((a) => a.textContent), hint: !!document.getElementById('lpHint') }));
+  const card = await page.eval(() => ({ plats: [...document.querySelectorAll('#lpEmbed [data-emb], #lpPlat a')].map((a) => a.textContent), hint: !!document.getElementById('lpHint') }));
   assert.deepEqual(card, { plats: ['Spotify', 'Apple Music', 'YouTube'], hint: false });
   await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
   await page.until(() => document.getElementById('lpCard').hidden);
@@ -861,5 +875,113 @@ test('homepage: theme switch top-right, nothing clipped, no arrows or 前往, on
     assert.deepEqual(foreign, []);
     await closePage(page);
   }
+  await main.close();
+});
+
+test('vagabond card: one recommended song per platform, each tab its own song', { skip: SKIP }, async () => {
+  const main = await origin();
+  const page = await open(`${main.base}/${SLUG}/`);
+  await page.send('Network.setBlockedURLs', { urls: PLAYER_HOSTS });
+  const a = artists['拍謝少年'];
+  const show = schedule.find((s) => s.name.split(/\s+(?:ft\.|×)\s+/)[0] === '拍謝少年'); // 拍謝少年 ft. 謝銘祐: first tab
+  await page.tap(`#day${show.day}`);
+  await page.longPress(`.block[data-id="${show.id}"]`);
+  await page.until(() => !document.getElementById('lpCard').hidden && document.querySelector('#lpEmbed iframe'));
+  await sleep(300); // the card ignores touches for a moment after the long press lifts
+  const srcs = [];
+  for (const k of ['spotifyTrack', 'appleMusicSong', 'youtube']) {
+    await page.tap(`[data-emb="${k}"]`);
+    srcs.push(await page.eval(`document.querySelector('#lpEmbed iframe').getAttribute('src')`));
+  }
+  const [album, song] = a.embeds.appleMusicSong.split('?i=');
+  assert.match(srcs[0], new RegExp(`^https://open\\.spotify\\.com/embed/track/${a.embeds.spotifyTrack}\\?`));
+  assert.match(srcs[1], new RegExp(`^https://embed\\.music\\.apple\\.com/tw/album/${album}\\?i=${song}&`));
+  assert.equal(srcs[2], `https://www.youtube-nocookie.com/embed/${a.embeds.youtube}`);
+  assert.deepEqual(await page.eval(`[...document.querySelectorAll('#lpPlat a')].length`), 0, 'every platform has a song, so no link buttons');
+  await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+  await page.until(() => document.getElementById('lpCard').hidden);
+  await closePage(page);
+  await main.close();
+});
+
+/* ---------------- pages that read without JavaScript (features.pages) ---------------- */
+const NOJS_CLIPPED = () => {
+  const out = [];
+  for (const el of document.querySelectorAll('body *')) {
+    if (el.offsetParent === null || /^(SCRIPT|STYLE)$/.test(el.tagName)) continue;
+    const r = el.getBoundingClientRect();
+    if (r.right > innerWidth + 1) out.push(`wider than the screen: ${el.tagName}.${el.className}`);
+    const cs = getComputedStyle(el);
+    if (cs.textOverflow === 'ellipsis' || (el.children.length === 0 && cs.overflowX === 'hidden' && el.scrollWidth > el.clientWidth + 1)) out.push(`cut off: ${el.textContent.trim().slice(0, 20)}`);
+  }
+  return out;
+};
+
+test('without JavaScript: the timetable, an artist page and the Claude page read fine at phone width', { skip: SKIP }, async () => {
+  const main = await origin();
+  for (const width of [390, 320]) {
+    const page = await chrome.newPage({ width, height: 844 });
+    await page.send('Emulation.setScriptExecutionDisabled', { value: true });
+    await page.goto(`${main.base}/${SLUG}/`);
+    const app = await page.eval(() => ({
+      nojs: document.documentElement.classList.contains('nojs'),
+      list: getComputedStyle(document.getElementById('static')).display,
+      rows: document.querySelectorAll('#static li').length,
+      board: getComputedStyle(document.getElementById('pickView')).display,
+      dock: getComputedStyle(document.getElementById('dock')).display,
+    }));
+    assert.deepEqual(app, { nojs: true, list: 'block', rows: schedule.length, board: 'none', dock: 'none' });
+    assert.deepEqual(await page.eval(NOJS_CLIPPED), [], `timetable at ${width}px`);
+    for (const p of [`artists/${artists['拍謝少年'].slug}/`, 'claude/']) {
+      await page.goto(`${main.base}/${SLUG}/${p}`);
+      assert.ok(await page.eval(`document.querySelector('h1').textContent.length > 0 && getComputedStyle(document.body).backgroundColor !== 'rgba(0, 0, 0, 0)'`), p);
+      assert.deepEqual(await page.eval(NOJS_CLIPPED), [], `${p} at ${width}px`);
+    }
+    await closePage(page);
+  }
+  await main.close();
+});
+
+test('with JavaScript: the text timetable stays hidden, the board says where the data is from, #show- opens on that show', { skip: SKIP }, async () => {
+  const main = await origin();
+  const page = await open(`${main.base}/${SLUG}/`);
+  const st = await page.eval(() => ({
+    nojs: document.documentElement.classList.contains('nojs'),
+    list: getComputedStyle(document.getElementById('static')).display,
+    note: document.querySelector('#board .board-note')?.textContent || '',
+  }));
+  assert.equal(st.nojs, false);
+  assert.equal(st.list, 'none');
+  assert.match(st.note, /官方公告 2026\/10\/17・非官方排團工具/);
+  await closePage(page);
+  // From an artist page's 在時間表上看: day 2, the show on screen, and the address loses the #show- part.
+  const target = schedule.find((s) => s.day === 2 && s.stage === EV.stages.at(-1).id);
+  const p2 = await open(`${main.base}/${SLUG}/#show-${target.id}`);
+  await p2.until((id) => {
+    const b = document.querySelector(`.block[data-id="${id}"]`);
+    if (!b || document.getElementById('day2').getAttribute('aria-pressed') !== 'true') return false;
+    const r = b.getBoundingClientRect(); const br = document.getElementById('board').getBoundingClientRect();
+    return r.left >= br.left && r.right <= br.right + 1 && r.top >= br.top && r.bottom <= br.bottom;
+  }, { args: [target.id], ms: 4000 });
+  assert.equal(await p2.eval('location.hash'), '');
+  await closePage(p2);
+  await main.close();
+});
+
+test('the service worker leaves the other pages alone: an artist page opens as itself, with its Markdown copy in the headers', { skip: SKIP }, async () => {
+  const main = await origin();
+  const page = await chrome.newPage();
+  await page.goto(`${main.base}/${SLUG}/`);
+  await page.until(() => navigator.serviceWorker.controller !== null, { ms: 10000 });
+  const slug = artists['拍謝少年'].slug;
+  await page.goto(`${main.base}/${SLUG}/artists/${slug}/`);
+  assert.equal(await page.eval(`document.querySelector('h1').textContent`), '拍謝少年');
+  assert.equal(await page.eval(`!!document.getElementById('grid')`), false, 'not the app');
+  const r = await fetch(`${main.base}/${SLUG}/artists/${slug}/`);
+  assert.equal(r.headers.get('link'), '<index.md>; rel="alternate"; type="text/markdown"');
+  const m = await fetch(`${main.base}/${SLUG}/artists/${slug}/index.md`);
+  assert.match(m.headers.get('content-type'), /^text\/markdown/);
+  assert.match(await m.text(), /^# 拍謝少年/);
+  await closePage(page);
   await main.close();
 });

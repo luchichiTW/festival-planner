@@ -15,6 +15,7 @@ npm test                                # 資料／建置檢查＋手機寬度�
 node scripts/fonts.mjs <slug>           # 重抓字型子集（藝人名單改了要跑）
 node scripts/icons.mjs <slug>           # 從 assets/icon.html 重畫主畫面圖示
 node scripts/check-embeds.mjs <slug>    # 連網核對每個試聽：存在、可嵌入、是這位藝人的（改了 embeds 要跑）
+node scripts/og.mjs <slug>              # 畫分享預覽圖（1200×630）→ assets/og.png
 ```
 
 建置與測試都只用 Node 內建功能，不需要 `npm install`。
@@ -40,7 +41,9 @@ node scripts/check-embeds.mjs <slug>    # 連網核對每個試聽：存在、�
 | `events/<slug>/CLAUDE.md` | 這個活動的來源、限制、資料規則、待辦 |
 | `site/index.html` | 首頁樣板：列出所有活動（圖示、名稱、日期地點、還有幾天／今天／已結束），單一檔案、不載入其他網站的東西 |
 | `site/wrangler.jsonc` | 首頁的 Worker（`fp-home`），只接 `chiparashi.tw/` 這一頁 |
-| `scripts/` | validate、build、serve、fonts、icons；`lib/chrome.mjs` 是不用套件的無頭 Chrome 驅動 |
+| `core/page.css` | 藝人頁與 Claude 頁的樣式（`features.pages`），配色和字型沿用活動的 tokens |
+| `scripts/lib/pages.mjs` | 不用 JavaScript 也讀得到的頁面：文字版時間表、藝人頁、Claude 頁、各頁的 metadata、JSON-LD、Markdown 版、sitemap |
+| `scripts/` | validate、build、serve、fonts、icons、og、check-embeds；`lib/chrome.mjs` 是不用套件的無頭 Chrome 驅動 |
 | `tests/` | `node:test`；`e2e.test.mjs` 用無頭 Chrome 跑 |
 
 `core/` 裡不能出現任何特定活動的名稱、日期或顏色。活動專屬的東西放 `event.json`；真的需要活動專屬邏輯時，先想能不能變成 `event.json` 的設定。
@@ -62,12 +65,14 @@ node scripts/check-embeds.mjs <slug>    # 連網核對每個試聽：存在、�
 `artists.json`：
 
 ```json
-{ "ano": { "bio": "…", "sources": ["https://…", "https://…"], "links": { "spotify": "…", "apple": "…", "youtube": "…" } } }
+{ "ano": { "slug": "ano", "bio": "…", "sources": ["https://…", "https://…"], "links": { "spotify": "…", "apple": "…", "youtube": "…" } } }
 ```
+
+`slug` 是藝人頁的網址（`artists/<slug>/`，`features.pages` 時有簡介或連結的藝人都要有），用官方英文名轉小寫加連字號，上線後不要改。
 
 其他選用欄位：`embeds`（試聽 ID：整個藝人或專輯用 `spotify`、`appleMusic`；單首推薦曲用 `spotifyTrack`、`appleMusicSong`（`<專輯 ID>?i=<歌曲 ID>`）、`youtube`（影片）；另有 `spotifyPodcast`、`streetvoice`。一個平台只放一個播放器，事件要開 `features.embeds`）、`picks`（每個試聽的推薦說明：`title`、`why`、`sources`，只留在 repo 給人審，不會進網頁）、`members`（一個演出底下的演出者，各自是 `artists.json` 的鍵）。
 
-`event.json` 的選用設定：`languages`（`["zh", "en"]` 時出現 EN／中 切換，英文名放 `nameEn`、`subtitleEn`、`sourceNoteEn`、舞台 `en`、演出 `en`）、`features`（`embeds`、`map`）、`lottery`（抽籤彩蛋：`favorite` 那一場一定抽中）、`rules`（`minBioSources`、`minBioChars`，預設 2 與 40；`picks: true` 時每個試聽都要有 `picks` 說明，而且同一組藝人每個平台放不同首）、`css`（活動專屬的少量樣式，例如字標漸層）。
+`event.json` 的選用設定：`languages`（`["zh", "en"]` 時出現 EN／中 切換，英文名放 `nameEn`、`subtitleEn`、`sourceNoteEn`、舞台 `en`、演出 `en`）、`features`（`embeds`、`map`、`pages`）、`organizer`（主辦單位 `name`、`url`）、`venue`（場地 `name`、`locality`、`region`、`country`）、`ogImage`（分享預覽圖，`scripts/og.mjs` 產生）、`urls.official`、`urls.tickets`、`lottery`（抽籤彩蛋：`favorite` 那一場一定抽中）、`rules`（`minBioSources`、`minBioChars`，預設 2 與 40；`picks: true` 時每個試聽都要有 `picks` 說明，而且同一組藝人每個平台放不同首）、`css`（活動專屬的少量樣式，例如字標漸層）。
 
 `validate.mjs` 會擋：ID／seq 重複、時間格式、同舞台時間重疊、超出當天時段、未知舞台、簡介少於兩個不同網站的來源（Last.fm 不算）、不是藝人頁格式的平台連結、活動代號開頭和別的活動相同。
 
@@ -78,10 +83,22 @@ node scripts/check-embeds.mjs <slug>    # 連網核對每個試聽：存在、�
 1. 選代號：小寫英數與連字號，例如 `megaport2026`。不能是其他活動代號的開頭（網址是 `<slug>*`）。
 2. 照 `events/vagabond2026/` 的結構建資料夾：`event.json`、`data/`、`assets/`、`artifact/README.md`、`CLAUDE.md`、`CHANGELOG.md`。
 3. 照活動 `CLAUDE.md` 的資料規則轉時間表與藝人資料。
-4. `node scripts/fonts.mjs <slug>`、`node scripts/icons.mjs <slug>`。
+4. `node scripts/fonts.mjs <slug>`、`node scripts/icons.mjs <slug>`、`node scripts/og.mjs <slug>`。
 5. `node scripts/validate.mjs <slug>`、`node scripts/build.mjs <slug>`、`node scripts/serve.mjs` 實際看過、`npm test`。
 6. 加一份 `events/<slug>/wrangler.jsonc`（照 vagabond2026 的改名稱與路徑），並在 `.github/workflows/deploy.yml` 的選單加上這個活動，再部署。
 7. 活動上線後，再部署一次 `site`，首頁才會列出它。
+
+## 不用 JavaScript 也讀得到的頁面（`features.pages`）
+
+工具本身是 JavaScript 畫出來的，只抓 HTML、不執行程式的讀者（搜尋引擎、連結預覽、螢幕閱讀器、幫人查資料的 AI 工具）會看到空殼。開了 `features.pages`，build 會多產生：
+
+- 工具頁裡的文字版時間表（`#static`）。頁面送出時 `<html class="nojs">`，第一個 script 就拿掉它，所以用工具的人只看到互動版；不執行程式的讀者看到這份清單。時間表下方有一行資料日期與「非官方」。
+- 每位有簡介或平台連結的藝人一頁：`artists/<slug>/`，有演出時間（連回工具上那一團：`#show-<id>`）、介紹與來源、推薦曲目、平台連結。開頁不載入任何播放器。
+- `claude/`：用 Claude 做自己版本的說明、可複製的提示（跟 README 同一段，`pages.test.mjs` 會比對）、單檔與資料 JSON（`data/schedule.json`、`data/artists.json`）的網址。
+- 每頁：自己的標題與描述、canonical、`og:*` 預覽、JSON-LD（`Festival` 與每場 `MusicEvent`，時間帶 `+08:00`，performer 附已驗證的連結）、一份 `index.md`（HTML 裡用 `<link rel="alternate" type="text/markdown">` 指出，`_headers` 也在回應標頭加 `Link`）。
+- `sitemap.xml`（`lastmod` 是資料日期）。
+
+service worker 只把工具頁本身當 App；其他頁面直接走網路，不會被換成工具頁。
 
 ## 網站與更新（PWA）
 
