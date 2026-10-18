@@ -620,3 +620,29 @@ test('light/dark switch in the header flips the theme and stays in sync with 關
   await closePage(page);
   await main.close();
 });
+
+test('no × buttons: tap a 我的團序 item for its card (remove from there); tap outside to close the card', { skip: SKIP }, async () => {
+  const main = await origin();
+  const page = await open(`${main.base}/${SLUG}/`);
+  await page.tap('.block[data-id="d1-nell"]');
+  await page.tap('.block[data-id="d1-ano"]');
+  await page.tap('#tabMine');
+  await page.until(() => document.querySelector('.item[data-id="d1-nell"]'));
+  assert.equal(await page.eval(`document.querySelectorAll('#mineIn .rm').length`), 0, 'no × on list items');
+  await page.tap('.item[data-id="d1-nell"]');
+  await page.until(() => !document.getElementById('lpCard').hidden);
+  const card = await page.eval(() => {
+    const x = document.querySelector('#lpCard [data-lp="close"]');
+    return { name: document.getElementById('lpName').textContent, remove: !!document.querySelector('[data-lp-act="remove"]'), closeVisible: !!x && x.getBoundingClientRect().width > 1 };
+  });
+  assert.deepEqual(card, { name: 'NELL', remove: true, closeVisible: false });
+  await page.tap('[data-lp-act="remove"]');
+  await page.until(() => !document.querySelector('.item[data-id="d1-nell"]'));
+  assert.equal(await page.eval(`document.getElementById('mineSub').textContent`), '1 團');
+  // Tap outside the card closes it.
+  await page.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: 8, y: 120, button: 'left', clickCount: 1 });
+  await page.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: 8, y: 120, button: 'left', clickCount: 1 });
+  await page.until(() => document.getElementById('lpCard').hidden);
+  await closePage(page);
+  await main.close();
+});

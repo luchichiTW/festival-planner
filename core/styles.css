@@ -390,7 +390,7 @@ button { font: inherit; color: inherit; }
 
 .item {
   display: grid;
-  grid-template-columns: 52px minmax(0, 1fr) auto;
+  grid-template-columns: 52px minmax(0, 1fr);
   gap: 12px;
   align-items: start;
   padding: 12px 8px 12px 14px;
@@ -426,19 +426,6 @@ button { font: inherit; color: inherit; }
 .prog { position: absolute; left: 14px; right: 14px; bottom: 6px; height: 3px; border-radius: 2px; background: var(--line-2); }
 .prog i { display: block; height: 100%; border-radius: inherit; background: var(--c); }
 .note { margin: 0; font-size: 12.5px; color: var(--muted); }
-.rm {
-  appearance: none;
-  width: 34px;
-  height: 34px;
-  border: 0;
-  border-radius: 9px;
-  background: transparent;
-  color: var(--muted);
-  font-size: 20px;
-  line-height: 1;
-  cursor: pointer;
-}
-.rm:hover { background: var(--line); color: var(--fg); }
 
 .cluster {
   display: flex;
@@ -525,7 +512,6 @@ button { font: inherit; color: inherit; }
 .alt-time { flex: none; font: 500 12px var(--mono); font-variant-numeric: tabular-nums; }
 .alt-name { flex: 1; min-width: 0; overflow-wrap: anywhere; font: 600 14px/1.3 var(--body); color: var(--fg); }
 .alt-act { flex: none; font: 700 12px/1 var(--body); color: var(--accent-text); }
-.alt-row .rm { width: 32px; height: 32px; font-size: 18px; }
 @media (max-width: 380px) { .alt-time { display: none; } }
 .gap { display: flex; align-items: center; gap: 10px; font-size: 11.5px; color: var(--faint); }
 .gap::before, .gap::after { content: ""; flex: 1; height: 1px; background: var(--line); }
@@ -794,20 +780,6 @@ button { font: inherit; color: inherit; }
 .lp-head .pill { padding: 5px 10px 4px; border-radius: 8px; font-size: 11.5px; }
 .lp-time { font: 600 13px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
 .lp-dur { font-size: 11.5px; color: var(--faint); }
-.lp-x {
-  appearance: none;
-  margin-left: auto;
-  width: 30px;
-  height: 30px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--muted);
-  font-size: 20px;
-  line-height: 1;
-  cursor: pointer;
-}
-.lp-x:hover { background: var(--line); color: var(--fg); }
 .lp-name { margin: 0; font: 700 18px/1.4 var(--body); color: var(--fg); overflow-wrap: anywhere; text-wrap: balance; }
 .lp-note { margin: -4px 0 0; font-size: 13px; line-height: 1.6; color: var(--muted); }
 /* 04 decide clashes right from the card */
@@ -960,3 +932,7 @@ button { font: inherit; color: inherit; }
 .about-theme button { flex: 1; appearance: none; border: 0; border-radius: 9px; padding: 9px 4px; background: transparent; color: var(--muted); font: 700 13px/1 var(--body); cursor: pointer; white-space: nowrap; }
 .about-theme button[aria-checked="true"] { background: var(--surface-2); color: var(--fg); box-shadow: inset 0 0 0 1px var(--line-2); }
 .about-h { margin: 4px 0 -2px; font: 700 12px var(--body); letter-spacing: .04em; color: var(--muted); }
+
+/* Visually hidden, still announced by screen readers (e.g. the artist card's close button). */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.item { cursor: pointer; }

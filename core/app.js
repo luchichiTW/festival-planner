@@ -384,7 +384,6 @@
         <h3>${esc(s.name)}</h3>
         ${s.note ? `<p class="note">${esc(s.note)}</p>` : ''}
       </div>
-      <button type="button" class="rm" data-id="${s.id}" aria-label="移除 ${esc(s.name)}">×</button>
     </article>`;
   }
 
@@ -396,7 +395,6 @@
         <span class="alt-name">${esc(s.name)}</span>
         <span class="alt-act">改去這團</span>
       </button>
-      <button type="button" class="rm" data-id="${s.id}" aria-label="移除 ${esc(s.name)}">×</button>
     </div>`;
   }
 
@@ -485,14 +483,7 @@
       if (first) first.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'center' });
       return;
     }
-    const rm = e.target.closest('.rm');
-    if (rm) {
-      const s = BYID.get(rm.dataset.id);
-      picks.delete(rm.dataset.id);
-      commit();
-      toast(`已移除 ${s.name}`);
-      return;
-    }
+
     const dr = e.target.closest('.draw');
     if (dr) { openLottery(dr.dataset.ids.split(','), dr); return; }
     const rd = e.target.closest('.redo');
@@ -502,6 +493,8 @@
       toast('已重新打開，點一團要去的');
       return;
     }
+    const plain = e.target.closest('.item[data-id]:not([data-choose])');
+    if (plain) { openArtist(plain.dataset.id, plain, false); return; }
     const ch = e.target.closest('[data-choose]');
     if (ch) {
       const s = BYID.get(ch.dataset.choose);
@@ -1078,7 +1071,7 @@
         <span class="pill">${esc(s.stage.short)}</span>
         <span class="lp-time">${fmt(s.start)} – ${fmt(s.end)}</span>
         <span class="lp-dur">${s.end - s.start} 分鐘</span>
-        <button type="button" class="lp-x" data-lp="close" aria-label="關閉">×</button>
+        <button type="button" class="sr-only" data-lp="close">關閉</button>
       </div>
       <h2 class="lp-name" id="lpName">${esc(s.name)}</h2>
       ${s.note ? `<p class="lp-note">${esc(s.note)}</p>` : ''}
@@ -1183,7 +1176,7 @@
   function startPress(e) {
     press.type = e.pointerType;
     const t = pressTarget(e);
-    if (!t || e.target.closest('.rm, .draw, .choose, .alt-main')) return;
+    if (!t || e.target.closest('.draw, .choose, .alt-main')) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     cancelPress();
     press.fired = 0;
@@ -1218,7 +1211,7 @@
       if (!t) return;
       e.preventDefault();
       // Desktop: right-click opens the card. Touch long presses are handled by the timer.
-      if (press.type === 'mouse' && !e.target.closest('.rm, .draw')) openArtist(t.dataset.id, t, false);
+      if (press.type === 'mouse' && !e.target.closest('.draw')) openArtist(t.dataset.id, t, false);
     });
   }
 
