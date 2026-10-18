@@ -90,6 +90,10 @@ node scripts/icons.mjs <slug>           # 從 assets/icon.html 重畫主畫面�
 
 改到畫面（`core/`、主題、文案）時，除了 `npm test`，還要用 `node scripts/serve.mjs` 在手機寬度實際操作過受影響的流程，正反兩種情境都要看。
 
+- 看得出能點的東西（卡片、列表項、按鈕）不加「前往」、箭頭或「點這裡」之類的提示；文字只說會發生什麼（例如「改去這團」）。
+- 不顯示捲軸。
+- iPhone 主畫面版的頁面畫到狀態列底下：靠邊的元件自己處理安全區（頁首 `safe-area-inset-top`、分頁列 `safe-area-inset-bottom`），不要在整頁外圍加內距。狀態列文字是白色，淺色主題用 `--status-bar` 墊底。
+
 ## Commit
 
 Commitizen 格式 `type(scope): subject`，subject 用英文、小寫、不加句號，不寫 body。這個專案沒有 ClickUp 卡，不加 `CU-` 後綴。
