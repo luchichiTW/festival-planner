@@ -57,6 +57,28 @@ test('one ticket per event, painted from its event.json: wordmark, place, days, 
   }
 });
 
+test('the homepage says what the site is and who runs it: WebSite, Person with Instagram only, WebApplication part of the site', () => {
+  const html = read('index.html');
+  const blocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1]));
+  assert.equal(blocks.length, 1);
+  const graph = blocks[0]['@graph'];
+  const site = graph.find((n) => n['@type'] === 'WebSite');
+  assert.equal(site['@id'], `${HOST}/#website`);
+  assert.equal(site.name, 'chiparashi');
+  assert.equal(site.url, `${HOST}/`);
+  assert.equal(site.inLanguage, 'zh-Hant-TW');
+  assert.equal(site.description, /<meta name="description" content="([^"]*)"/.exec(html)[1].replace(/&amp;/g, '&'), 'same words as the meta description');
+  const person = graph.find((n) => n['@type'] === 'Person');
+  assert.deepEqual(site.publisher, { '@id': person['@id'] });
+  assert.equal(person.name, 'Chi');
+  assert.deepEqual(person.sameAs, ['https://www.instagram.com/luchichitw/'], 'Instagram is the only account named');
+  const app = graph.find((n) => n['@type'] === 'WebApplication');
+  assert.deepEqual(app.isPartOf, { '@id': site['@id'] });
+  // No other site is named anywhere in the structured data.
+  const urls = [...JSON.stringify(blocks[0]).matchAll(/https?:\/\/[^"]+/g)].map((m) => m[0]);
+  for (const u of urls) assert.ok(u === 'https://schema.org' || u.startsWith(`${HOST}/`) || u === 'https://www.instagram.com/luchichitw/', u);
+});
+
 test('contact and footer', () => {
   const html = read('index.html');
   assert.ok(html.includes('href="https://www.instagram.com/luchichitw/"'));
