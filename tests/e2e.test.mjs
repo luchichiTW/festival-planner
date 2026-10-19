@@ -825,6 +825,27 @@ const CLIPPED = () => {
   return out;
 };
 
+test('a phone on its side: no header, the timetable from the top edge, the dock still there; upright and on a computer the header stays', { skip: SKIP }, async () => {
+  const main = await origin();
+  const look = () => {
+    const board = document.querySelector('.board').getBoundingClientRect();
+    const dock = document.querySelector('.dock').getBoundingClientRect();
+    const stage = document.querySelector('#grid .sh').getBoundingClientRect();
+    return { header: getComputedStyle(document.getElementById('top')).display !== 'none', boardTop: Math.round(board.top), stagesShown: stage.top >= board.top && stage.bottom <= innerHeight, dockShown: dock.bottom <= innerHeight && dock.top > 0 };
+  };
+  const side = await open(`${main.base}/${SLUG}/`, { width: 874, height: 402 });
+  assert.deepEqual(await side.eval(look), { header: false, boardTop: 8, stagesShown: true, dockShown: true }, 'iPhone on its side');
+  assert.deepEqual(await side.eval(CLIPPED), [], 'nothing clipped on its side');
+  await closePage(side);
+  const upright = await open(`${main.base}/${SLUG}/`, { width: 402, height: 874 });
+  assert.equal((await upright.eval(look)).header, true, 'upright');
+  await closePage(upright);
+  const laptop = await open(`${main.base}/${SLUG}/`, { width: 900, height: 450, mobile: false });
+  assert.equal((await laptop.eval(look)).header, true, 'a short computer window keeps it');
+  await closePage(laptop);
+  await main.close();
+});
+
 test('controls live at the bottom: day tabs, 我的團序 and search in the dock; header has none', { skip: SKIP }, async () => {
   const main = await origin();
   const page = await open(`${main.base}/${SLUG}/`, { safeArea: { top: 59, bottom: 34 } });

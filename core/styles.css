@@ -323,6 +323,12 @@ button { font: inherit; color: inherit; }
 }
 
 @media (min-width: 701px) { .board { margin-top: 12px; } }
+/* A phone on its side: the timetable gets the whole height. The header (wordmark, date, EN, theme) comes back
+   when the phone is upright again; the dock stays. Touch screens only, so a short desktop window keeps it. */
+@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+  .top { display: none; }
+  .board { margin-top: max(8px, env(safe-area-inset-top, 0px)); }
+}
 /* Phones: the board runs edge to edge, with a slimmer time rail and narrower stages. */
 @media (max-width: 700px) {
   .board {
