@@ -137,7 +137,6 @@ window.FP_I18N = {
     '接下來': 'Up next',
     '今天這個舞台沒有接下來的演出': 'Nothing more on this stage today',
     // under the timetable: features and questions (scripts/lib/copy.mjs has the same pairs)
-    "特色與常見問題": "Features and FAQ",
     "特色": "Features",
     "常見問題": "FAQ",
     "隱私說明": "Privacy",

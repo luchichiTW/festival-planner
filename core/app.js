@@ -464,7 +464,7 @@
     if (picks.size) actions.push(`<button type="button" class="pill-btn quiet" id="clearBtn">${t('清除全部')}</button>`);
     out.push(`<div class="keep"><p class="sync" id="syncNote" data-state="${sync.state}">${esc(sync.text)}</p>${actions.length ? `<div class="keep-actions">${actions.join('')}</div>` : ''}</div>`);
     out.push(`<p class="src">${esc(sourceNote)}</p>`);
-    out.push(`<p class="src"><button type="button" class="about-link" id="aboutBtn">${t('關於・自己做一個')}</button></p>`);
+    out.push(`<p class="src src-links"><button type="button" class="about-link" id="aboutBtn">${t('關於・自己做一個')}</button>${EVT.about ? `<a class="about-link" href="${esc(EVT.about.privacy)}">${t('隱私說明')}</a>` : ''}</p>`);
     mineIn.innerHTML = out.join('');
     refreshStatus();
   }
@@ -952,6 +952,10 @@
       <p class="sub">${esc(t('{name} 排團工具。', { name: lang === 'en' && EVT.nameEn ? EVT.nameEn : EVT.name }))}${esc(sourceNote)}</p>
       ${links.length ? `<p class="about-p">${t('程式和資料都公開在 GitHub。照著活動資料夾裡的 CLAUDE.md，就能做出你自己的音樂祭版本。')}</p>
       <div class="about-links">${links.map(([href, label, sub]) => `<a href="${esc(href)}" target="_blank" rel="noopener"><b>${esc(label)}</b><span>${esc(sub)}</span></a>`).join('')}</div>` : ''}
+      ${EVT.about ? `<p class="about-h">${t('特色')}</p>
+      <ul class="about-feats">${EVT.about.features.map((f) => `<li><b>${esc(t(f.title))}</b><span>${esc(t(f.text))}</span></li>`).join('')}</ul>
+      <p class="about-h">${t('常見問題')}</p>
+      <div class="about-faq">${EVT.about.faq.map((x) => `<h3>${esc(t(x.q))}</h3><p>${esc(t(x.a))}</p>`).join('')}<a href="${esc(EVT.about.privacy)}">${t('隱私說明')}</a></div>` : ''}
       <p class="about-h">${t('外觀')}</p>
       <div class="about-theme" role="radiogroup" aria-label="${t('外觀')}">${[['system', t('跟隨系統')], ['light', t('淺色')], ['dark', t('深色')]].map(([m, label]) => `<button type="button" role="radio" data-theme-set="${m}" aria-checked="${themeMode() === m}">${label}</button>`).join('')}</div>
       <p class="about-meta" id="aboutMeta">${t('版本 {build}・時間表資料 {date}', { build: esc(EVT.build), date: mmdd(EVT.dataDate) })}</p>

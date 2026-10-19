@@ -5,7 +5,7 @@
 // assistants that fetch a page without running scripts get the same facts the app shows.
 import fs from 'node:fs';
 import path from 'node:path';
-import { faqJsonLd, webAppJsonLd, PRIVACY_PATH } from './copy.mjs';
+import { faqJsonLd, webAppJsonLd, staticAbout, PRIVACY_PATH } from './copy.mjs';
 
 const DOW = '日一二三四五六';
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -148,7 +148,8 @@ export function makePages({ ev, schedule, artists, site, out, pageCSS }) {
       ].join('\n')),
       '  </div>',
     ].join('\n')),
-    `  <p><a href="claude/">用 Claude 做你自己的排團工具</a>・<a href="${esc(official)}">${esc(ev.shortName)}官方網站</a></p>`,
+    staticAbout(),
+    `  <p><a href="claude/">用 Claude 做你自己的排團工具</a>・<a href="${PRIVACY_PATH}">隱私說明</a>・<a href="${esc(official)}">${esc(ev.shortName)}官方網站</a></p>`,
     '</section>',
     '<!-- /static -->',
   ].join('\n');

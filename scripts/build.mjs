@@ -10,7 +10,7 @@ import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { ROOT, loadEvent, listEvents, validate } from './validate.mjs';
 import { makePages } from './lib/pages.mjs';
-import { boardAbout, webAppJsonLd, PRIVACY_PATH, PRIVACY_UPDATED } from './lib/copy.mjs';
+import { aboutForPage, webAppJsonLd, PRIVACY_PATH, PRIVACY_UPDATED } from './lib/copy.mjs';
 
 const CORE = path.join(ROOT, 'core');
 const STACKS = {
@@ -87,6 +87,8 @@ function clientConfig(ev, build, mode) {
     subtitle: ev.subtitle || '', subtitleEn: ev.subtitleEn, dataDate: ev.dataDate, sourceNote: ev.sourceNote, sourceNoteEn: ev.sourceNoteEn,
     days: ev.days, stages: ev.stages.map(({ id, name, short, en, shortEn, long }) => ({ id, name, short, en, shortEn, long })),
     features: ev.features || {}, lottery: ev.lottery, urls: ev.urls || {}, build, mode,
+    // Offline use, personal data and the questions, for the 關於 sheet: website only (scripts/lib/copy.mjs).
+    about: mode === 'artifact' ? null : aboutForPage(),
   };
 }
 
@@ -249,8 +251,6 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
   const page = pg
     ? { title: esc(pg.appTitle), description: esc(pg.appDesc), head: `${head}\n${pg.appHead}`, static: pg.staticBlock }
     : { static: '' };
-  // Under the timetable: where the data is from, offline use and personal data, the questions (scripts/lib/copy.mjs).
-  page.boardAbout = boardAbout({ dataLine: pg?.dataLine, claude: !!pg });
   fs.writeFileSync(path.join(site, 'index.html'), fill(template, { ...common, head, scripts, ...page }).replace(/ *<!-- \/?fp:(web|body) -->\n/g, ''));
   fs.writeFileSync(path.join(site, 'styles.css'), themeCSS(ev, fontName) + '\n' + styles + eventCSS);
   fs.writeFileSync(path.join(site, 'data.js'), dataJS('web', imgName));
@@ -283,7 +283,7 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
     if (!imgURIs.has(rel)) imgURIs.set(rel, `data:${MIME[path.extname(rel).toLowerCase()] || 'application/octet-stream'};base64,${fs.readFileSync(path.join(dir, rel)).toString('base64')}`);
     return imgURIs.get(rel);
   };
-  const body = /<!-- fp:body -->\n([\s\S]*?)<!-- \/fp:body -->/.exec(fill(template, { ...common, head: '', scripts: '', static: '', boardAbout: '' }))[1]
+  const body = /<!-- fp:body -->\n([\s\S]*?)<!-- \/fp:body -->/.exec(fill(template, { ...common, head: '', scripts: '', static: '' }))[1]
     .replace(/ *<!-- fp:web -->[\s\S]*?<!-- \/fp:web -->\n/g, '');
   const single = [
     `<title>${esc(ev.name)}</title>`,

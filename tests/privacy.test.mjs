@@ -25,18 +25,25 @@ before(() => {
 after(() => { for (const d of [out, out + '-art', site]) fs.rmSync(d, { recursive: true, force: true }); });
 const read = (...p) => fs.readFileSync(path.join(...p), 'utf8');
 
-test('event pages show the features and the questions under the timetable, website only', () => {
+test('nothing under the timetable; the app gets the features and questions for its 關於 sheet, website only', () => {
   for (const slug of ['vagabond2026', 'megaport2026']) {
-    const html = read(out, slug, 'index.html');
-    const about = /<section class="board-about"[\s\S]*?<\/section>/.exec(html)?.[0] || '';
-    assert.ok(about, `${slug}: a features and questions section`);
-    for (const f of FEATURES) assert.ok(about.includes(esc(f.title)) && about.includes(esc(f.text)), `${slug}: ${f.title}`);
-    for (const x of FAQ) assert.ok(about.includes(esc(x.q)) && about.includes(esc(x.a)), `${slug}: ${x.q}`);
-    assert.ok(about.includes('href="/privacy/"'), `${slug}: links the privacy page`);
+    assert.equal(/class="board-about"/.test(read(out, slug, 'index.html')), false, `${slug}: nothing under the timetable`);
+    const data = read(out, slug, 'data.js');
+    const ev = JSON.parse(/window\.FP_EVENT = (\{[\s\S]*?\});\n/.exec(data)[1]);
+    assert.deepEqual(ev.about.features.map((f) => f.title), FEATURES.map((f) => f.title), `${slug}: features`);
+    assert.deepEqual(ev.about.faq.map((x) => [x.q, x.a]), FAQ.map((x) => [x.q, x.a]), `${slug}: questions`);
+    assert.equal(ev.about.privacy, '/privacy/');
   }
   // The single-file artifact keeps picks in a Claude account, so none of this is said there.
-  const art = read(out + '-art', 'megaport2026', 'index.html');
-  assert.equal(/<section class="board-about"/.test(art), false, 'no section in the single file (its i18n dictionary still carries the strings)');
+  assert.match(read(out + '-art', 'megaport2026', 'index.html'), /"about":null/);
+});
+
+test('readers without JavaScript get the same features and questions in the text timetable', () => {
+  const html = read(out, 'vagabond2026', 'index.html');
+  const block = /<div class="static-about">[\s\S]*?<\/div>/.exec(html)?.[0] || '';
+  for (const f of FEATURES) assert.ok(block.includes(esc(f.title)) && block.includes(esc(f.text)), f.title);
+  for (const x of FAQ) assert.ok(block.includes(esc(x.q)) && block.includes(esc(x.a)), x.q);
+  assert.ok(block.includes('href="/privacy/"'));
 });
 
 test('the event page carries FAQPage and WebApplication data, and its description says offline and no sign-up', () => {
@@ -62,7 +69,7 @@ test('every line has its English version in core/i18n.js', () => {
   const en = ctx.window.FP_I18N.en;
   for (const f of FEATURES) { assert.equal(en[f.title], f.titleEn); assert.equal(en[f.text], f.textEn); }
   for (const x of FAQ) { assert.equal(en[x.q], x.qEn); assert.equal(en[x.a], x.aEn); }
-  for (const k of ['特色', '常見問題', '隱私說明', '特色與常見問題', '用 Claude 做你自己的排團工具']) assert.ok(en[k], k);
+  for (const k of ['特色', '常見問題', '隱私說明']) assert.ok(en[k], k);
 });
 
 test('the privacy page says what is not collected, what stays on the device, the statistics, Cloudflare and the players', () => {

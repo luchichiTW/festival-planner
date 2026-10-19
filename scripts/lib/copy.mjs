@@ -1,6 +1,6 @@
 // What the site says about working offline and about personal data: the features, the questions and answers, and
-// the privacy page's date. One source for the visible text (under the timetable, on the homepage), the FAQPage
-// structured data and llms.txt. Every sentence describes what the code does today — when storage, outside requests,
+// the privacy page's date. One source for the app's 關於 sheet, the text version for readers without JavaScript,
+// the FAQPage structured data and llms.txt. Every sentence describes what the code does today — when storage, outside requests,
 // cookies, statistics or third-party players change, change this file in the same edit (see CLAUDE.md).
 // English versions are for events with "languages": ["zh", "en"]; core/i18n.js carries the same pairs.
 
@@ -40,21 +40,22 @@ export const FAQ = [
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-// Under the timetable (website only; the single-file artifact keeps picks in a Claude account, so this text would
-// not be true there): where the data comes from, the features, the questions, and links to the privacy page.
-export function boardAbout({ dataLine = '', claude = false } = {}) {
-  return `<section class="board-about" aria-label="特色與常見問題" data-i18n-attr="aria-label">
-${dataLine ? `        <p class="board-note">${esc(dataLine)}</p>\n` : ''}        <h2 data-i18n>特色</h2>
-        <ul class="ba-feats">
-${FEATURES.map((f) => `          <li><b data-i18n>${esc(f.title)}</b><span data-i18n>${esc(f.text)}</span></li>`).join('\n')}
-        </ul>
-        <h2 data-i18n>常見問題</h2>
-        <div class="ba-faq">
-${FAQ.map((x) => `          <h3 data-i18n>${esc(x.q)}</h3><p data-i18n>${esc(x.a)}</p>`).join('\n')}
-        </div>
-        <p class="ba-links"><a href="${PRIVACY_PATH}" data-i18n>隱私說明</a>${claude ? '<a href="claude/" data-i18n>用 Claude 做你自己的排團工具</a>' : ''}</p>
-      </section>`;
+// For readers without JavaScript (inside the text timetable, features.pages): the same features and questions the
+// app shows in its 關於 sheet. Website only; the single-file artifact keeps picks in a Claude account.
+export function staticAbout() {
+  return `  <div class="static-about">
+    <h3>特色</h3>
+    <ul>
+${FEATURES.map((f) => `      <li><b>${esc(f.title)}</b>：${esc(f.text)}</li>`).join('\n')}
+    </ul>
+    <h3>常見問題</h3>
+${FAQ.map((x) => `    <h4>${esc(x.q)}</h4>\n    <p>${esc(x.a)}</p>`).join('\n')}
+    <p><a href="${PRIVACY_PATH}">隱私說明</a></p>
+  </div>`;
 }
+
+// What the app needs to show them in the 關於 sheet (the website build only).
+export const aboutForPage = () => ({ features: FEATURES.map(({ title, text }) => ({ title, text })), faq: FAQ.map(({ q, a }) => ({ q, a })), privacy: PRIVACY_PATH });
 
 export const faqJsonLd = () => ({
   '@type': 'FAQPage',

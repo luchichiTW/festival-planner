@@ -184,7 +184,8 @@ export async function launch({ args = [], userDataDir } = {}) {
       try { ws.close(); } catch { /* already closed */ }
       if (proc.exitCode === null) proc.kill();
       await new Promise((r) => { if (proc.exitCode !== null) r(); else proc.once('exit', r); });
-      if (!userDataDir) fs.rmSync(dir, { recursive: true, force: true });
+      // Chrome's helper processes can still be writing to the profile for a moment after exit: retry the removal.
+      if (!userDataDir) fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
     },
   };
 }
