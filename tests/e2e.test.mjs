@@ -362,6 +362,10 @@ test('P1-09 / AC-06 works offline after the first visit', { skip: SKIP }, async 
     build: FP_EVENT.build, picks: FP.snapshot().picks, fonts: document.fonts.check('900 20px "Chiron GoRound TC"'),
   }));
   assert.deepEqual(state, { build: 'e2e-offline', picks: ['d1-nell'], fonts: true });
+  // The official timetables behind the map button come from the cache too.
+  await page.tap('#mapBtn');
+  await page.until(() => { const i = document.getElementById('mvImg'); return i.complete && i.naturalWidth > 0; });
+  await page.tap('.mv [data-mv-close]');
   // A fresh open (as from the home screen, with a query) also comes from the cache.
   await page.goto(`${base}/${SLUG}/?source=homescreen`);
   await page.until(() => document.querySelectorAll('#grid .block').length > 0);
@@ -612,17 +616,37 @@ test('from the home screen and in the Claude artifact: the two how-to cards, no 
   await closePage(page);
 });
 
-test('before the official venue map is out, the map button says where it will be and links to the official page', { skip: SKIP }, async () => {
+test('the map button: the official DAY 1 and DAY 2 timetables, open on the day the board shows; the venue map tab waits for the official one', { skip: SKIP }, async () => {
   const srv = await origin();
   const page = await open(`${srv.base}/${SLUG}/`);
+  const look = () => {
+    const ov = document.querySelector('.mv:not(.mv-wait)');
+    const img = document.getElementById('mvImg');
+    return {
+      open: !ov.hidden,
+      tabs: [...ov.querySelectorAll('[data-mv]')].map((b) => `${b.textContent}${b.getAttribute('aria-pressed') === 'true' ? '*' : ''}`),
+      img: document.getElementById('mvStage').hidden ? null : img.getAttribute('src'),
+      loaded: img.complete && img.naturalWidth,
+      wait: document.getElementById('mvWait').hidden ? null : document.getElementById('mvWait').innerText.split('\n').filter(Boolean),
+    };
+  };
   await page.tap('#mapBtn');
-  await page.until(() => document.querySelector('.mv-wait') && !document.querySelector('.mv-wait').hidden);
-  const v = await page.eval(() => ({ title: document.getElementById('mvWaitTitle').textContent, text: document.querySelector('.mv-wait-in p').textContent, link: document.querySelector('.mv-wait-in a').getAttribute('href') }));
-  assert.equal(v.title, '場地圖');
-  assert.match(v.text, /還沒公布/);
-  assert.equal(v.link, 'https://www.vagabondfest.com/pages/map');
-  await page.tap('.mv-wait [data-mv-close]');
-  await page.until(() => document.querySelector('.mv-wait').hidden);
+  await page.until(() => { const i = document.getElementById('mvImg'); return i.complete && i.naturalWidth > 0; });
+  assert.deepEqual(await page.eval(look), { open: true, tabs: ['場地圖', 'DAY 1*', 'DAY 2'], img: 'img/vagabond_festival_2026_day_1.webp', loaded: 1206, wait: null });
+  await page.tap('.mv [data-mv="0"]');
+  const w = await page.eval(look);
+  assert.equal(w.img, null, 'no image on the venue map tab');
+  assert.equal(await page.eval(() => document.querySelector('#mvWait h2').textContent), '場地圖');
+  assert.match(await page.eval(() => document.querySelector('#mvWait p').textContent), /還沒公布/);
+  assert.equal(await page.eval(() => document.querySelector('#mvWait a').getAttribute('href')), 'https://www.vagabondfest.com/pages/map');
+  await page.tap('.mv [data-mv="2"]');
+  await page.until(() => document.getElementById('mvImg').getAttribute('src') === 'img/vagabond_festival_2026_day_2.webp');
+  await page.tap('.mv [data-mv-close]');
+  await page.until(() => document.querySelector('.mv:not(.mv-wait)').hidden);
+  // On DAY 2 the map button opens on DAY 2's timetable.
+  await page.tap('#day2');
+  await page.tap('#mapBtn');
+  await page.until(() => document.querySelector('.mv [data-mv="2"]').getAttribute('aria-pressed') === 'true');
   await closePage(page);
 });
 
@@ -651,7 +675,8 @@ test('浪人祭 in English: official stage and act names and talk titles, and th
       sorry: document.querySelector('.block[data-id="d1-sorry-youth"] .nm')?.textContent,
       talk: document.querySelector('.block[data-id="d1-xiaoweiba-talk"]')?.textContent.replace(/\s+/g, ' ').trim(),
       cjk: [...document.querySelectorAll('#grid .block .nm, #grid .block .nt, #grid .sh')].map((e) => e.textContent).filter((t) => /[㐀-鿿ぁ-ヿ]/.test(t)),
-      tabs: [...document.querySelectorAll('.tabbar .tab')].map((t) => { const r = t.getBoundingClientRect(); return { l: r.left, r: r.right, text: [...t.children].map((c) => { const q = c.getBoundingClientRect(); return { l: q.left, r: q.right, t: c.textContent }; }) }; }),
+      // the dock's tabs (the map's tab bar is there too, hidden)
+      tabs: [...document.querySelectorAll('.tabbar .tab')].filter((t) => t.offsetParent).map((t) => { const r = t.getBoundingClientRect(); return { l: r.left, r: r.right, text: [...t.children].map((c) => { const q = c.getBoundingClientRect(); return { l: q.left, r: q.right, t: c.textContent }; }) }; }),
     }));
     assert.equal(s.lang, 'en', `${width}`);
     assert.equal(s.toggle, '中');

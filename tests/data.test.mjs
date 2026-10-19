@@ -61,6 +61,8 @@ test('validate checks the two-line header and the Safari step pictures', () => {
   build('vagabond2026', { out, artifactOut: out + '-art' });
   for (let i = 1; i <= 5; i++) assert.ok(fs.existsSync(path.join(out, 'vagabond2026', 'a2hs', `step${i}.webp`)));
   assert.match(fs.readFileSync(path.join(out, 'vagabond2026', 'sw.js'), 'utf8'), /"a2hs\/step5\.webp"/);
+  // The official timetables behind the map button too, so they open offline.
+  for (const d of [1, 2]) assert.match(fs.readFileSync(path.join(out, 'vagabond2026', 'sw.js'), 'utf8'), new RegExp(`"img/vagabond_festival_2026_day_${d}\\.webp"`));
   assert.doesNotMatch(fs.readFileSync(path.join(out + '-art', 'vagabond2026', 'index.html'), 'utf8'), /a2hs\//);
 });
 

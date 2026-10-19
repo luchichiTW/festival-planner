@@ -1,3 +1,7 @@
 {
-  "pending": { "url": "https://www.vagabondfest.com/pages/map" }
+  "pending": { "url": "https://www.vagabondfest.com/pages/map" },
+  "images": [
+    { "label": "DAY 1", "en": "DAY 1", "day": 1, "src": "assets/img/vagabond_festival_2026_day_1.webp" },
+    { "label": "DAY 2", "en": "DAY 2", "day": 2, "src": "assets/img/vagabond_festival_2026_day_2.webp" }
+  ]
 }

@@ -10,7 +10,13 @@
   const en = lang === 'en';
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-  // Before the official map is out (venue.json "pending"): the same button opens a note saying where it will be.
+  // Before the official map is out (venue.json "pending"): a note saying where it will be. With no other official
+  // images, the button opens just the note; with some (the official timetables), the note is the first tab.
+  const note = () => `
+        <div class="ob-icon" aria-hidden="true">🗺️</div>
+        <h2 id="mvWaitTitle">${t('場地圖')}</h2>
+        <p>${t('官方還沒公布場地圖。公布後會放在這裡：點舞台就能看接下來的團、一鍵導航。')}</p>
+        ${V.pending.url ? `<a class="pill-btn" href="${esc(V.pending.url)}" target="_blank" rel="noopener">${t('官網的場地資訊')}</a>` : ''}`;
   if (V.pending && !(V.images && V.images.length)) {
     const wait = document.createElement('div');
     wait.className = 'mv mv-wait';
@@ -19,11 +25,7 @@
     wait.setAttribute('aria-modal', 'true');
     wait.setAttribute('aria-labelledby', 'mvWaitTitle');
     wait.innerHTML = `
-      <div class="mv-wait-in">
-        <div class="ob-icon" aria-hidden="true">🗺️</div>
-        <h2 id="mvWaitTitle">${t('場地圖')}</h2>
-        <p>${t('官方還沒公布場地圖。公布後會放在這裡：點舞台就能看接下來的團、一鍵導航。')}</p>
-        ${V.pending.url ? `<a class="pill-btn" href="${esc(V.pending.url)}" target="_blank" rel="noopener">${t('官網的場地資訊')}</a>` : ''}
+      <div class="mv-wait-in">${note()}
       </div>
       <div class="mv-bar"><div class="mv-fill"></div><button type="button" class="dock-btn mv-done" data-mv-close>${t('完成')}</button></div>`;
     document.body.append(wait);
@@ -42,7 +44,10 @@
     ? `https://maps.apple.com/?daddr=${lat},${lng}&dirflg=w`
     : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=walking`;
 
-  const images = V.images.map((im) => ({ ...im, label: en && im.en ? im.en : im.label, file: en && im.srcEn ? im.srcEn : im.src }));
+  const images = [
+    ...(V.pending ? [{ pending: true, label: t('場地圖') }] : []),
+    ...V.images.map((im) => ({ ...im, label: en && im.en ? im.en : im.label, file: en && im.srcEn ? im.srcEn : im.src })),
+  ];
   // Hotspots line up with the map they were measured on; an English map with a different layout gets none.
   const spotsFor = (im) => (im.map && (!en || !im.srcEn || im.srcEn === im.src || V.map?.regionsEn) ? (en && V.map?.regionsEn) || V.map?.regions || {} : {});
 
@@ -54,6 +59,7 @@
   ov.setAttribute('aria-label', t('場地圖與官方時間表'));
   ov.innerHTML = `
     <div class="mv-stage" id="mvStage"><div class="mv-pan" id="mvPan"><img id="mvImg" alt="" draggable="false"><div class="mv-spots" id="mvSpots"></div></div></div>
+    ${V.pending ? `<div class="mv-wait-in" id="mvWait" hidden>${note()}</div>` : ''}
     <div class="mv-pop glass" id="mvPop" hidden></div>
     <div class="mv-bar">
       ${images.length > 1 ? `<div class="tabbar" role="tablist">${images.map((im, i) => `<button type="button" class="tab" role="tab" data-mv="${i}" aria-pressed="${i === 0}"><b>${esc(im.label)}</b></button>`).join('')}</div>` : '<div class="mv-fill"></div>'}
@@ -65,6 +71,7 @@
   const img = ov.querySelector('#mvImg');
   const spots = ov.querySelector('#mvSpots');
   const pop = ov.querySelector('#mvPop');
+  const wait = ov.querySelector('#mvWait');
 
   /* ---------- zoom & pan ---------- */
   const view = { s: 1, x: 0, y: 0, w: 0, h: 0, fitX: 0, fitY: 0 };
@@ -179,13 +186,16 @@
     current = i;
     pop.hidden = true;
     const im = images[i];
+    ov.querySelectorAll('[data-mv]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.mv) === i)));
+    stage.hidden = !!im.pending;
+    if (wait) wait.hidden = !im.pending;
+    if (im.pending) return;
     const regions = spotsFor(im);
     const st = FP.stages();
     spots.innerHTML = Object.entries(regions).map(([id, r]) => {
       const s = st.find((x) => x.id === id);
       return `<button type="button" data-spot="${id}" style="left:${r.x}%;top:${r.y}%;width:${r.w}%;height:${r.h}%" aria-label="${esc(s ? s.name : id)}"></button>`;
     }).join('');
-    ov.querySelectorAll('[data-mv]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.mv) === i)));
     img.alt = im.label;
     if (img.getAttribute('src') !== im.file) { img.onload = fit; img.src = im.file; } else fit();
   }
@@ -193,7 +203,9 @@
   function open() {
     opener = document.activeElement;
     ov.hidden = false;
-    show(current);
+    // An image for one day (venue.json "day"), e.g. that day's official timetable: open on the day the board shows.
+    const forDay = images.findIndex((im) => im.day === FP.day());
+    show(forDay >= 0 ? forDay : current);
     ov.querySelector('[data-mv-close]').focus();
   }
   function close() {

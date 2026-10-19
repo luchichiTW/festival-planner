@@ -235,6 +235,10 @@ export function validate({ slug, dir, event: ev, schedule, artists, venue }) {
   if (venue) {
     const files = [venue.map?.image, venue.map?.imageEn, ...(venue.images || []).flatMap((i) => [i.src, i.srcEn])].filter(Boolean);
     for (const f of files) if (!fs.existsSync(path.join(dir, f))) err(`venue.json: 找不到圖片 ${f}`);
+    for (const im of venue.images || []) {
+      if (!im.label || !im.src) err('venue.json: images 每一張都要有 label 和 src');
+      if (im.day !== undefined && !(Number.isInteger(im.day) && im.day >= 1 && im.day <= (ev.days || []).length)) err(`venue.json: 圖片「${im.label}」的 day 要是 1 到 ${(ev.days || []).length}`);
+    }
     for (const [id, r] of Object.entries(venue.map?.regions || {})) {
       if (!stageIds.has(id)) err(`venue.json: 熱區 "${id}" 不是 event.json 裡的舞台`);
       if (![r.x, r.y, r.w, r.h].every((v) => typeof v === 'number' && v >= 0 && v <= 100)) err(`venue.json: 熱區 ${id} 的 x／y／w／h 要是 0–100 的百分比`);
