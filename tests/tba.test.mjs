@@ -38,6 +38,15 @@ test('a tba event builds one page with the notice, no planner, no service worker
   assert.doesNotMatch(html, /id="grid"|sw\.js|serviceWorker/, 'no planner and no offline install yet');
   assert.equal(fs.existsSync(path.join(site, 'sw.js')), false);
   assert.ok(fs.existsSync(path.join(site, 'icon-192.png')), 'icons for the homepage card');
+  // A shared link shows the event's icon as a square picture (it has no 1200×630 picture until the timetable is out).
+  const tags = Object.fromEntries([...html.matchAll(/<meta (?:property|name)="((?:og|twitter):[^"]+)" content="([^"]*)"/g)].map((m) => [m[1], m[2]]));
+  assert.equal(tags['og:type'], 'website');
+  assert.equal(tags['og:url'], ev.urls.site);
+  assert.equal(tags['og:image'], `${ev.urls.site}icon-512.png`);
+  assert.deepEqual([tags['og:image:width'], tags['og:image:height']], ['512', '512']);
+  assert.ok(tags['og:image:alt']);
+  assert.equal(tags['twitter:card'], 'summary');
+  assert.ok(fs.existsSync(path.join(site, 'icon-512.png')), 'the picture is served next to the page');
   assert.doesNotMatch(html, /<script[^>]+src="https?:|<link[^>]+href="https?:\/\/(?!chiparashi)/, 'nothing from other sites');
   assert.match(fs.readFileSync(path.join(out, '_redirects'), 'utf8'), new RegExp(`^/${SLUG} /${SLUG}/ 301$`, 'm'));
   assert.equal(fs.existsSync(path.join(out + '-art', SLUG)), false, 'no single-file artifact for a page without a timetable');

@@ -141,7 +141,8 @@ function buildTba({ event: ev, dir }, out) {
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
 <meta name="theme-color" content="${esc(ev.icons?.themeColor || ev.theme.dark.bg)}">
-${base ? `<link rel="canonical" href="${esc(base)}">\n<meta property="og:title" content="${esc(title)}">\n<meta property="og:description" content="${esc(description)}">\n<meta property="og:url" content="${esc(base)}">` : ''}
+${base ? `<link rel="canonical" href="${esc(base)}">\n<meta property="og:type" content="website">\n<meta property="og:title" content="${esc(title)}">\n<meta property="og:description" content="${esc(description)}">\n<meta property="og:url" content="${esc(base)}">` : ''}
+${base && icon['512'] ? `<meta property="og:image" content="${esc(base)}icon-512.png">\n<meta property="og:image:width" content="512">\n<meta property="og:image:height" content="512">\n<meta property="og:image:alt" content="${esc(ev.name)} 的圖示">\n<meta name="twitter:card" content="summary">` : ''}
 ${icon.svg ? '<link rel="icon" href="icon.svg" type="image/svg+xml">' : icon['192'] ? '<link rel="icon" href="icon-192.png" sizes="192x192" type="image/png">' : ''}
 ${icon['180'] ? '<link rel="apple-touch-icon" href="icon-180.png">' : ''}
 <style>
@@ -315,7 +316,8 @@ const hex = (c) => (/^#[0-9a-f]{6}$/i.test(c) ? [1, 3, 5].map((i) => parseInt(c.
 const apart = (a, b) => { const x = hex(a); const y = hex(b); return x && y ? x.reduce((n, v, i) => n + Math.abs(v - y[i]), 0) : 99; };
 const todayIn = (tz) => new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 
-function ticket(ev) {
+// Also used by scripts/og.mjs site for the homepage's link-preview picture.
+export function ticket(ev) {
   const d = ev.theme.dark;
   const tba = ev.status === 'tba';
   // On the dark page the ticket sits on the event's surface colour, or the next one up when that is too close to
@@ -391,6 +393,8 @@ export function buildSite({ out = path.join(ROOT, 'dist-site') } = {}) {
   /* ---------- privacy page: what is and isn't collected (wording follows scripts/lib/copy.mjs) ---------- */
   fs.mkdirSync(path.join(out, 'privacy'), { recursive: true });
   fs.writeFileSync(path.join(out, 'privacy', 'index.html'), fill(read(path.join(ROOT, 'site', 'privacy.html')), { updated: PRIVACY_UPDATED.replace(/-/g, '/') }));
+  // The link-preview picture for the homepage and /privacy/ (made by node scripts/og.mjs site).
+  fs.copyFileSync(path.join(ROOT, 'site', 'og.png'), path.join(out, 'og.png'));
 
   /* ---------- robots.txt: one group for every crawler, and where the sitemaps are ---------- */
   const live = events.filter((ev) => !ev.urls?.archive);

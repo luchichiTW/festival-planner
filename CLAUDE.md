@@ -16,6 +16,7 @@ node scripts/fonts.mjs <slug>           # 重抓字型子集（藝人名單改�
 node scripts/icons.mjs <slug>           # 從 assets/icon.html 重畫主畫面圖示
 node scripts/check-embeds.mjs <slug>    # 連網核對每個試聽：存在、可嵌入、是這位藝人的（改了 embeds 要跑）
 node scripts/og.mjs <slug>              # 畫分享預覽圖（1200×630）→ assets/og.png
+node scripts/og.mjs site                # 畫首頁與 /privacy/ 的分享預覽圖 → site/og.png（新增活動或換圖示時要跑）
 ```
 
 建置與測試都只用 Node 內建功能，不需要 `npm install`。
@@ -84,7 +85,7 @@ node scripts/og.mjs <slug>              # 畫分享預覽圖（1200×630）→ a
 1. 選代號：小寫英數與連字號，例如 `megaport2026`。不能是其他活動代號的開頭（網址是 `<slug>*`）。
 2. 照 `events/vagabond2026/` 的結構建資料夾：`event.json`、`data/`、`assets/`、`artifact/README.md`、`CLAUDE.md`、`CHANGELOG.md`。
 3. 照活動 `CLAUDE.md` 的資料規則轉時間表與藝人資料。
-4. `node scripts/fonts.mjs <slug>`、`node scripts/icons.mjs <slug>`、`node scripts/og.mjs <slug>`。
+4. `node scripts/fonts.mjs <slug>`、`node scripts/icons.mjs <slug>`、`node scripts/og.mjs <slug>`，再跑 `node scripts/og.mjs site` 讓首頁的分享預覽圖也列出這個活動。
 5. `node scripts/validate.mjs <slug>`、`node scripts/build.mjs <slug>`、`node scripts/serve.mjs` 實際看過、`npm test`。
 6. 加一份 `events/<slug>/wrangler.jsonc`（照 vagabond2026 的改名稱與路徑），並在 `.github/workflows/deploy.yml` 的選單加上這個活動，再部署。
 7. 推上 main 後首頁會自動重新部署（`.github/workflows/site.yml`），票券、robots.txt、llms.txt、sitemap.xml 就會列出這個活動。

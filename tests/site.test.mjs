@@ -19,7 +19,7 @@ const read = (f) => fs.readFileSync(path.join(out, f), 'utf8');
 const ticketOf = (html, slug) => new RegExp(`<a class="ticket"[^>]* href="${slug}/"[\\s\\S]*?</a>`).exec(html)?.[0] || '';
 
 test('the homepage ships its own files, icons included, and loads nothing from other sites', () => {
-  assert.deepEqual(fs.readdirSync(out).sort(), ['icons', 'index.html', 'llms.txt', 'privacy', 'robots.txt', 'sitemap.xml']);
+  assert.deepEqual(fs.readdirSync(out).sort(), ['icons', 'index.html', 'llms.txt', 'og.png', 'privacy', 'robots.txt', 'sitemap.xml']);
   // Icons are the homepage's own copies: an event's path may redirect elsewhere once the event moves (urls.archive).
   for (const ev of events) {
     assert.ok(fs.existsSync(path.join(out, 'icons', `${ev.slug}.png`)), `${ev.slug} icon copied`);
@@ -77,6 +77,27 @@ test('the homepage says what the site is and who runs it: WebSite, Person with I
   // No other site is named anywhere in the structured data.
   const urls = [...JSON.stringify(blocks[0]).matchAll(/https?:\/\/[^"]+/g)].map((m) => m[0]);
   for (const u of urls) assert.ok(u === 'https://schema.org' || u.startsWith(`${HOST}/`) || u === 'https://www.instagram.com/luchichitw/', u);
+});
+
+// A shared link (Facebook, Threads, Instagram messages, LINE) shows this card: title, description and a 1200×630 picture.
+const og = (html) => Object.fromEntries([...html.matchAll(/<meta (?:property|name)="((?:og|twitter):[^"]+)" content="([^"]*)"/g)].map((m) => [m[1], m[2]]));
+const pngSize = (file) => { const b = fs.readFileSync(file); return b.slice(1, 4).toString() === 'PNG' ? [b.readUInt32BE(16), b.readUInt32BE(20)] : null; };
+test('link preview: the homepage and the privacy page share the homepage picture, 1200×630, made by scripts/og.mjs site', () => {
+  assert.deepEqual(pngSize(path.join(ROOT, 'site', 'og.png')), [1200, 630], 'site/og.png (node scripts/og.mjs site)');
+  assert.ok(fs.readFileSync(path.join(out, 'og.png')).equals(fs.readFileSync(path.join(ROOT, 'site', 'og.png'))), 'copied as it is');
+  for (const [file, url] of [['index.html', `${HOST}/`], ['privacy/index.html', `${HOST}/privacy/`]]) {
+    const tags = og(read(file));
+    assert.equal(tags['og:url'], url, file);
+    assert.ok(tags['og:title'] && tags['og:description'], `${file}: title and description`);
+    assert.equal(tags['og:type'], 'website', file);
+    assert.equal(tags['og:site_name'], 'chiparashi', file);
+    assert.equal(tags['og:image'], `${HOST}/og.png`, file);
+    assert.equal(tags['og:image:width'], '1200', file);
+    assert.equal(tags['og:image:height'], '630', file);
+    assert.ok(tags['og:image:alt'], `${file}: the picture described`);
+    assert.equal(tags['og:locale'], 'zh_TW', file);
+    assert.equal(tags['twitter:card'], 'summary_large_image', file);
+  }
 });
 
 test('contact and footer', () => {
