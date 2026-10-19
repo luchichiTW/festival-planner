@@ -915,6 +915,57 @@ test('浪人祭 header: the year leaves the wordmark; date over place on its rig
   await main.close();
 });
 
+// Each timetable name or talk title as lines, with what reads badly: a last line of one character, an English word
+// split in two.
+const BREAKS = () => [...document.querySelectorAll('#grid .block')].flatMap((b) => [...b.querySelectorAll('.nm, .nt')].map((el) => {
+  const marks = [];
+  for (const n of el.childNodes) {
+    if (n.nodeType !== 3) continue;
+    for (let i = 0; i < n.data.length; i++) {
+      if (/\s/.test(n.data[i])) { marks.push({ ch: n.data[i] }); continue; }
+      const r = document.createRange(); r.setStart(n, i); r.setEnd(n, i + 1);
+      const boxes = r.getClientRects();
+      marks.push({ ch: n.data[i], top: Math.round(boxes[boxes.length - 1].top) });
+    }
+  }
+  const lines = []; let top = null; let split = false; let prev = null;
+  for (const m of marks) {
+    if (m.top === undefined) { if (lines.length) lines[lines.length - 1] += m.ch; prev = null; continue; }
+    if (top === null || Math.abs(m.top - top) > 3) {
+      if (top !== null && prev && /[A-Za-z0-9]/.test(prev) && /[A-Za-z0-9]/.test(m.ch)) split = true;
+      lines.push(m.ch); top = m.top;
+    } else lines[lines.length - 1] += m.ch;
+    prev = m.ch;
+  }
+  const L = lines.map((x) => x.trim());
+  return { id: b.dataset.id, lines: L, bad: split || (L.length > 1 && [...L[L.length - 1]].length === 1) };
+}));
+
+test('timetable names never end on a line of one character or split an English word; 我是機車少女 stays on one line, 王鍾惟 whole', { skip: SKIP }, async () => {
+  const main = await origin();
+  for (const [lang, width] of [['zh', 402], ['zh', 320], ['en', 402]]) {
+    const page = await open(`${main.base}/${SLUG}/`, { width, seed: { [`fp:${SLUG}:lang`]: lang } });
+    await page.eval('document.fonts.ready');
+    const all = [];
+    for (const d of [1, 2]) {
+      await page.tap(`#day${d}`);
+      await page.eval('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))');
+      all.push(...await page.eval(BREAKS));
+    }
+    const bad = all.filter((x) => x.bad).map((x) => `${x.id}: ${x.lines.join('／')}`);
+    // English: two names are single words wider than a stage column even at the smallest size; nothing to do there.
+    const known = lang === 'en' ? ['d2-whateveryousay-talk', 'd2-strongstrong-talk'] : [];
+    assert.deepEqual(bad.filter((x) => !known.some((k) => x.startsWith(k + ':'))), [], `${lang} ${width}px`);
+    if (lang === 'zh') {
+      const by = (id) => all.find((x) => x.id === id).lines;
+      assert.deepEqual(by('d2-imdifficult'), ['我是機車少女']);
+      assert.deepEqual(by('d1-vuize'), ['Vuize', '王鍾惟']);
+    }
+    await closePage(page);
+  }
+  await main.close();
+});
+
 test('no text is cut off or replaced with "…" at 390, 375 and 320 px', { skip: SKIP }, async () => {
   const main = await origin();
   for (const width of [390, 375, 320]) {

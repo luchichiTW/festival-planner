@@ -208,6 +208,9 @@
   let nowY = null;
   grid.style.setProperty('--ns', STAGES.length);
 
+  // Chinese, Japanese or Korean in a name: keep its words whole (styles.css .cjk). Not for Thai, which WebKit then
+  // can't break between words at all.
+  const CJK = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\uac00-\ud7af]/;
   function renderGrid() {
     const d = DAYS[state.day];
     grid.innerHTML = '';
@@ -248,8 +251,8 @@
         b.title = `${s.note ? s.note + '｜' : ''}${s.label}　${fmt(s.start)}–${fmt(s.end)}`;
         b.setAttribute('aria-label', t('{name}，{stage}，{start} 到 {end}', { name: s.label, stage: st.short, start: fmt(s.start), end: fmt(s.end) }));
         b.innerHTML =
-          (s.note ? `<span class="nt">${esc(s.note)}</span>` : '') +
-          `<span class="nm${s.label.length > 18 ? ' sm' : ''}">${esc(s.label)}</span>` +
+          (s.note ? `<span class="nt${CJK.test(s.note) ? ' cjk' : ''}">${esc(s.note)}</span>` : '') +
+          `<span class="nm${s.label.length > 18 ? ' sm' : ''}${CJK.test(s.label) ? ' cjk' : ''}">${esc(s.label)}</span>` +
           `<span class="tm">${fmt(s.start)}–${fmt(s.end)}</span>`;
         col.append(b);
         blockEls.set(s.id, b);
@@ -264,9 +267,46 @@
     fitBlocks();
   }
 
-  // Shrink a block's text step by step (fit1…fit4) until it fits — never cut it off. Runs after layout.
+  // A last line of one character (我是機車少／女) or an English word split in two (JABBERLOO／P): read from where
+  // each character landed. A single line is never wrong.
+  const range = document.createRange();
+  function badBreak(el) {
+    const lh = parseFloat(getComputedStyle(el).lineHeight) || 16;
+    if (el.offsetHeight < lh * 1.5) return false;
+    let top = null;
+    let prev = null; // the character before, unless a space came between
+    let onLast = 0;
+    for (const n of el.childNodes) {
+      if (n.nodeType !== 3) continue;
+      for (let i = 0; i < n.data.length; i++) {
+        const ch = n.data[i];
+        if (/\s/.test(ch)) { prev = null; continue; }
+        range.setStart(n, i);
+        range.setEnd(n, i + 1);
+        // WebKit gives a character pushed to the next line two boxes, the first an empty one at the end of the line
+        // before: the last box is where it is.
+        const boxes = range.getClientRects();
+        const box = boxes[boxes.length - 1];
+        if (!box) continue;
+        const y = Math.round(box.top);
+        if (top !== null && Math.abs(y - top) > 3) {
+          if (prev && /[A-Za-z0-9]/.test(prev) && /[A-Za-z0-9]/.test(ch)) return true;
+          onLast = 0;
+        }
+        top = y;
+        prev = ch;
+        onLast++;
+      }
+    }
+    return onLast === 1;
+  }
+
+  // Shrink a block's text step by step (fit1…fit4) until it fits — never cut it off. Then, where a name or talk title
+  // still breaks badly (see badBreak), make just that text 0.5px smaller at a time — names down to 10px, talk titles
+  // to 8px — until it reads well; if it never does, it keeps its size. Runs after layout.
   function fitBlocks() {
     for (const b of blockEls.values()) {
+      b.querySelectorAll('.nm, .nt').forEach((x) => { x.style.fontSize = ''; });
       b.classList.remove('fit1', 'fit2', 'fit3', 'fit4', 'fit5', 'fit6');
       const fits = () => {
         const kids = [...b.children].filter((c) => !c.classList.contains('hit-tag') && !c.classList.contains('bprog'));
@@ -274,6 +314,18 @@
         return used <= b.clientHeight - 6 && kids.every((c) => c.scrollWidth <= c.clientWidth + 1);
       };
       for (let step = 1; step <= 6 && !fits(); step++) b.classList.add(`fit${step}`);
+      for (const x of b.querySelectorAll('.nm, .nt')) {
+        if (getComputedStyle(x).display === 'none' || !badBreak(x)) continue;
+        const min = x.classList.contains('nt') ? 8 : 10;
+        let size = parseFloat(getComputedStyle(x).fontSize);
+        let bad = true;
+        while (bad && size - 0.5 >= min) {
+          size -= 0.5;
+          x.style.fontSize = `${size}px`;
+          bad = badBreak(x);
+        }
+        if (bad) x.style.fontSize = '';
+      }
     }
   }
   try { document.fonts.ready.then(fitBlocks); } catch (e) { /* no font loading API: fitted after the first render */ }

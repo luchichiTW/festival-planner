@@ -243,6 +243,11 @@ button { font: inherit; color: inherit; }
 @media (hover: hover) { .block:hover { border-color: var(--c); } }
 .block:active { transform: scale(.97); }
 .block .nm, .block .nt { display: block; overflow-wrap: anywhere; }
+/* Break between words, not inside them (王鍾惟, 怡岑 stay whole: .cjk, set by app.js), and even out the lines. A run with no space that
+   doesn't fit still breaks where it must; app.js (fitBlocks) then makes it smaller instead of leaving one character
+   on a line. */
+.block .nm, .block .nt { text-wrap: balance; }
+.block .cjk { word-break: keep-all; }
 .block .nm { font: 700 13px/1.22 var(--body); }
 .block .nm.sm { font-size: 11.5px; }
 .block .nt { font: 500 9.5px/1.25 var(--body); opacity: .78; }
