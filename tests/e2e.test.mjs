@@ -361,12 +361,16 @@ test('AC-07 a new deploy switches in only when nobody is using the page, and kee
     await page.tap('#day2');
     await page.tap('.block[data-id="d2-milena"]');
     const consistent = () => ({ build: FP_EVENT.build, meta: document.querySelector('meta[name="fp-build"]').content });
+    const swState = () => page.eval(`navigator.serviceWorker.getRegistration().then((r) => JSON.stringify({ installing: r.installing?.state, waiting: r.waiting?.state, active: r.active?.state, build: FP_EVENT.build, here: window.__stillHere }))`);
 
     // v2 is deployed. Opening the app again: the cached v1 page shows first (never v2 HTML with v1 files), v2
-    // downloads, and since nothing was touched yet it takes over at once and says so.
+    // downloads, and since nothing was touched yet it takes over at once and says so. The switch is the page
+    // reloading itself once it has loaded and gone quiet: wait for that load.
     rebuild(root, 'e2e-v2');
     await page.reload();
-    await page.until(() => FP_EVENT.build === 'e2e-v2', { ms: 15000 });
+    await page.waitFor('Page.loadEventFired', () => true, 15000).catch(async (e) => {
+      throw new Error(`${e.message}: v2 never switched in\nservice worker: ${await swState()}`);
+    });
     assert.deepEqual(await page.eval(consistent), { build: 'e2e-v2', meta: 'e2e-v2' });
     await page.until(() => /已更新到 10\/17 的時間表/.test(document.getElementById('toast').textContent));
     assert.deepEqual(await page.eval(`FP.snapshot().picks`), ['d2-milena']);
@@ -377,8 +381,7 @@ test('AC-07 a new deploy switches in only when nobody is using the page, and kee
     rebuild(root, 'e2e-v3');
     await page.eval(`window.__stillHere = true; navigator.serviceWorker.getRegistration().then((r) => r.update())`);
     await page.until(async () => !!(await navigator.serviceWorker.getRegistration()).waiting, { ms: 15000 }).catch(async (e) => {
-      const st = await page.eval(`navigator.serviceWorker.getRegistration().then((r) => JSON.stringify({ installing: r.installing?.state, waiting: r.waiting?.state, active: r.active?.state, build: FP_EVENT.build, here: window.__stillHere }))`);
-      throw new Error(`${e.message}\nservice worker: ${st}`);
+      throw new Error(`${e.message}\nservice worker: ${await swState()}`);
     });
     await sleep(800);
     assert.deepEqual(await page.eval(`[FP_EVENT.build, window.__stillHere]`), ['e2e-v2', true], 'no reload while in use');
