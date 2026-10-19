@@ -426,37 +426,42 @@ const readOnboard = () => {
   };
 };
 const onStep = (page, title) => page.until((t) => document.querySelector('#sheet:not([hidden]) .ob h2')?.textContent === t, { args: [title] });
-const INSTALL_TITLE = '加到主畫面，沒網路也能開';
+const IOS_INSTALL = '先加主畫面再排團！';
+const PHONE_INSTALL = '加到主畫面，沒網路也能開';
 
-test('first visit on an iPhone: three steps — picking, my picks, add to the home screen — then never again', { skip: SKIP }, async () => {
+test('first visit on an iPhone: the 大港撞團 cards — long-press, 我的團序 and map, add to the home screen — then never again', { skip: SKIP }, async () => {
   const srv = await origin();
   const url = `${srv.base}/${SLUG}/`;
   const page = await open(url, { onboard: true, ua: UA.iphone });
-  await onStep(page, '怎麼排團');
+  await onStep(page, '長按看表演者資訊');
   assert.deepEqual(await page.eval(() => [document.getElementById('coach'), document.getElementById('installHint')]), [null, null], 'the old one-line hints are gone');
   let s = await page.eval(readOnboard);
   assert.equal(s.dots, 3);
   assert.deepEqual(s.buttons, ['跳過', '下一步']);
-  for (const w of [/點一下/, /長按/, /重疊/]) assert.match(s.text, w);
-  assert.deepEqual(await page.eval(() => [...document.querySelectorAll('#sheet .ob-demo .block')].map((b) => b.className.replace('block', '').trim())), ['', 'sel', 'clash'], 'a small picture of the three looks');
+  const card = await page.eval(() => { const r = document.getElementById('sheet').getBoundingClientRect(); return { centred: Math.abs((r.top + r.bottom) / 2 - innerHeight / 2) < 4, cls: document.getElementById('sheet').className }; });
+  assert.ok(card.centred && /ob-card/.test(card.cls), 'a card in the middle of the screen, as in 大港撞團');
+  const mock = await page.eval(() => ({ pill: document.querySelector('#sheet .ob-mock .pill')?.textContent, time: document.querySelector('#sheet .ob-mock .lp-time')?.textContent, name: document.querySelector('#sheet .ob-mock .lp-name')?.textContent, seg: [...document.querySelectorAll('#sheet .ob-mock .emb-seg button')].map((b) => b.textContent) }));
+  assert.deepEqual(mock, { pill: '小嘻門', time: '16:10 – 16:50', name: 'C.Holly', seg: [] }, 'the example card is C.Holly (event.json onboardExample), with her one player');
 
   await page.tap('#sheet [data-act="ob-next"]');
-  await onStep(page, '我的團序');
+  await onStep(page, '團序、時間表與地圖');
   s = await page.eval(readOnboard);
   assert.deepEqual(s.buttons, ['上一步', '下一步']);
-  for (const w of [/抽籤/, /複製備份連結/]) assert.match(s.text, w);
+  for (const w of [/抽籤/, /地圖/, /複製備份連結/]) assert.match(s.text, w);
 
   await page.tap('#sheet [data-act="ob-next"]');
-  await onStep(page, INSTALL_TITLE);
+  await onStep(page, IOS_INSTALL);
   s = await page.eval(readOnboard);
-  for (const w of [/分享/, /加入主畫面/, /沒有網路/, /Safari 裡排的團序不會帶到主畫面/]) assert.match(s.text, w);
-  assert.deepEqual(s.buttons, ['上一步', '開始排團']);
+  for (const w of [/分享/, /加入主畫面/, /離線/, /不蒐集/]) assert.match(s.text, w);
+  assert.deepEqual(s.buttons, ['上一步', '開始使用']);
+  assert.deepEqual(await page.eval(() => [...document.querySelectorAll('#sheet .ob-links a')].map((a) => [a.textContent, a.getAttribute('href')])), [['官方網站', 'https://www.vagabondfest.com/'], ['GitHub 原始碼', 'https://github.com/luchichiTW/festival-planner']]);
   await page.tap('#sheet [data-act="ob-back"]');
-  await onStep(page, '我的團序');
+  await onStep(page, '團序、時間表與地圖');
   await page.tap('#sheet [data-act="ob-next"]');
-  await onStep(page, INSTALL_TITLE);
+  await onStep(page, IOS_INSTALL);
   await page.tap('#sheet [data-act="ob-done"]');
   await page.until(() => document.getElementById('sheet').hidden && document.getElementById('scrim').hidden);
+  assert.equal(await page.eval(() => document.getElementById('sheet').className), 'sheet', 'back to an ordinary sheet for everything else');
   await closePage(page);
 
   const again = await open(url, { onboard: true, ua: UA.iphone });
@@ -465,16 +470,21 @@ test('first visit on an iPhone: three steps — picking, my picks, add to the ho
   await closePage(again);
 });
 
-test('skipping still ends on using it offline; where the browser offers it, one tap installs', { skip: SKIP }, async () => {
+test('跳過 closes it, as in 大港撞團; the add-to-home-screen card comes back once; where the browser offers it, one tap installs', { skip: SKIP }, async () => {
   const srv = await origin();
-  const page = await open(`${srv.base}/${SLUG}/`, { onboard: true, ua: UA.android });
-  await onStep(page, '怎麼排團');
-  await page.tap('#sheet [data-act="ob-skip"]');
-  await onStep(page, INSTALL_TITLE);
+  const url = `${srv.base}/${SLUG}/`;
+  const first = await open(url, { onboard: true, ua: UA.android });
+  await onStep(first, '長按看表演者資訊');
+  await first.tap('#sheet [data-act="ob-skip"]');
+  await first.until(() => document.getElementById('sheet').hidden);
+  await closePage(first);
+  const page = await open(url, { onboard: true, ua: UA.android });
+  await onStep(page, PHONE_INSTALL);
   let s = await page.eval(readOnboard);
-  for (const w of [/⋮/, /加到主畫面/, /沒有網路/]) assert.match(s.text, w);
-  assert.deepEqual(s.buttons, ['上一步', '開始排團']);
-  // Chrome offers its own install prompt (beforeinstallprompt): the step turns into an install button.
+  assert.equal(s.dots, 0, 'only the card that was skipped past');
+  assert.deepEqual(s.buttons, ['👌']);
+  for (const w of [/⋮/, /加到主畫面/, /離線/]) assert.match(s.text, w);
+  // Chrome offers its own install prompt (beforeinstallprompt): the card turns into an install button.
   await page.eval(() => {
     const e = new Event('beforeinstallprompt', { cancelable: true });
     e.__fake = true;
@@ -492,14 +502,14 @@ test('skipping still ends on using it offline; where the browser offers it, one 
   await closePage(page);
 });
 
-test('people who already use it see only the add-to-home-screen step, once; inside Instagram it says to open a browser first', { skip: SKIP }, async () => {
+test('people who already use it see only the add-to-home-screen card, once; inside Instagram it says to open a browser first', { skip: SKIP }, async () => {
   const srv = await origin();
   const url = `${srv.base}/${SLUG}/`;
   const page = await open(url, { onboard: true, ua: UA.instagram, seed: { [`fp:${SLUG}:hint-seen`]: '1' } });
-  await onStep(page, INSTALL_TITLE);
+  await onStep(page, IOS_INSTALL);
   const s = await page.eval(readOnboard);
-  assert.equal(s.dots, 0, 'one step, no dots');
-  assert.deepEqual(s.buttons, ['知道了']);
+  assert.equal(s.dots, 0, 'one card, no dots');
+  assert.deepEqual(s.buttons, ['👌']);
   for (const w of [/App 裡的瀏覽器/, /Safari 或 Chrome/]) assert.match(s.text, w);
   assert.ok(await page.eval(() => !!document.querySelector('#sheet .ob-body [data-act="ob-copy"]')), 'a button to copy the address');
   // Closing it any way (here: tapping outside) counts as seen.
@@ -512,16 +522,16 @@ test('people who already use it see only the add-to-home-screen step, once; insi
   await closePage(again);
 });
 
-test('from the home screen and in the Claude artifact: the two how-to steps, no install step; a link to one show opens on the show', { skip: SKIP }, async () => {
+test('from the home screen and in the Claude artifact: the two how-to cards, no install card; a link to one show opens on the show', { skip: SKIP }, async () => {
   for (const [path, opts] of [[`/${SLUG}/`, { ua: UA.iphone, standalone: true }], ['/art/', {}]]) {
     const srv = await origin();
     const page = await open(`${srv.base}${path}`, { onboard: true, ...opts });
-    await onStep(page, '怎麼排團');
+    await onStep(page, '長按看表演者資訊');
     assert.equal((await page.eval(readOnboard)).dots, 2, path);
     await page.tap('#sheet [data-act="ob-next"]');
-    await onStep(page, '我的團序');
+    await onStep(page, '團序、時間表與地圖');
     const s = await page.eval(readOnboard);
-    assert.deepEqual(s.buttons, ['上一步', '開始排團'], path);
+    assert.deepEqual(s.buttons, ['上一步', '開始使用'], path);
     assert.doesNotMatch(s.text, /主畫面/, path);
     await page.tap('#sheet [data-act="ob-done"]');
     await page.until(() => document.getElementById('sheet').hidden);
@@ -531,6 +541,20 @@ test('from the home screen and in the Claude artifact: the two how-to steps, no 
   const page = await open(`${srv.base}/${SLUG}/#show-${schedule[0].id}`, { onboard: true, ua: UA.iphone });
   await sleep(300);
   assert.equal(await page.eval(() => document.getElementById('sheet').hidden), true, 'arriving from an artist page: no walkthrough over the show');
+  await closePage(page);
+});
+
+test('before the official venue map is out, the map button says where it will be and links to the official page', { skip: SKIP }, async () => {
+  const srv = await origin();
+  const page = await open(`${srv.base}/${SLUG}/`);
+  await page.tap('#mapBtn');
+  await page.until(() => document.querySelector('.mv-wait') && !document.querySelector('.mv-wait').hidden);
+  const v = await page.eval(() => ({ title: document.getElementById('mvWaitTitle').textContent, text: document.querySelector('.mv-wait-in p').textContent, link: document.querySelector('.mv-wait-in a').getAttribute('href') }));
+  assert.equal(v.title, '場地圖');
+  assert.match(v.text, /還沒公布/);
+  assert.equal(v.link, 'https://www.vagabondfest.com/pages/map');
+  await page.tap('.mv-wait [data-mv-close]');
+  await page.until(() => document.querySelector('.mv-wait').hidden);
   await closePage(page);
 });
 
@@ -578,13 +602,15 @@ test('浪人祭 in English: official stage and act names and talk titles, and th
 
 test('the walkthrough speaks English when the page does', { skip: SKIP }, async () => {
   const srv = await origin();
-  const page = await open(`${srv.base}/megaport2026/`, { onboard: true, ua: UA.iphone, seed: { 'fp:megaport2026:lang': 'en' } });
-  await onStep(page, 'How it works');
+  const page = await open(`${srv.base}/${SLUG}/`, { onboard: true, ua: UA.iphone, seed: { [`fp:${SLUG}:lang`]: 'en' } });
+  await onStep(page, 'Press and hold for artist info');
   assert.deepEqual((await page.eval(readOnboard)).buttons, ['Skip', 'Next']);
-  await page.tap('#sheet [data-act="ob-skip"]');
-  await onStep(page, 'Add it to your Home Screen to use it offline');
+  for (const title of ['Schedule, timetable and map', 'Add to Home Screen first!']) {
+    await page.tap('#sheet [data-act="ob-next"]');
+    await onStep(page, title);
+  }
   const s = await page.eval(readOnboard);
-  assert.deepEqual(s.buttons, ['Back', 'Start planning']);
+  assert.deepEqual(s.buttons, ['Back', 'Get started']);
   assert.match(s.text, /Add to Home Screen/);
   assert.doesNotMatch(s.text, /[一-鿿]/, 'no Chinese left in the English walkthrough');
   await closePage(page);
@@ -875,7 +901,7 @@ test('megaport: 12 stages, both days, and vagabond keeps no map or language butt
   assert.equal(await page.eval(`!!document.getElementById('mapBtn') && !!document.getElementById('langBtn')`), true);
   await closePage(page);
   const vb = await open(`${main.base}/${SLUG}/`);
-  assert.deepEqual(await vb.eval(`[!!document.getElementById('mapBtn'), !!document.getElementById('langBtn')]`), [false, true], 'vagabond: no map yet, and EN／中 since its official English timetable is in');
+  assert.deepEqual(await vb.eval(`[!!document.getElementById('mapBtn'), !!document.getElementById('langBtn')]`), [true, true], 'vagabond: a map button (a placeholder until the official map), and EN／中 since its official English timetable is in');
   await closePage(vb);
   await main.close();
 });
@@ -1203,6 +1229,28 @@ test('an event waiting for its announcement: one page saying so, readable at 390
   await main.close();
 });
 
+test('a sheet can be pulled down to close, like on iPhone; a short pull springs back', { skip: SKIP }, async () => {
+  const srv = await origin();
+  const page = await open(`${srv.base}/${SLUG}/`);
+  await page.tap('#tabMine');
+  await page.until(() => document.getElementById('aboutBtn'));
+  await page.tap('#aboutBtn');
+  await page.until(() => !document.getElementById('sheet').hidden);
+  await sleep(300);
+  const pull = async (dy) => {
+    const { x, y } = await page.center('#sheet .grab');
+    await page.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+    for (let i = 1; i <= 6; i++) { await page.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y + (dy * i) / 6 }] }); await sleep(16); }
+    await page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await sleep(400);
+  };
+  await pull(40);
+  assert.equal(await page.eval(() => document.getElementById('sheet').hidden), false, 'a short pull springs back');
+  await pull(220);
+  assert.equal(await page.eval(() => document.getElementById('sheet').hidden), true, 'a long pull closes it');
+  await closePage(page);
+});
+
 test('a long sheet opens at its top: the 關於 sheet starts at its title, not at the 完成 button', { skip: SKIP }, async () => {
   const srv = await origin();
   const page = await open(`${srv.base}/${SLUG}/`);
@@ -1234,11 +1282,22 @@ test('我的團序 footer: 關於・自己做一個 and 隱私說明 side by sid
     await page.until(() => document.getElementById('aboutBtn'));
     const foot = await page.eval(() => {
       const about = document.getElementById('aboutBtn').getBoundingClientRect();
-      const priv = document.querySelector('.src-links a.about-link');
+      const priv = document.getElementById('privacyBtn');
       const r = priv.getBoundingClientRect();
-      return { text: priv.textContent, href: priv.getAttribute('href'), sameRow: Math.abs(r.top - about.top) < 4, sameLook: getComputedStyle(priv).fontSize === getComputedStyle(document.getElementById('aboutBtn')).fontSize };
+      return { text: priv.textContent, tag: priv.tagName, sameRow: Math.abs(r.top - about.top) < 4, sameLook: getComputedStyle(priv).fontSize === getComputedStyle(document.getElementById('aboutBtn')).fontSize };
     });
-    assert.deepEqual(foot, { text: lng === 'en' ? 'Privacy' : '隱私說明', href: '/privacy/', sameRow: true, sameLook: true }, `${slug} ${lng} ${width}px`);
+    assert.deepEqual(foot, { text: lng === 'en' ? 'Privacy' : '隱私說明', tag: 'BUTTON', sameRow: true, sameLook: true }, `${slug} ${lng} ${width}px`);
+    // 隱私說明 opens in a sheet like 關於, not a new page; in English, the English summary only.
+    await page.tap('#privacyBtn');
+    await page.until(() => !document.getElementById('sheet').hidden && document.querySelector('#sheet .pv'));
+    const pv = await page.eval(() => ({ path: location.pathname, title: document.getElementById('sheetTitle').textContent, text: document.querySelector('#sheet .pv').textContent, out: [...document.querySelectorAll('#sheet .pv a[href^="http"]')].every((a) => a.target === '_blank') }));
+    assert.equal(pv.path, `/${slug}/`, 'still in the planner');
+    assert.equal(pv.title, lng === 'en' ? 'Privacy' : '隱私說明');
+    assert.match(pv.text, lng === 'en' ? /collect no personal data/ : /不蒐集的東西/);
+    if (lng === 'en') assert.doesNotMatch(pv.text, /[一-鿿]/);
+    assert.ok(pv.out, 'links open in a new tab');
+    await page.tap('#sheet [data-act="close"]');
+    await page.until(() => document.getElementById('sheet').hidden);
     await page.tap('#aboutBtn');
     await page.until(() => document.querySelector('.about-faq'));
     const sheet = await page.eval(() => ({

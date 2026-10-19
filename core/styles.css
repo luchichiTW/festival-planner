@@ -621,24 +621,42 @@ button { font: inherit; color: inherit; }
 @keyframes rise { from { transform: translateY(28px); opacity: 0; } }
 .sheet:focus { outline: none; }
 
-/* ---------- first-visit walkthrough (in the sheet) ---------- */
-.ob { display: flex; flex-direction: column; gap: 12px; }
-.ob-body { display: flex; flex-direction: column; gap: 12px; font-size: 14px; line-height: 1.6; }
-.ob-body p { margin: 0; }
-.ob-list, .ob-steps { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 6px; }
-.ob-list li::marker, .ob-steps li::marker { color: var(--muted); }
-.ob-demo { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.ob-demo figure { margin: 0; display: flex; flex-direction: column; gap: 6px; }
-.ob-demo .block { position: static; flex: 1; min-height: 60px; cursor: default; pointer-events: none; transition: none; }
-.ob-demo figcaption { text-align: center; font-size: 12px; color: var(--muted); }
-.ob-icon { align-self: center; width: 60px; height: 60px; border-radius: 14px; box-shadow: 0 6px 18px rgb(0 0 0 / .25); }
-.ob-note { padding: 10px 12px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--line-2)); background: color-mix(in srgb, var(--gold) 10%, var(--surface)); font-size: 13px; }
-.ob-note b { color: var(--accent-text); }
-.ob-url { font: 500 12.5px/1.4 var(--mono); color: var(--muted); overflow-wrap: anywhere; -webkit-user-select: text; user-select: text; }
-.ob-copy { align-self: flex-start; }
-.ob-dots { display: flex; justify-content: center; gap: 6px; padding-top: 2px; }
+/* ---------- first-visit walkthrough: a centred card, one step at a time (as in 大港撞團) ---------- */
+.scrim.ob-scrim { -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+.sheet.ob-card {
+  top: 50%;
+  bottom: auto;
+  left: 16px;
+  right: 16px;
+  max-width: 360px;
+  max-height: calc(100% - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  gap: 20px;
+  padding: 30px 24px 24px;
+  border: 1px solid var(--line-2);
+  border-radius: 24px;
+  transform: translateY(-50%);
+  box-shadow: 0 24px 60px -20px rgb(0 0 0 / .55);
+  animation: ob-in .3s ease-out;
+}
+@keyframes ob-in { from { opacity: 0; transform: translateY(-50%) scale(.96); } }
+.ob { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; animation: ob-step .3s ease-out; }
+@keyframes ob-step { from { opacity: 0; transform: translateX(24px); } }
+.ob-icon { font-size: 48px; line-height: 1; margin-bottom: 4px; }
+.sheet.ob-card .ob h2 { font: 800 22px/1.3 var(--body); letter-spacing: 0; color: var(--fg); }
+.ob-body { width: 100%; display: flex; flex-direction: column; gap: 14px; }
+.ob-desc { margin: 0; font-size: 14px; line-height: 1.6; color: var(--muted); }
+.ob-mock { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--line-2); background: var(--bg-2); text-align: left; }
+.ob-mock .lp-name { font-size: 16px; }
+.ob-mock .emb-seg button { cursor: default; }
+.ob-player { display: grid; place-items: center; height: 76px; border-radius: 12px; background: color-mix(in srgb, var(--fg) 6%, transparent); font-size: 12px; color: var(--faint); }
+.ob-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin: 0; }
+.ob-links a { padding: 8px 14px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--surface-2); color: var(--fg); font: 600 13px/1.2 var(--body); text-decoration: none; }
+.ob-url { margin: 0; font: 500 12.5px/1.4 var(--mono); color: var(--muted); overflow-wrap: anywhere; -webkit-user-select: text; user-select: text; }
+.ob-copy { align-self: center; }
+.ob-dots { display: flex; justify-content: center; gap: 6px; }
 .ob-dots i { width: 7px; height: 7px; border-radius: 4px; background: var(--line-2); transition: width .2s, background-color .2s; }
 .ob-dots i.on { width: 20px; background: var(--accent-text); }
+.sheet.ob-card .sheet-actions { margin-top: 0; }
 
 /* ---------- 05 search ---------- */
 .sp-scrim { position: fixed; inset: 0; z-index: 24; background: var(--scrim); backdrop-filter: blur(6px); }
@@ -896,7 +914,18 @@ a.about-link { display: inline-block; }
 .about-faq h3 { margin: 8px 0 0; font-size: 14px; line-height: 1.5; }
 .about-faq h3:first-child { margin-top: 0; }
 .about-faq p { margin: 0; }
-.about-faq a { margin-top: 8px; color: var(--accent-text); text-underline-offset: 3px; font-size: 13px; }
+.about-faq-link { justify-self: start; margin-top: 8px; padding: 0; border: 0; background: none; color: var(--accent-text); font: 13px var(--body); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+/* 隱私說明 in a sheet: the privacy page's text */
+.pv { display: grid; gap: 14px; font-size: 13.5px; line-height: 1.65; }
+.pv-head { display: grid; gap: 4px; }
+.pv .date { margin: 0; font-size: 12px; color: var(--faint); }
+.pv .lede, .pv p { margin: 0; }
+.pv section { display: grid; gap: 6px; }
+.pv h2 { margin: 6px 0 0; font: 700 14px/1.5 var(--body); color: var(--fg); text-align: left; letter-spacing: 0; }
+.pv h3 { margin: 4px 0 0; font-size: 13.5px; }
+.pv ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+.pv a { color: var(--accent-text); text-underline-offset: 3px; overflow-wrap: anywhere; }
+.pv .muted { color: var(--muted); }
 .about-links { display: flex; flex-direction: column; gap: 6px; }
 .about-links a {
   display: flex;
@@ -945,7 +974,11 @@ a.about-link { display: inline-block; }
 .mv-bar { position: absolute; left: 0; right: 0; bottom: var(--dock-gap); display: flex; gap: 8px; padding-inline: max(12px, env(safe-area-inset-left, 0px)) max(12px, env(safe-area-inset-right, 0px)); justify-content: center; }
 .mv-bar .tabbar { max-width: 380px; }
 .mv-fill { flex: 1; }
-.mv-done { width: auto; padding: 0 18px; font: 800 14px/1 var(--body); }
+.mv-done { width: auto; min-height: 48px; padding: 0 18px; font: 800 14px/1 var(--body); }
+.mv-wait-in { position: absolute; inset: 0 0 calc(var(--dock-gap) + 66px) 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: calc(24px + env(safe-area-inset-top, 0px)) 32px 24px; text-align: center; }
+.mv-wait-in h2 { margin: 0; font: 800 22px/1.3 var(--body); color: var(--fg); }
+.mv-wait-in p { margin: 0; max-width: 22em; font-size: 14px; line-height: 1.6; color: var(--muted); }
+.mv-wait-in .pill-btn { text-decoration: none; }
 .mv-pop {
   position: absolute;
   left: 50%;

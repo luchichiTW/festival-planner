@@ -467,7 +467,7 @@
     if (picks.size) actions.push(`<button type="button" class="pill-btn quiet" id="clearBtn">${t('清除全部')}</button>`);
     out.push(`<div class="keep"><p class="sync" id="syncNote" data-state="${sync.state}">${esc(sync.text)}</p>${actions.length ? `<div class="keep-actions">${actions.join('')}</div>` : ''}</div>`);
     out.push(`<p class="src">${esc(sourceNote)}</p>`);
-    out.push(`<p class="src src-links"><button type="button" class="about-link" id="aboutBtn">${t('關於・自己做一個')}</button>${EVT.about ? `<a class="about-link" href="${esc(EVT.about.privacy)}">${t('隱私說明')}</a>` : ''}</p>`);
+    out.push(`<p class="src src-links"><button type="button" class="about-link" id="aboutBtn">${t('關於・自己做一個')}</button>${EVT.about ? `<button type="button" class="about-link" id="privacyBtn">${t('隱私說明')}</button>` : ''}</p>`);
     mineIn.innerHTML = out.join('');
     refreshStatus();
   }
@@ -539,6 +539,8 @@
     if (im) { openImportSheet(im); return; }
     const ab = e.target.closest('#aboutBtn');
     if (ab) { openAboutSheet(ab); return; }
+    const pv = e.target.closest('#privacyBtn');
+    if (pv) { openPrivacySheet(pv); return; }
     const cb = e.target.closest('#clearBtn');
     if (cb) {
       if (cb.classList.contains('armed')) {
@@ -802,6 +804,32 @@
     if (lastFocus && document.contains(lastFocus)) lastFocus.focus();
   }
   scrim.addEventListener('click', closeSheet);
+  // Pull a sheet down to close it, as on iPhone: from its grab bar, or anywhere while it is scrolled to the top.
+  // (Not the walkthrough card, and not while typing.)
+  let pull = null;
+  sheet.addEventListener('touchstart', (e) => {
+    if (ob || e.touches.length !== 1 || e.target.closest('textarea, input, iframe')) return;
+    if (sheet.scrollTop > 0 && !e.target.closest('.grab')) return;
+    pull = { y: e.touches[0].clientY, dy: 0 };
+  }, { passive: true });
+  sheet.addEventListener('touchmove', (e) => {
+    if (!pull) return;
+    pull.dy = Math.max(0, e.touches[0].clientY - pull.y);
+    if (!pull.dy) return;
+    if (e.cancelable) e.preventDefault(); // the sheet follows the finger instead of the page bouncing
+    sheet.style.transition = 'none';
+    sheet.style.transform = `translateY(${pull.dy}px)`;
+  }, { passive: false });
+  const endPull = () => {
+    if (!pull) return;
+    const far = pull.dy > 90;
+    pull = null;
+    sheet.style.transition = 'transform .18s ease-out';
+    sheet.style.transform = far ? 'translateY(100%)' : '';
+    setTimeout(() => { sheet.style.transition = ''; sheet.style.transform = ''; if (far) closeSheet(); }, far ? 170 : 200);
+  };
+  sheet.addEventListener('touchend', endPull);
+  sheet.addEventListener('touchcancel', endPull);
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     if (!$('sp').hidden) closeSearch();
@@ -950,8 +978,26 @@
       ${EVT.about ? `<p class="about-h">${t('特色')}</p>
       <ul class="about-feats">${EVT.about.features.map((f) => `<li><b>${esc(t(f.title))}</b><span>${esc(t(f.text))}</span></li>`).join('')}</ul>
       <p class="about-h">${t('常見問題')}</p>
-      <div class="about-faq">${EVT.about.faq.map((x) => `<h3>${esc(t(x.q))}</h3><p>${esc(t(x.a))}</p>`).join('')}<a href="${esc(EVT.about.privacy)}">${t('隱私說明')}</a></div>` : ''}
+      <div class="about-faq">${EVT.about.faq.map((x) => `<h3>${esc(t(x.q))}</h3><p>${esc(t(x.a))}</p>`).join('')}<button type="button" class="about-faq-link" data-act="privacy">${t('隱私說明')}</button></div>` : ''}
       <p class="about-meta" id="aboutMeta">${t('版本 {build}・時間表資料 {date}', { build: esc(EVT.build), date: mmdd(EVT.dataDate) })}</p>
+      <div class="sheet-actions"><button type="button" class="primary" data-act="close">${t('完成')}</button></div>`;
+    openSheet(opener);
+  }
+
+  // 隱私說明 inside the app, like 關於: the privacy page's text (built in, so it opens offline too). In English, only
+  // its English summary. Links go out in a new tab, so the planner stays where it was.
+  function openPrivacySheet(opener) {
+    const box = el('div', 'pv');
+    box.innerHTML = EVT.about.privacyHtml;
+    if (lang === 'en') {
+      const en = box.querySelector('section.en');
+      box.innerHTML = '';
+      if (en) { en.querySelector('h2')?.remove(); box.append(en); }
+    }
+    box.querySelectorAll('a[href^="http"]').forEach((a) => { a.target = '_blank'; a.rel = 'noopener'; });
+    sheet.innerHTML = `<div class="grab"></div>
+      <h2 id="sheetTitle">${t('隱私說明')}</h2>
+      ${box.outerHTML}
       <div class="sheet-actions"><button type="button" class="primary" data-act="close">${t('完成')}</button></div>`;
     openSheet(opener);
   }
@@ -997,8 +1043,9 @@
     else if (act === 'import') runImport();
     else if (act === 'ob-next' && ob) showStep(ob.i + 1);
     else if (act === 'ob-back' && ob) showStep(ob.i - 1);
-    else if (act === 'ob-skip' && ob) { const k = ob.steps.findIndex((st, j) => j > ob.i && st.keep); if (k > 0) showStep(k); else closeSheet(); }
+    else if (act === 'ob-skip') closeSheet();
     else if (act === 'ob-done') closeSheet();
+    else if (act === 'privacy') openPrivacySheet();
     else if (act.startsWith('ob-') && ob && ob.steps[ob.i].act) ob.steps[ob.i].act(act, b);
     else if (act === 'use-link' && pendingLink) {
       const set = pendingLink;
@@ -1010,46 +1057,42 @@
     }
   });
 
-  /* ---------- first visit: a short walkthrough in the sheet ---------- */
-  // New visitors get how to pick and what 我的團序 does; add-ons append their own steps (pwa.js: add to the home
-  // screen, website only). People who already used the app — picks, or the old one-line hint dismissed — get only
-  // the add-on steps they haven't seen. A step counts as seen once it was on screen and the sheet closes.
+  /* ---------- first visit: the walkthrough (the cards of 大港撞團) ---------- */
+  // A centred card, one step at a time: long-press for the artist card, 我的團序 and the map, then (website only,
+  // from pwa.js) adding it to the home screen. People who already used the
+  // app — picks, or the old one-line hint dismissed — get only the add-on steps they haven't seen. 跳過 closes it;
+  // closing it any way counts as seen, and a step counts once it was on screen.
   const KEY_ONBOARD = key('onboard');
-  const obAddOns = []; // { id, keep, title(), body(), cta?() → { act, label }, act?(name, button), seen?() }
+  const obAddOns = []; // { id, icon, keep, title(), body(), cta?() → { act, label }, act?(name, button), seen?() }
   let ob = null; // { steps, i, shown }
 
-  // Three shows from different stages for the little picture: short names first, so nothing has to wrap much.
-  function demoShows() {
-    const out = [];
-    for (const short of [true, false]) {
-      for (const s of SHOWS) {
-        if (out.length === 3) return out;
-        if ((!short || [...s.label].length <= 8) && !out.some((o) => o.si === s.si || o.id === s.id)) out.push(s);
-      }
-    }
-    return out;
+  // The example artist card: event.json "onboardExample" (a show id), else the first set with players.
+  function exampleShow() {
+    return BYID.get(EVT.onboardExample) || SHOWS.find((s) => ARTISTS[s.name]?.embeds) || SHOWS[0];
   }
-  const OB_PICK = {
-    id: 'pick',
-    title: () => t('怎麼排團'),
+  const OB_PRESS = {
+    id: 'press',
+    icon: '👆',
+    title: () => t('長按看表演者資訊'),
     body: () => {
-      const looks = [['', t('沒選')], ['sel', t('已選')], ['clash', t('時段重疊')]];
-      return `<div class="ob-demo" aria-hidden="true">${demoShows().map((s, i) => `<figure><span class="block${looks[i][0] ? ` ${looks[i][0]}` : ''}" style="--c:${s.stage.c}"><span class="nm">${esc(s.label)}</span><span class="tm">${fmt(s.start)}</span></span><figcaption>${looks[i][1]}</figcaption></figure>`).join('')}</div>
-        <ul class="ob-list">
-          <li>${t('點一下表演加進團序，再點一次取消。')}</li>
-          <li>${EVT.features.embeds ? t('長按可以看藝人介紹和試聽。') : t('長按可以看藝人介紹。')}</li>
-          <li>${t('變淡的是跟你已選時段重疊的團。')}</li>
-        </ul>`;
+      const s = exampleShow();
+      const E = window.FP_EMBED;
+      const embeds = ARTISTS[s.name]?.embeds || {};
+      const plats = E ? [...new Set(E.platforms.filter((k) => embeds[k]).map((k) => E.label(k)))] : [];
+      return `<p class="ob-desc">${t('長按任一演出，就能看表演者介紹、試聽串流音樂。')}</p>
+        <div class="ob-mock" aria-hidden="true">
+          <div class="lp-head" style="--c:${s.stage.c}"><span class="pill">${esc(s.stage.short)}</span><span class="lp-time">${fmt(s.start)} – ${fmt(s.end)}</span><span class="lp-dur">${t('{n} 分鐘', { n: s.end - s.start })}</span></div>
+          <p class="lp-name">${esc(s.label)}</p>
+          ${plats.length > 1 ? `<div class="emb-seg">${plats.map((p, i) => `<button type="button" tabindex="-1" aria-selected="${i === 1}">${esc(p)}</button>`).join('')}</div>` : ''}
+          <div class="ob-player">♫ ${t('串流音樂預覽')}</div>
+        </div>`;
     },
   };
   const OB_MINE = {
     id: 'mine',
-    title: () => t('我的團序'),
-    body: () => `<ul class="ob-list">
-          <li>${t('下方的「我的團序」列出你選的團；撞在一起的，可以選要去哪團，或抽籤決定。')}</li>
-          <li>${t('活動當天會標出現在時間和下一團。')}</li>
-          ${hasBigInt ? `<li>${t('換手機前，到「我的團序」按「複製備份連結」，在新手機打開就能還原。')}</li>` : ''}
-        </ul>`,
+    icon: '🗺️',
+    title: () => t('團序、時間表與地圖'),
+    body: () => `<p class="ob-desc">${t('切換「我的團序」看已選的團和撞團，撞在一起可以抽籤決定。')}${$('mapBtn') ? t('下方的地圖按鈕可以看場地圖。') : ''}${hasBigInt ? t('換手機前，到「我的團序」按「複製備份連結」就能搬過去。') : ''}</p>`,
   };
 
   function showStep(i) {
@@ -1060,16 +1103,16 @@
     const step = steps[i];
     const last = i === steps.length - 1;
     const cta = last && step.cta ? step.cta() : null; // e.g. 安裝, when the browser offers it
-    const left = !last ? (i === 0 ? ['ob-skip', t('跳過')] : ['ob-back', t('上一步')])
-      : cta ? ['ob-done', t('先不用')] : i > 0 ? ['ob-back', t('上一步')] : null;
-    const right = !last ? ['ob-next', t('下一步')] : cta ? [cta.act, cta.label] : ['ob-done', steps.length > 1 ? t('開始排團') : t('知道了')];
-    sheet.innerHTML = `<div class="grab"></div>
-      <div class="ob" data-step="${esc(step.id)}">
+    const one = steps.length === 1;
+    const left = cta ? ['ob-done', t('先不用')] : !last ? (i === 0 ? ['ob-skip', t('跳過')] : ['ob-back', t('上一步')]) : one ? null : ['ob-back', t('上一步')];
+    const right = cta ? [cta.act, cta.label] : !last ? ['ob-next', t('下一步')] : one ? ['ob-done', '👌', t('知道了')] : ['ob-done', t('開始使用')];
+    sheet.innerHTML = `<div class="ob" data-step="${esc(step.id)}">
+        <div class="ob-icon" aria-hidden="true">${step.icon || ''}</div>
         <h2 id="sheetTitle">${esc(step.title())}</h2>
         <div class="ob-body">${step.body()}</div>
       </div>
       ${steps.length > 1 ? `<div class="ob-dots" role="img" aria-label="${esc(t('第 {i} 步，共 {n} 步', { i: i + 1, n: steps.length }))}">${steps.map((_, j) => `<i${j === i ? ' class="on"' : ''}></i>`).join('')}</div>` : ''}
-      <div class="sheet-actions">${left ? `<button type="button" class="ghost" data-act="${left[0]}">${esc(left[1])}</button>` : ''}<button type="button" class="primary" data-act="${esc(right[0])}">${esc(right[1])}</button></div>`;
+      <div class="sheet-actions">${left ? `<button type="button" class="ghost" data-act="${left[0]}">${esc(left[1])}</button>` : ''}<button type="button" class="primary" data-act="${esc(right[0])}"${right[2] ? ` aria-label="${esc(right[2])}"` : ''}>${esc(right[1])}</button></div>`;
     sheet.scrollTop = 0;
     if (!sheet.hidden) sheet.querySelector('.primary').focus({ preventScroll: true });
   }
@@ -1077,12 +1120,14 @@
   function startOnboard() {
     if (!sheet.hidden) return; // a backup link's question is open: next time
     const returning = !!(store.get(KEY_ONBOARD) || store.get(KEY_HINT) || picks.size);
-    const steps = [...(returning ? [] : [OB_PICK, OB_MINE]), ...obAddOns];
+    const steps = [...(returning ? [] : [OB_PRESS, OB_MINE]), ...obAddOns];
     if (!steps.length) return;
     ob = { steps, i: 0, shown: new Set() };
+    sheet.classList.add('ob-card');
+    scrim.classList.add('ob-scrim');
     showStep(0);
     openSheet();
-    // Nobody has touched the page yet: focus the sheet itself, so no button wears a focus ring on arrival.
+    // Nobody has touched the page yet: focus the card itself, so no button wears a focus ring on arrival.
     sheet.focus({ preventScroll: true });
   }
 
@@ -1090,6 +1135,8 @@
     if (!ob) return;
     const o = ob;
     ob = null;
+    sheet.classList.remove('ob-card');
+    scrim.classList.remove('ob-scrim');
     store.set(KEY_ONBOARD, '1');
     store.set(KEY_HINT, '1');
     o.steps.forEach((st, j) => { if (o.shown.has(j) && st.seen) st.seen(); });

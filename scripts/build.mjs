@@ -79,6 +79,14 @@ ${stageVars('light')}
 `;
 }
 
+// The privacy page's text without its page frame: from the date line to the English summary.
+function privacyBody() {
+  const page = fill(read(path.join(ROOT, 'site', 'privacy.html')), { updated: PRIVACY_UPDATED.replace(/-/g, '/') });
+  const body = /<h1>[^<]*<\/h1>\s*([\s\S]*<\/section>)\s*<footer>/.exec(page);
+  if (!body) throw new Error('site/privacy.html: 找不到 <h1> 到最後一個 </section> 的內容');
+  return body[1].replace(/<\/header>/, '</div>').replace(/^/, '<div class="pv-head">');
+}
+
 // What the page needs at run time: event.json minus the build-only parts, plus the build id.
 function clientConfig(ev, build, mode) {
   return {
@@ -86,9 +94,10 @@ function clientConfig(ev, build, mode) {
     languages: ev.languages || ['zh'], wordmark: ev.wordmark,
     subtitle: ev.subtitle || '', subtitleEn: ev.subtitleEn, dataDate: ev.dataDate, sourceNote: ev.sourceNote, sourceNoteEn: ev.sourceNoteEn,
     days: ev.days, stages: ev.stages.map(({ id, name, short, en, shortEn, long }) => ({ id, name, short, en, shortEn, long })),
-    features: ev.features || {}, lottery: ev.lottery, urls: ev.urls || {}, build, mode,
-    // Offline use, personal data and the questions, for the 關於 sheet: website only (scripts/lib/copy.mjs).
-    about: mode === 'artifact' ? null : aboutForPage(),
+    features: ev.features || {}, lottery: ev.lottery, urls: ev.urls || {}, onboardExample: ev.onboardExample, build, mode,
+    // Offline use, personal data and the questions, for the 關於 sheet, and the privacy page's text for the 隱私說明
+    // sheet (so it opens inside the app, offline too): website only (scripts/lib/copy.mjs, site/privacy.html).
+    about: mode === 'artifact' ? null : { ...aboutForPage(), privacyHtml: privacyBody() },
   };
 }
 
@@ -197,7 +206,8 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
   const dataJS = (mode, venueSrc) => `window.FP_EVENT = ${inlineJSON(clientConfig(ev, build, mode))};\nwindow.FP_DATA = ${inlineJSON({ schedule, artists: pageArtists })};\n`
     + (venue ? `window.FP_VENUE = ${inlineJSON(venueFor(venueSrc, mode !== 'artifact'))};\n` : '');
   const eventCSS = ev.css ? '\n/* ---------- event.css ---------- */\n' + read(path.join(dir, ev.css)) : '';
-  const hasMap = !!(venue && venue.images && venue.images.length);
+  // A map button once there is a map, or a placeholder (venue.json "pending") while the official map isn't out yet.
+  const hasMap = !!(venue && ((venue.images && venue.images.length) || venue.pending));
   const langBtn = (ev.languages || []).includes('en') ? '    <button type="button" class="hdr-btn hdr-lang" id="langBtn">EN</button>' : '';
   common.langBtn = langBtn;
   const mapBtn = hasMap ? '      <button type="button" class="dock-btn" id="mapBtn" aria-label="場地圖與官方時間表" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4z"/><path d="M9 4v14M15 6v14"/></svg></button>' : '';

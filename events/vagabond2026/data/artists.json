@@ -1752,7 +1752,22 @@
       "https://www.mirrormedia.mg/story/20221025ent001",
       "https://www.marieclaire.com.tw/entertainment/story/72014"
     ],
-    "links": {}
+    "links": {
+      "youtube": "https://www.youtube.com/@CHolly-ku7zn"
+    },
+    "embeds": {
+      "youtube": "TErGiheo20k"
+    },
+    "picks": {
+      "youtube": {
+        "title": "三不娶",
+        "why": "C.Holly 在網路上爆紅的代表曲，《美麗佳人》把它列為近期最有話題的洗腦神曲之一。這是官方 MV。",
+        "sources": [
+          "https://www.marieclaire.com.tw/entertainment/music/92394"
+        ],
+        "channel": "C.Holly ღ"
+      }
+    }
   },
   "YaMon Social Club 壓滿俱樂部": {
     "slug": "yamon-social-club",

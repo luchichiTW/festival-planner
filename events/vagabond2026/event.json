@@ -7,6 +7,7 @@
   "lang": "zh-Hant-TW",
   "timezone": "Asia/Taipei",
   "languages": ["zh", "en"],
+  "onboardExample": "d2-c-holly",
   "wordmark": { "text": "浪人祭", "sub": "2026" },
   "subtitle": "11.07–08 臺南觀夕平臺大草皮",
   "dataDate": "2026-10-17",

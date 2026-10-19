@@ -5,10 +5,37 @@
   const FP = window.FP;
   const V = window.FP_VENUE;
   const btn = document.getElementById('mapBtn');
-  if (!FP || !V || !btn || !(V.images && V.images.length)) return;
+  if (!FP || !V || !btn) return;
   const { t, lang } = FP;
   const en = lang === 'en';
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // Before the official map is out (venue.json "pending"): the same button opens a note saying where it will be.
+  if (V.pending && !(V.images && V.images.length)) {
+    const wait = document.createElement('div');
+    wait.className = 'mv mv-wait';
+    wait.hidden = true;
+    wait.setAttribute('role', 'dialog');
+    wait.setAttribute('aria-modal', 'true');
+    wait.setAttribute('aria-labelledby', 'mvWaitTitle');
+    wait.innerHTML = `
+      <div class="mv-wait-in">
+        <div class="ob-icon" aria-hidden="true">🗺️</div>
+        <h2 id="mvWaitTitle">${t('場地圖')}</h2>
+        <p>${t('官方還沒公布場地圖。公布後會放在這裡：點舞台就能看接下來的團、一鍵導航。')}</p>
+        ${V.pending.url ? `<a class="pill-btn" href="${esc(V.pending.url)}" target="_blank" rel="noopener">${t('官網的場地資訊')}</a>` : ''}
+      </div>
+      <div class="mv-bar"><div class="mv-fill"></div><button type="button" class="dock-btn mv-done" data-mv-close>${t('完成')}</button></div>`;
+    document.body.append(wait);
+    let back = null;
+    const close = () => { wait.hidden = true; if (back && document.contains(back)) back.focus(); };
+    btn.addEventListener('click', () => { back = document.activeElement; wait.hidden = false; wait.querySelector('[data-mv-close]').focus({ preventScroll: true }); });
+    wait.addEventListener('click', (e) => { if (e.target.closest('[data-mv-close]')) close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !wait.hidden) { e.stopPropagation(); close(); } }, true);
+    window.FP_MAP = { open: () => btn.click(), close };
+    return;
+  }
+  if (!(V.images && V.images.length)) return;
   const fmt = (m) => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
   const isApple = /iP(hone|od|ad)|Macintosh/.test(navigator.userAgent);
   const directions = ({ lat, lng }) => isApple
