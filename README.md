@@ -7,7 +7,7 @@
 | 活動 | 網址 |
 | --- | --- |
 | 浪人祭 2026（11/7–8，臺南） | https://chiparashi.tw/vagabond2026/ |
-| 大港開唱 2026（3/21–22，高雄，已結束） | https://chiparashi.tw/megaport2026/ |
+| 大港開唱 2026（3/21–22，高雄，已結束） | https://luchichitw.github.io/megaport2026/index.html （舊版） |
 | 大港開唱 2027（待官方資訊公布） | https://chiparashi.tw/megaport2027/ |
 
 非官方工具。演出異動以主辦方現場公告為準。

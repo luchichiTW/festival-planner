@@ -2,7 +2,7 @@
 
 - 日期：2026/3/21（六）、3/22（日），時間表範圍 12:00–22:00，時區 `Asia/Taipei`
 - 地點：高雄駁二（KIDS𨑨迌親子區在大義公園草皮）
-- 網站：https://chiparashi.tw/megaport2026/
+- 網站：活動已結束，https://chiparashi.tw/megaport2026/ 轉到舊版「大港撞團」（`event.json` 的 `urls.archive`：https://luchichitw.github.io/megaport2026/index.html ）。這裡的資料與設定留給 2027 參考
 - 資料日期：2026/3/13（`event.json` 的 `dataDate`），活動已結束，資料不再更新
 - 介面：中文與英文（`languages`）、場地地圖（`data/venue.json`）、卡片內試聽（`features.embeds`）
 - 共通結構、指令與部署見根目錄的 [CLAUDE.md](../../CLAUDE.md)
@@ -37,8 +37,8 @@
 - 英文地圖的版面和中文不同，所以英文介面的地圖沒有可點的舞台熱區；要的話在 `venue.json` 加 `map.regionsEn`。
 - 53 組演出沒有官方介紹，卡片會顯示「目前沒有找到可靠的介紹資料」。
 - 原始資料裡「黑狼人肉戰車 那卡西」的介紹鍵名多一個空格，搬過來時已改成跟時間表一致。
-- 從 `luchichitw.github.io/megaport2026` 搬到 `chiparashi.tw` 是不同網域，舊網址上排好的團序帶不過來。舊網址要轉址或放新連結（runbook P3-02）。
+- 網址轉到舊版之後，首頁照樣列出這個活動的票券，但根網域的 sitemap 不列它，llms.txt 改連到 `urls.archive`（見根目錄 [CLAUDE.md](../../CLAUDE.md)）。
 
 ## 待辦
 
-- 舊網址 `luchichitw.github.io/megaport2026` 轉到新網址或放連結（第三階段）。
+- 沒有。2027 的工作見 [megaport2027 的 CLAUDE.md](../megaport2027/CLAUDE.md)。
