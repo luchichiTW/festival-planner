@@ -26,8 +26,6 @@ User-agent: meta-externalagent
 User-agent: Amazonbot
 User-agent: Bingbot
 User-agent: Applebot
-User-agent: DuckDuckBot
-User-agent: DuckAssistBot
 User-agent: YandexBot
 User-agent: Baiduspider
 User-agent: Sogou
