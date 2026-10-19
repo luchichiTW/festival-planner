@@ -80,7 +80,7 @@
       "alert": "#D63A32",
       "ok": "#2B9660",
       "brand": "#C9393D",
-      "brand-shadow": "transparent",
+      "brand-shadow": "#E8B23A",
       "brand-shadow-2": "transparent",
       "board-bg": "rgb(255 255 255 / .5)",
       "col-sep": "rgb(60 30 25 / .08)",

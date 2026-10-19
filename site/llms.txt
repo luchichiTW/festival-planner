@@ -7,7 +7,7 @@
 - 離線可用：加到手機主畫面後，沒有網路也能看時間表和自己排好的團序
 - 不用註冊、不蒐集個資：團序只存在使用者自己的手機（瀏覽器本機儲存），不會上傳；沒有廣告，也沒有追蹤用的 cookie
 - 流量統計只用 Cloudflare Web Analytics，不用 cookie、不辨識個人
-- 試聽播放器要在打開藝人卡片時才會載入（YouTube、Spotify、Apple Music、StreetVoice），載入後適用它們的隱私政策
+- 試聽播放器要在打開藝人卡片、或在第一次使用的導覽裡點試聽時才會載入（YouTube、Spotify、Apple Music、StreetVoice），載入後適用它們的隱私政策
 - 完整說明：[隱私說明](https://chiparashi.tw/privacy/)
 
 ## 音樂祭排團工具

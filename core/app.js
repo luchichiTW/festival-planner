@@ -1083,11 +1083,27 @@
         <div class="ob-mock" aria-hidden="true">
           <div class="lp-head" style="--c:${s.stage.c}"><span class="pill">${esc(s.stage.short)}</span><span class="lp-time">${fmt(s.start)} – ${fmt(s.end)}</span><span class="lp-dur">${t('{n} 分鐘', { n: s.end - s.start })}</span></div>
           <p class="lp-name">${esc(s.label)}</p>
-          ${plats.length > 1 ? `<div class="emb-seg">${plats.map((p, i) => `<button type="button" tabindex="-1" aria-selected="${i === 1}">${esc(p)}</button>`).join('')}</div>` : ''}
-          <div class="ob-player">♫ ${t('串流音樂預覽')}</div>
+          ${plats.length > 1 ? `<div class="emb-seg ob-seg">${plats.map((p, i) => `<button type="button" tabindex="-1" aria-selected="${i === 0}">${esc(p)}</button>`).join('')}</div>` : ''}
+          ${playable() ? `<button type="button" class="ob-player ob-play" data-act="ob-play">▶ ${t('點一下試聽')}</button><div class="lp-embed ob-embed" hidden></div>` : `<div class="ob-player">♫ ${t('串流音樂預覽')}</div>`}
         </div>`;
     },
+    // The real player, only once tapped: nothing from YouTube, Spotify or Apple loads before that (see 隱私說明).
+    act: (name, b) => {
+      if (name !== 'ob-play') return;
+      const s = exampleShow();
+      const box = sheet.querySelector('.ob-embed');
+      if (window.FP_EMBED.render(box, ARTISTS[s.name].embeds, { dark: effectiveTheme() === 'dark', label: t })) {
+        b.remove();
+        sheet.querySelector('.ob-seg')?.remove(); // the player brings its own switcher
+      } else {
+        b.textContent = t('沒有網路，暫時沒辦法試聽');
+      }
+    },
   };
+  // A real player can load here: the website with players on, and an example with one.
+  function playable() {
+    return !!(EVT.features && EVT.features.embeds && EVT.mode !== 'artifact' && window.FP_EMBED && ARTISTS[exampleShow().name]?.embeds);
+  }
   const OB_MINE = {
     id: 'mine',
     icon: '🗺️',

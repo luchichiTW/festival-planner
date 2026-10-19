@@ -442,6 +442,12 @@ test('first visit on an iPhone: the 大港撞團 cards — long-press, 我的團
   assert.ok(card.centred && /ob-card/.test(card.cls), 'a card in the middle of the screen, as in 大港撞團');
   const mock = await page.eval(() => ({ pill: document.querySelector('#sheet .ob-mock .pill')?.textContent, time: document.querySelector('#sheet .ob-mock .lp-time')?.textContent, name: document.querySelector('#sheet .ob-mock .lp-name')?.textContent, seg: [...document.querySelectorAll('#sheet .ob-mock .emb-seg button')].map((b) => b.textContent) }));
   assert.deepEqual(mock, { pill: '小嘻門', time: '16:10 – 16:50', name: 'C.Holly', seg: [] }, 'the example card is C.Holly (event.json onboardExample), with her one player');
+  // Her real player, but only once tapped: nothing from YouTube loads with the walkthrough itself.
+  assert.equal(await page.eval(() => document.querySelector('#sheet iframe')), null, 'no player before a tap');
+  await page.tap('#sheet [data-act="ob-play"]');
+  await page.until(() => document.querySelector('#sheet .ob-embed iframe'));
+  assert.match(await page.eval(() => document.querySelector('#sheet .ob-embed iframe').src), /youtube-nocookie\.com\/embed\/TErGiheo20k/, '〈三不娶〉, C.Holly’s official MV');
+  assert.equal(await page.eval(() => document.querySelector('#sheet [data-act="ob-play"]')), null, 'the tap target gives way to the player');
 
   await page.tap('#sheet [data-act="ob-next"]');
   await onStep(page, '團序、時間表與地圖');
@@ -697,12 +703,12 @@ test('iPhone layout: glass header under the status bar, floating tab bar, conten
   assert.deepEqual(scrim, { top: 0, h: d.h }, 'the sheet scrim covers the status bar area too');
   await closePage(dark);
 
-  // Light: same glass, and the wordmark has no doubled shadow.
+  // Light: same glass; the wordmark is two-tone like in dark (its colours: the wordmark test below).
   const light = await open(`${main.base}/${SLUG}/`, { safeArea: IPHONE, theme: 'light' });
   const l = await light.eval(layout);
   assert.equal(l.strip, 'none');
   assert.ok(l.header.pageColour && l.bar.blur);
-  assert.match(l.wordmarkShadow, /^(none|(rgba\(0, 0, 0, 0\)[^,]*,?\s*)+)$/, `light wordmark has no visible shadow (${l.wordmarkShadow})`);
+  assert.doesNotMatch(l.wordmarkShadow, /^(none|(rgba\(0, 0, 0, 0\)[^,]*,?\s*)+)$/, `light wordmark has a colour underneath (${l.wordmarkShadow})`);
 
   // More stages to the right → fade on the right edge, gone once scrolled to the end. (This origin reopens on
   // 我的團序 from the dark run; switching to 排團 must recompute the fade.)
@@ -1227,6 +1233,19 @@ test('an event waiting for its announcement: one page saying so, readable at 390
     await closePage(page);
   }
   await main.close();
+});
+
+test('the 浪人祭 wordmark is two-tone in both themes: gold over 鯤鯓 red in dark, 鯤鯓 red over sunset gold in light', { skip: SKIP }, async () => {
+  const k = EV.stages.find((s) => s.id === 'K').color;
+  const rgb = (hex) => `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ')})`;
+  for (const [theme, text, shadow] of [['dark', EV.theme.dark.brand, k.dark], ['light', k.light, '#E8B23A']]) {
+    const srv = await origin();
+    const page = await open(`${srv.base}/${SLUG}/`, { theme });
+    const w = await page.eval(() => { const cs = getComputedStyle(document.querySelector('.wordmark')); return { color: cs.color, shadow: cs.textShadow }; });
+    assert.equal(w.color, rgb(text), `${theme}: letters`);
+    assert.ok(w.shadow.startsWith(rgb(shadow)), `${theme}: the colour underneath (${w.shadow})`);
+    await closePage(page);
+  }
 });
 
 test('a sheet can be pulled down to close, like on iPhone; a short pull springs back', { skip: SKIP }, async () => {

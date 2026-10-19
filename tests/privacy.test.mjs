@@ -111,7 +111,7 @@ test('llms.txt leads with offline use and no personal data, and points to the pr
   assert.match(feats, /離線可用/);
   assert.match(feats, /不會上傳/);
   assert.match(feats, /Cloudflare Web Analytics/);
-  assert.match(feats, /打開藝人卡片時才會載入/, 'players load when an artist card opens, as the code does');
+  assert.match(feats, /打開藝人卡片、或在第一次使用的導覽裡點試聽時才會載入/, 'players load when an artist card opens or play is tapped in the walkthrough, as the code does');
   assert.ok(feats.includes('[隱私說明](https://chiparashi.tw/privacy/)'));
   assert.ok(listEvents().length > 0);
 });

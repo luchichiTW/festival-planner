@@ -28,8 +28,8 @@ export const FAQ = [
   },
   {
     q: '需要註冊嗎？會蒐集我的資料嗎？', qEn: 'Do I need an account? Do you collect my data?',
-    a: '不用註冊。團序只存在你的手機，不會上傳；沒有廣告，也沒有追蹤用的 cookie。網站只用不含 cookie 的匿名流量統計（Cloudflare Web Analytics）。長按打開藝人卡片時，才會載入 YouTube、Spotify、Apple Music 等外部播放器，載入後適用它們的隱私政策。',
-    aEn: 'No account needed. Your picks stay on your phone and are never uploaded. No ads and no tracking cookies; the site counts visits anonymously with cookie-free Cloudflare Web Analytics. Players from YouTube, Spotify, Apple Music and others load only when you open an artist card, and then their own privacy policies apply.',
+    a: '不用註冊。團序只存在你的手機，不會上傳；沒有廣告，也沒有追蹤用的 cookie。網站只用不含 cookie 的匿名流量統計（Cloudflare Web Analytics）。長按打開藝人卡片，或在第一次使用的導覽裡點「點一下試聽」時，才會載入 YouTube、Spotify、Apple Music 等外部播放器，載入後適用它們的隱私政策。',
+    aEn: 'No account needed. Your picks stay on your phone and are never uploaded. No ads and no tracking cookies; the site counts visits anonymously with cookie-free Cloudflare Web Analytics. Players from YouTube, Spotify, Apple Music and others load only when you open an artist card or tap play in the first-use walkthrough, and then their own privacy policies apply.',
   },
   {
     q: '團序存在哪裡？換手機還在嗎？', qEn: 'Where are my picks saved? Will they move to a new phone?',
