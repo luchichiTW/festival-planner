@@ -599,7 +599,6 @@
     refreshMarks();
     updateCounts();
     renderNext();
-    if (picks.size) hideCoach();
     if (!lpCard.hidden && lpShowId) renderLpAct();
     if (state.view === 'mine') renderMine();
     commitHooks.forEach((fn) => { try { fn(); } catch (e) { console.error('[fp] commit hook failed', e); } });
@@ -607,16 +606,6 @@
 
   $('tabMine').addEventListener('click', () => setView('mine'));
   dayBtns.forEach((b, i) => b.addEventListener('click', () => setDay(DAY_NUMS[i])));
-
-  // One-time hint.
-  const coach = $('coach');
-  function hideCoach() {
-    if (coach.hidden) return;
-    coach.hidden = true;
-    store.set(KEY_HINT, '1');
-  }
-  if (!store.get(KEY_HINT)) coach.hidden = false;
-  $('coachOk').addEventListener('click', hideCoach);
 
   // Scroll to a show and outline it briefly. Used by search and the next-up bar.
   function flash(node) {
@@ -800,6 +789,7 @@
     if (f) f.focus();
   }
   function closeSheet() {
+    endOnboard(); // closing the walkthrough any way (button, outside, Esc) counts as seen
     clearTimeout(spinTimer);
     lot = null;
     pendingLink = null;
@@ -1002,6 +992,11 @@
     else if (act === 'spin') spin();
     else if (act === 'accept') accept();
     else if (act === 'import') runImport();
+    else if (act === 'ob-next' && ob) showStep(ob.i + 1);
+    else if (act === 'ob-back' && ob) showStep(ob.i - 1);
+    else if (act === 'ob-skip' && ob) { const k = ob.steps.findIndex((st, j) => j > ob.i && st.keep); if (k > 0) showStep(k); else closeSheet(); }
+    else if (act === 'ob-done') closeSheet();
+    else if (act.startsWith('ob-') && ob && ob.steps[ob.i].act) ob.steps[ob.i].act(act, b);
     else if (act === 'use-link' && pendingLink) {
       const set = pendingLink;
       closeSheet();
@@ -1011,6 +1006,91 @@
       toast(t('已換成連結裡的 {n} 團', { n: set.size }));
     }
   });
+
+  /* ---------- first visit: a short walkthrough in the sheet ---------- */
+  // New visitors get how to pick and what 我的團序 does; add-ons append their own steps (pwa.js: add to the home
+  // screen, website only). People who already used the app — picks, or the old one-line hint dismissed — get only
+  // the add-on steps they haven't seen. A step counts as seen once it was on screen and the sheet closes.
+  const KEY_ONBOARD = key('onboard');
+  const obAddOns = []; // { id, keep, title(), body(), cta?() → { act, label }, act?(name, button), seen?() }
+  let ob = null; // { steps, i, shown }
+
+  // Three shows from different stages for the little picture: short names first, so nothing has to wrap much.
+  function demoShows() {
+    const out = [];
+    for (const short of [true, false]) {
+      for (const s of SHOWS) {
+        if (out.length === 3) return out;
+        if ((!short || [...s.label].length <= 8) && !out.some((o) => o.si === s.si || o.id === s.id)) out.push(s);
+      }
+    }
+    return out;
+  }
+  const OB_PICK = {
+    id: 'pick',
+    title: () => t('怎麼排團'),
+    body: () => {
+      const looks = [['', t('沒選')], ['sel', t('已選')], ['clash', t('時段重疊')]];
+      return `<div class="ob-demo" aria-hidden="true">${demoShows().map((s, i) => `<figure><span class="block${looks[i][0] ? ` ${looks[i][0]}` : ''}" style="--c:${s.stage.c}"><span class="nm">${esc(s.label)}</span><span class="tm">${fmt(s.start)}</span></span><figcaption>${looks[i][1]}</figcaption></figure>`).join('')}</div>
+        <ul class="ob-list">
+          <li>${t('點一下表演加進團序，再點一次取消。')}</li>
+          <li>${EVT.features.embeds ? t('長按可以看藝人介紹和試聽。') : t('長按可以看藝人介紹。')}</li>
+          <li>${t('變淡的是跟你已選時段重疊的團。')}</li>
+        </ul>`;
+    },
+  };
+  const OB_MINE = {
+    id: 'mine',
+    title: () => t('我的團序'),
+    body: () => `<ul class="ob-list">
+          <li>${t('下方的「我的團序」列出你選的團；撞在一起的，可以選要去哪團，或抽籤決定。')}</li>
+          <li>${t('活動當天會標出現在時間和下一團。')}</li>
+          ${hasBigInt ? `<li>${t('換手機前，到「我的團序」按「複製備份連結」，在新手機打開就能還原。')}</li>` : ''}
+        </ul>`,
+  };
+
+  function showStep(i) {
+    if (!ob || i < 0 || i >= ob.steps.length) return;
+    ob.i = i;
+    ob.shown.add(i);
+    const { steps } = ob;
+    const step = steps[i];
+    const last = i === steps.length - 1;
+    const cta = last && step.cta ? step.cta() : null; // e.g. 安裝, when the browser offers it
+    const left = !last ? (i === 0 ? ['ob-skip', t('跳過')] : ['ob-back', t('上一步')])
+      : cta ? ['ob-done', t('先不用')] : i > 0 ? ['ob-back', t('上一步')] : null;
+    const right = !last ? ['ob-next', t('下一步')] : cta ? [cta.act, cta.label] : ['ob-done', steps.length > 1 ? t('開始排團') : t('知道了')];
+    sheet.innerHTML = `<div class="grab"></div>
+      <div class="ob" data-step="${esc(step.id)}">
+        <h2 id="sheetTitle">${esc(step.title())}</h2>
+        <div class="ob-body">${step.body()}</div>
+      </div>
+      ${steps.length > 1 ? `<div class="ob-dots" role="img" aria-label="${esc(t('第 {i} 步，共 {n} 步', { i: i + 1, n: steps.length }))}">${steps.map((_, j) => `<i${j === i ? ' class="on"' : ''}></i>`).join('')}</div>` : ''}
+      <div class="sheet-actions">${left ? `<button type="button" class="ghost" data-act="${left[0]}">${esc(left[1])}</button>` : ''}<button type="button" class="primary" data-act="${esc(right[0])}">${esc(right[1])}</button></div>`;
+    sheet.scrollTop = 0;
+    if (!sheet.hidden) sheet.querySelector('.primary').focus();
+  }
+
+  function startOnboard() {
+    if (!sheet.hidden) return; // a backup link's question is open: next time
+    const returning = !!(store.get(KEY_ONBOARD) || store.get(KEY_HINT) || picks.size);
+    const steps = [...(returning ? [] : [OB_PICK, OB_MINE]), ...obAddOns];
+    if (!steps.length) return;
+    ob = { steps, i: 0, shown: new Set() };
+    showStep(0);
+    openSheet();
+    // Nobody has touched the page yet: focus the sheet itself, so no button wears a focus ring on arrival.
+    sheet.focus({ preventScroll: true });
+  }
+
+  function endOnboard() {
+    if (!ob) return;
+    const o = ob;
+    ob = null;
+    store.set(KEY_ONBOARD, '1');
+    store.set(KEY_HINT, '1');
+    o.steps.forEach((st, j) => { if (o.shown.has(j) && st.seen) st.seen(); });
+  }
 
   /* ---------- copy (used by the backup link) ---------- */
   function openCopySheet(text, opener, title, sub) {
@@ -1291,6 +1371,9 @@
     festNow,
     locateShow: (id) => locateShow(id),
     onCommit: (fn) => { commitHooks.push(fn); },
+    onboardStep: (step) => { obAddOns.push(step); },
+    onboardRefresh: (id) => { if (ob && ob.steps[ob.i].id === id) showStep(ob.i); },
+    closeSheet: () => closeSheet(),
   };
 
   /* ---------- boot ---------- */
@@ -1340,6 +1423,12 @@
         }
       }
     }
+  }
+  // First visit: the walkthrough, after the add-ons (pwa.js) have added their steps. Not over a backup link's
+  // question, and not when arriving to see one show (#show-): those visitors get it next time.
+  if (!showLink) {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startOnboard, { once: true });
+    else startOnboard();
   }
   // On the website, drop the token from the address so a reload or a home-screen shortcut doesn't carry it.
   if (tok && EVT.mode !== 'artifact') {

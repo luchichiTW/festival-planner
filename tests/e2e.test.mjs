@@ -43,11 +43,19 @@ const rebuild = (root, buildId) => {
 };
 
 // Page with the festival clock set to `time` and a controllable page visibility (window.__fpSetVis).
-async function open(url, { time = PRE_FESTIVAL, timezone = 'Asia/Taipei', safeArea, theme, width, height, mobile, ready = () => document.querySelectorAll('#grid .block').length > 0 } = {}) {
+// The first-visit walkthrough is marked as seen unless `onboard` is set; `seed` puts other values in localStorage
+// (only where nothing is saved yet); `ua` is [userAgent, platform]; `standalone` opens it as from the home screen.
+async function open(url, { time = PRE_FESTIVAL, timezone = 'Asia/Taipei', safeArea, theme, width, height, mobile, onboard = false, seed = {}, ua, standalone = false, ready = () => document.querySelectorAll('#grid .block').length > 0 } = {}) {
   const page = await chrome.newPage({ timezone, safeArea, width, height, mobile, touch: mobile !== false });
   if (theme) await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: theme }] });
+  if (ua) await page.send('Emulation.setUserAgentOverride', { userAgent: ua[0], platform: ua[1] });
   const t = Date.parse(time);
+  const stored = { ...(onboard ? {} : Object.fromEntries(['vagabond2026', 'megaport2026'].flatMap((s) => [[`fp:${s}:onboard`, '1'], [`fp:${s}:install-hint`, '1']]))), ...seed };
   await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
+    try { for (const [k, v] of Object.entries(${JSON.stringify(stored)})) if (localStorage.getItem(k) === null) localStorage.setItem(k, v); } catch (e) { /* opaque origin */ }
+    // Headless Chrome offers to install the local site by itself; only a test's own offer (__fake) gets through.
+    window.addEventListener('beforeinstallprompt', (e) => { if (!e.__fake) e.stopImmediatePropagation(); }, true);
+    ${standalone ? "Object.defineProperty(Navigator.prototype, 'standalone', { get: () => true, configurable: true });" : ''}
     const off = ${t} - Date.now(); const R = Date;
     function D(...a) { if (!new.target) return new R(R.now() + off).toString(); return a.length ? new R(...a) : new R(R.now() + off); }
     D.prototype = R.prototype; D.now = () => R.now() + off; D.parse = R.parse; D.UTC = R.UTC; globalThis.Date = D;
@@ -65,6 +73,8 @@ async function open(url, { time = PRE_FESTIVAL, timezone = 'Asia/Taipei', safeAr
   return page;
 }
 const closePage = (page) => chrome.conn.send('Target.closeTarget', { targetId: page.targetId });
+// For pages opened without open(): the first-visit walkthrough already seen, so it doesn't cover the page.
+const SEEN = "try { for (const s of ['vagabond2026', 'megaport2026']) { localStorage.setItem(`fp:${s}:onboard`, '1'); localStorage.setItem(`fp:${s}:install-hint`, '1'); } } catch (e) {}";
 // Each test gets its own origin (a new port on the shared folder), so storage and service workers never leak between tests.
 const servers = [];
 async function origin() {
@@ -396,6 +406,146 @@ test('AC-07 a new deploy switches in only when nobody is using the page, and kee
   } finally {
     await srv.close();
   }
+});
+
+const UA = {
+  iphone: ['Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1', 'iPhone'],
+  android: ['Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36', 'Linux armv8l'],
+  instagram: ['Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 350.0.0.0.0 (iPhone15,2; iOS 18_0; zh_TW; zh-Hant; scale=3.00; 1179x2556; 0)', 'iPhone'],
+};
+// The walkthrough as shown: title, text, how many dots, the buttons at the bottom.
+const readOnboard = () => {
+  const s = document.getElementById('sheet');
+  const o = s.querySelector('.ob');
+  if (s.hidden || !o) return null;
+  return {
+    title: o.querySelector('h2').textContent,
+    text: o.querySelector('.ob-body').textContent.replace(/\s+/g, ' ').trim(),
+    dots: s.querySelectorAll('.ob-dots i').length,
+    buttons: [...s.querySelectorAll('.sheet-actions button')].map((b) => b.textContent),
+  };
+};
+const onStep = (page, title) => page.until((t) => document.querySelector('#sheet:not([hidden]) .ob h2')?.textContent === t, { args: [title] });
+const INSTALL_TITLE = '加到主畫面，沒網路也能開';
+
+test('first visit on an iPhone: three steps — picking, my picks, add to the home screen — then never again', { skip: SKIP }, async () => {
+  const srv = await origin();
+  const url = `${srv.base}/${SLUG}/`;
+  const page = await open(url, { onboard: true, ua: UA.iphone });
+  await onStep(page, '怎麼排團');
+  assert.deepEqual(await page.eval(() => [document.getElementById('coach'), document.getElementById('installHint')]), [null, null], 'the old one-line hints are gone');
+  let s = await page.eval(readOnboard);
+  assert.equal(s.dots, 3);
+  assert.deepEqual(s.buttons, ['跳過', '下一步']);
+  for (const w of [/點一下/, /長按/, /重疊/]) assert.match(s.text, w);
+  assert.deepEqual(await page.eval(() => [...document.querySelectorAll('#sheet .ob-demo .block')].map((b) => b.className.replace('block', '').trim())), ['', 'sel', 'clash'], 'a small picture of the three looks');
+
+  await page.tap('#sheet [data-act="ob-next"]');
+  await onStep(page, '我的團序');
+  s = await page.eval(readOnboard);
+  assert.deepEqual(s.buttons, ['上一步', '下一步']);
+  for (const w of [/抽籤/, /複製備份連結/]) assert.match(s.text, w);
+
+  await page.tap('#sheet [data-act="ob-next"]');
+  await onStep(page, INSTALL_TITLE);
+  s = await page.eval(readOnboard);
+  for (const w of [/分享/, /加入主畫面/, /沒有網路/, /Safari 裡排的團序不會帶到主畫面/]) assert.match(s.text, w);
+  assert.deepEqual(s.buttons, ['上一步', '開始排團']);
+  await page.tap('#sheet [data-act="ob-back"]');
+  await onStep(page, '我的團序');
+  await page.tap('#sheet [data-act="ob-next"]');
+  await onStep(page, INSTALL_TITLE);
+  await page.tap('#sheet [data-act="ob-done"]');
+  await page.until(() => document.getElementById('sheet').hidden && document.getElementById('scrim').hidden);
+  await closePage(page);
+
+  const again = await open(url, { onboard: true, ua: UA.iphone });
+  await sleep(300);
+  assert.equal(await again.eval(() => document.getElementById('sheet').hidden), true, 'second visit: nothing in the way');
+  await closePage(again);
+});
+
+test('skipping still ends on using it offline; where the browser offers it, one tap installs', { skip: SKIP }, async () => {
+  const srv = await origin();
+  const page = await open(`${srv.base}/${SLUG}/`, { onboard: true, ua: UA.android });
+  await onStep(page, '怎麼排團');
+  await page.tap('#sheet [data-act="ob-skip"]');
+  await onStep(page, INSTALL_TITLE);
+  let s = await page.eval(readOnboard);
+  for (const w of [/⋮/, /加到主畫面/, /沒有網路/]) assert.match(s.text, w);
+  assert.deepEqual(s.buttons, ['上一步', '開始排團']);
+  // Chrome offers its own install prompt (beforeinstallprompt): the step turns into an install button.
+  await page.eval(() => {
+    const e = new Event('beforeinstallprompt', { cancelable: true });
+    e.__fake = true;
+    e.prompt = () => { window.__prompted = true; return Promise.resolve(); };
+    e.userChoice = Promise.resolve({ outcome: 'accepted', platform: 'web' });
+    window.dispatchEvent(e);
+  });
+  await page.until(() => !!document.querySelector('#sheet [data-act="ob-install"]'));
+  s = await page.eval(readOnboard);
+  assert.deepEqual(s.buttons, ['先不用', '安裝']);
+  await page.tap('#sheet [data-act="ob-install"]');
+  await page.until(() => document.getElementById('sheet').hidden);
+  assert.equal(await page.eval('window.__prompted'), true);
+  await page.until(() => /安裝/.test(document.getElementById('toast').textContent));
+  await closePage(page);
+});
+
+test('people who already use it see only the add-to-home-screen step, once; inside Instagram it says to open a browser first', { skip: SKIP }, async () => {
+  const srv = await origin();
+  const url = `${srv.base}/${SLUG}/`;
+  const page = await open(url, { onboard: true, ua: UA.instagram, seed: { [`fp:${SLUG}:hint-seen`]: '1' } });
+  await onStep(page, INSTALL_TITLE);
+  const s = await page.eval(readOnboard);
+  assert.equal(s.dots, 0, 'one step, no dots');
+  assert.deepEqual(s.buttons, ['知道了']);
+  for (const w of [/App 裡的瀏覽器/, /Safari 或 Chrome/]) assert.match(s.text, w);
+  assert.ok(await page.eval(() => !!document.querySelector('#sheet .ob-body [data-act="ob-copy"]')), 'a button to copy the address');
+  // Closing it any way (here: tapping outside) counts as seen.
+  await page.eval(() => document.getElementById('scrim').click());
+  await page.until(() => document.getElementById('sheet').hidden);
+  await closePage(page);
+  const again = await open(url, { onboard: true, ua: UA.instagram });
+  await sleep(300);
+  assert.equal(await again.eval(() => document.getElementById('sheet').hidden), true);
+  await closePage(again);
+});
+
+test('from the home screen and in the Claude artifact: the two how-to steps, no install step; a link to one show opens on the show', { skip: SKIP }, async () => {
+  for (const [path, opts] of [[`/${SLUG}/`, { ua: UA.iphone, standalone: true }], ['/art/', {}]]) {
+    const srv = await origin();
+    const page = await open(`${srv.base}${path}`, { onboard: true, ...opts });
+    await onStep(page, '怎麼排團');
+    assert.equal((await page.eval(readOnboard)).dots, 2, path);
+    await page.tap('#sheet [data-act="ob-next"]');
+    await onStep(page, '我的團序');
+    const s = await page.eval(readOnboard);
+    assert.deepEqual(s.buttons, ['上一步', '開始排團'], path);
+    assert.doesNotMatch(s.text, /主畫面/, path);
+    await page.tap('#sheet [data-act="ob-done"]');
+    await page.until(() => document.getElementById('sheet').hidden);
+    await closePage(page);
+  }
+  const srv = await origin();
+  const page = await open(`${srv.base}/${SLUG}/#show-${schedule[0].id}`, { onboard: true, ua: UA.iphone });
+  await sleep(300);
+  assert.equal(await page.eval(() => document.getElementById('sheet').hidden), true, 'arriving from an artist page: no walkthrough over the show');
+  await closePage(page);
+});
+
+test('the walkthrough speaks English when the page does', { skip: SKIP }, async () => {
+  const srv = await origin();
+  const page = await open(`${srv.base}/megaport2026/`, { onboard: true, ua: UA.iphone, seed: { 'fp:megaport2026:lang': 'en' } });
+  await onStep(page, 'How it works');
+  assert.deepEqual((await page.eval(readOnboard)).buttons, ['Skip', 'Next']);
+  await page.tap('#sheet [data-act="ob-skip"]');
+  await onStep(page, 'Add it to your Home Screen to use it offline');
+  const s = await page.eval(readOnboard);
+  assert.deepEqual(s.buttons, ['Back', 'Start planning']);
+  assert.match(s.text, /Add to Home Screen/);
+  assert.doesNotMatch(s.text, /[一-鿿]/, 'no Chinese left in the English walkthrough');
+  await closePage(page);
 });
 
 test('the built single-file artifact runs on its own, without service worker or install hint', { skip: SKIP }, async () => {
@@ -796,7 +946,7 @@ test('megaport: nothing clipped at 390 and 320 px, in Chinese and English; only 
       const page = await chrome.newPage({ width, height: 844 });
       const urls = [];
       chrome.conn.listeners.add((m) => { if (m.sessionId === page.sessionId && m.method === 'Network.requestWillBeSent') urls.push(m.params.request.url); });
-      await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `try { localStorage.setItem('fp:${MP}:lang', '${lng}'); } catch (e) {}` });
+      await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `${SEEN} try { localStorage.setItem('fp:${MP}:lang', '${lng}'); } catch (e) {}` });
       await page.goto(`${main.base}/${MP}/`);
       await page.until(() => document.querySelectorAll('#grid .block').length > 0);
       await page.eval('document.fonts.ready');
@@ -1015,7 +1165,7 @@ test('我的團序 footer: 關於・自己做一個 and 隱私說明 side by sid
   const main = await origin();
   for (const [slug, lng, width] of [[SLUG, 'zh', 390], [SLUG, 'zh', 320], [MP, 'en', 320]]) {
     const page = await chrome.newPage({ width, height: 844 });
-    await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `try { localStorage.setItem('fp:${MP}:lang', '${lng}'); } catch (e) {}` });
+    await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `${SEEN} try { localStorage.setItem('fp:${MP}:lang', '${lng}'); } catch (e) {}` });
     await page.goto(`${main.base}/${slug}/`);
     await page.until(() => document.querySelectorAll('#grid .block').length > 0);
     await page.tap('#tabMine');

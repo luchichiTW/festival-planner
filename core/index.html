@@ -25,10 +25,6 @@
   <main class="view">
     <section class="pick" id="pickView" aria-label="時間表" data-i18n-attr="aria-label">
       <div class="board" id="board"><div class="grid" id="grid"></div></div>
-      <div class="coach" id="coach" hidden>
-        <p data-i18n>點一下把表演加進團序，再點一次取消。長按可以看藝人介紹和試聽；變淡的是跟已選時段重疊的團。</p>
-        <button type="button" id="coachOk" data-i18n>知道了</button>
-      </div>
     </section>
     <section class="mine" id="mineView" aria-label="我的團序" data-i18n-attr="aria-label" hidden>
       <div class="mine-in" id="mineIn"></div>
@@ -38,12 +34,6 @@
 
   <!-- Everything you tap often sits here, in reach of the thumb. -->
   <div class="dock" id="dock">
-    <!-- fp:web -->
-    <div class="hint-bar" id="installHint" hidden>
-      <p><b data-i18n>先加入主畫面再排團</b><span data-i18n>：點 Safari 的「分享」→「加入主畫面」。主畫面版和 Safari 的團序是分開的，沒網路也能開。</span></p>
-      <button type="button" id="installOk" data-i18n>知道了</button>
-    </div>
-    <!-- /fp:web -->
     <div class="next" id="nextBar" aria-live="polite" hidden></div>
     <nav class="dock-row" aria-label="頁面" data-i18n-attr="aria-label">
       <div class="tabbar">
@@ -59,7 +49,7 @@
 </div>
 
 <div class="scrim" id="scrim" hidden></div>
-<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" tabindex="-1" hidden></div>
 <div class="sp-scrim" id="spScrim" hidden></div>
 <div class="sp" id="sp" role="dialog" aria-modal="true" aria-label="搜尋藝人" data-i18n-attr="aria-label" hidden>
   <div class="sp-res" id="spRes"></div>

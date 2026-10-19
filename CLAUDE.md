@@ -25,12 +25,12 @@ node scripts/og.mjs <slug>              # 畫分享預覽圖（1200×630）→ a
 | 位置 | 內容 |
 | --- | --- |
 | `core/index.html` | 頁面骨架，`{{…}}` 由 build 填入 |
-| `core/app.js` | 時間表、我的團序、撞團與備選、抽籤、長按卡片、搜尋、下一團、備份連結 |
+| `core/app.js` | 時間表、我的團序、撞團與備選、抽籤、長按卡片、搜尋、下一團、備份連結、第一次打開的導覽（怎麼排團、我的團序） |
 | `core/styles.css` | 版面。顏色與字型不寫在這裡，由 build 從 `event.json` 產生 CSS 變數 |
 | `core/i18n.js` | 英文介面字串：鍵是 `core/` 裡寫的中文（含 `{變數}`），`t()` 在英文模式回傳英文 |
 | `core/embed.js` | 卡片內試聽（Spotify、Apple Music、YouTube、Podcast、街聲），打開卡片才載入、離線不顯示 |
 | `core/map.js` | 場地圖與官方圖：縮放、拖曳、舞台熱區（接下來的演出、步行導航） |
-| `core/pwa.js` | 只在網站版：service worker 註冊、安靜更新、iPhone 加入主畫面提示 |
+| `core/pwa.js` | 只在網站版：service worker 註冊、安靜更新、導覽最後一步「加到主畫面」（依 iPhone、Android、電腦、App 內建瀏覽器顯示不同做法） |
 | `core/sw.template.js` | service worker 樣板，build 填入版本與檔案清單 |
 | `core/cloud.js` | 只在 artifact 版：用 Claude 帳號同步團序（db＋user 能力） |
 | `events/<slug>/event.json` | 名稱、日期、時區、舞台與顏色、主題 tokens、字型、圖示、網址 |
