@@ -534,6 +534,48 @@ test('from the home screen and in the Claude artifact: the two how-to steps, no 
   await closePage(page);
 });
 
+test('浪人祭 in English: official stage and act names and talk titles, and the bottom tabs fit at 390 and 320 px', { skip: SKIP }, async () => {
+  // An English-language browser (like the one search engines render with) still gets the Chinese page until EN is picked.
+  {
+    const srv = await origin();
+    const page = await chrome.newPage({ locale: 'en-US' });
+    await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `${SEEN} Object.defineProperty(Navigator.prototype, 'language', { get: () => 'en-US', configurable: true });` });
+    await page.goto(`${srv.base}/${SLUG}/`);
+    await page.until(() => document.querySelectorAll('#grid .block').length > 0);
+    assert.deepEqual(await page.eval(() => [document.documentElement.lang, document.getElementById('langBtn').textContent, document.querySelector('#grid .sh b').textContent]), ['zh-Hant-TW', 'EN', '鯤鯓']);
+    await page.tap('#langBtn');
+    await page.until(() => document.documentElement.lang === 'en' && document.querySelectorAll('#grid .block').length > 0);
+    assert.equal(await page.eval(() => document.querySelector('#grid .sh b').textContent), 'Kun Shen Stage', 'EN switches and is remembered');
+    await closePage(page);
+  }
+  for (const width of [390, 320]) {
+    const srv = await origin();
+    const page = await open(`${srv.base}/${SLUG}/`, { width, seed: { [`fp:${SLUG}:lang`]: 'en' } });
+    await page.eval('document.fonts.ready');
+    const s = await page.eval(() => ({
+      lang: document.documentElement.lang,
+      toggle: document.getElementById('langBtn')?.textContent,
+      stages: [...document.querySelectorAll('#grid .sh b')].map((b) => b.textContent),
+      sorry: document.querySelector('.block[data-id="d1-sorry-youth"] .nm')?.textContent,
+      talk: document.querySelector('.block[data-id="d1-xiaoweiba-talk"]')?.textContent.replace(/\s+/g, ' ').trim(),
+      cjk: [...document.querySelectorAll('#grid .block .nm, #grid .block .nt, #grid .sh')].map((e) => e.textContent).filter((t) => /[㐀-鿿ぁ-ヿ]/.test(t)),
+      tabs: [...document.querySelectorAll('.tabbar .tab')].map((t) => { const r = t.getBoundingClientRect(); return { l: r.left, r: r.right, text: [...t.children].map((c) => { const q = c.getBoundingClientRect(); return { l: q.left, r: q.right, t: c.textContent }; }) }; }),
+    }));
+    assert.equal(s.lang, 'en', `${width}`);
+    assert.equal(s.toggle, '中');
+    assert.deepEqual(s.stages, ['Kun Shen Stage', 'Jian Shih Stage', 'Jin Ho Ting Stage', 'Xiao Si Men Stage', 'Fong Shih Stage', 'Ronin Cram School', 'Red Bull LUKA']);
+    assert.equal(s.sorry, 'Sorry Youth ft. MING YU HSIEH');
+    assert.match(s.talk, /Tiest ft\. Yitsen/);
+    assert.match(s.talk, /Is it difficult to perform at a festival\?/);
+    assert.deepEqual(s.cjk, [], `${width}: no Chinese left on day 1 of the English timetable`);
+    for (const [i, t] of s.tabs.entries()) {
+      for (const c of t.text) assert.ok(c.l >= t.l - 0.5 && c.r <= t.r + 0.5, `${width}: 「${c.t}」 stays inside its tab (${Math.round(c.l)}–${Math.round(c.r)} vs ${Math.round(t.l)}–${Math.round(t.r)})`);
+      if (i) assert.ok(t.l >= s.tabs[i - 1].r - 0.5, `${width}: tab ${i} does not overlap the one before`);
+    }
+    await closePage(page);
+  }
+});
+
 test('the walkthrough speaks English when the page does', { skip: SKIP }, async () => {
   const srv = await origin();
   const page = await open(`${srv.base}/megaport2026/`, { onboard: true, ua: UA.iphone, seed: { 'fp:megaport2026:lang': 'en' } });
@@ -703,7 +745,7 @@ test('controls live at the bottom: day tabs, 我的團序 and search in the dock
     const ids = ['day1', 'day2', 'tabMine', 'searchBtn'].map((id) => document.getElementById(id).getBoundingClientRect());
     return { headerButtons: [...document.querySelectorAll('.top button')].map((b) => b.id).join(), dockTop: dock.top, h: innerHeight, inDock: ids.every((r) => r.top >= dock.top - 1 && r.bottom <= dock.bottom + 1), lowest: Math.max(...ids.map((r) => r.bottom)) };
   });
-  assert.equal(lay.headerButtons, 'themeBtn', 'the header only holds the light/dark switch');
+  assert.equal(lay.headerButtons, 'langBtn,themeBtn', 'the header only holds EN／中 and the light/dark switch');
   assert.ok(lay.inDock, 'day tabs, 我的團序 and search sit in the bottom dock');
   assert.ok(lay.dockTop > lay.h * 0.8, `dock is in the thumb zone (${Math.round(lay.dockTop)}/${lay.h})`);
   assert.ok(lay.lowest <= lay.h - 20, 'controls clear the home indicator');
@@ -833,7 +875,7 @@ test('megaport: 12 stages, both days, and vagabond keeps no map or language butt
   assert.equal(await page.eval(`!!document.getElementById('mapBtn') && !!document.getElementById('langBtn')`), true);
   await closePage(page);
   const vb = await open(`${main.base}/${SLUG}/`);
-  assert.equal(await vb.eval(`!!document.getElementById('mapBtn') || !!document.getElementById('langBtn')`), false, 'vagabond unchanged: no map, no EN');
+  assert.deepEqual(await vb.eval(`[!!document.getElementById('mapBtn'), !!document.getElementById('langBtn')]`), [false, true], 'vagabond: no map yet, and EN／中 since its official English timetable is in');
   await closePage(vb);
   await main.close();
 });
@@ -1185,7 +1227,7 @@ test('我的團序 footer: 關於・自己做一個 and 隱私說明 side by sid
   const main = await origin();
   for (const [slug, lng, width] of [[SLUG, 'zh', 390], [SLUG, 'zh', 320], [MP, 'en', 320]]) {
     const page = await chrome.newPage({ width, height: 844 });
-    await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `${SEEN} try { localStorage.setItem('fp:${MP}:lang', '${lng}'); } catch (e) {}` });
+    await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `${SEEN} try { localStorage.setItem('fp:${slug}:lang', '${lng}'); } catch (e) {}` });
     await page.goto(`${main.base}/${slug}/`);
     await page.until(() => document.querySelectorAll('#grid .block').length > 0);
     await page.tap('#tabMine');

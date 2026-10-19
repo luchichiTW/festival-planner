@@ -21,14 +21,15 @@
   const fmt = (m) => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const el = (tag, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; return e; };
-  // Language: Chinese, or English when the event offers it (event.json "languages"). Switching reloads the page.
+  // Language: Chinese unless the visitor picked English with EN／中 (offered when event.json "languages" has "en";
+  // the choice is remembered, switching reloads the page). Not guessed from the browser: search engines render pages
+  // in an English browser, and the page should read to them as the Chinese page it is.
   const LANGS = EVT.languages || ['zh'];
   const KEY_LANG = key('lang');
   const lang = (() => {
     let saved = null;
-    try { saved = localStorage.getItem(KEY_LANG); } catch (e) { /* storage unavailable: pick from the browser */ }
-    if (LANGS.includes(saved)) return saved;
-    return LANGS.includes('en') && !/^zh/i.test(navigator.language || '') ? 'en' : 'zh';
+    try { saved = localStorage.getItem(KEY_LANG); } catch (e) { /* storage unavailable: Chinese */ }
+    return LANGS.includes(saved) ? saved : 'zh';
   })();
   const DICT = lang === 'zh' ? null : (window.FP_I18N && window.FP_I18N[lang]) || null;
   // t('中文 {n}', { n }) → the UI string in the current language. Values are inserted as given (escape first for HTML).
@@ -66,7 +67,7 @@
   // Board order: day, stage, start. Backup links don't depend on it — they use each show's permanent seq.
   const SHOWS = DATA.schedule.map((r) => ({
     id: r.id, seq: r.seq, day: r.day, stage: STAGES[STAGE_AT.get(r.stage)], si: STAGE_AT.get(r.stage),
-    start: toMin(r.start), end: toMin(r.end), name: r.name, note: r.note || '', en: r.en || '', alias: r.alias || '',
+    start: toMin(r.start), end: toMin(r.end), name: r.name, note: (lang === 'en' && r.noteEn) || r.note || '', noteZh: r.note || '', en: r.en || '', alias: r.alias || '',
     label: lang === 'en' && r.en ? r.en : r.name, // what the page shows; name stays the data key
   })).sort((a, b) => a.day - b.day || a.si - b.si || a.start - b.start);
   const BYID = new Map(SHOWS.map((s) => [s.id, s]));
@@ -685,7 +686,7 @@
   function getIndex() {
     if (!INDEX) {
       INDEX = SHOWS.map((s) => {
-        const parts = [s.name, s.en, s.note, s.alias, ...splitArtists(s.name)];
+        const parts = [s.name, s.en, s.note, s.noteZh, s.alias, ...splitArtists(s.name)];
         return { s, hay: norm(parts.join(' ')), main: norm(s.name), en: norm(s.en) };
       });
     }

@@ -75,6 +75,8 @@ button { font: inherit; color: inherit; }
    On 我的團序 the header gets that hairline itself. */
 .app[data-view="mine"] .top { box-shadow: inset 0 -1px 0 var(--line-2); }
 .top-sub { flex: 1; min-width: 0; margin: 0; text-align: right; font-size: 12px; line-height: 1.35; color: var(--muted); }
+/* Break between the date and the place first (「11.07–08」／「臺南觀夕平臺大草皮」), not one character into a line of its own. */
+.top-sub { word-break: keep-all; overflow-wrap: anywhere; text-wrap: balance; }
 .hdr-btn {
   flex: none;
   appearance: none;
@@ -572,6 +574,8 @@ button { font: inherit; color: inherit; }
   cursor: pointer;
 }
 .tab b { font: 800 13px/1.15 var(--body); letter-spacing: .01em; }
+/* A label longer than its tab (English "My Schedule" on a 320 px phone) wraps onto a second line instead of running into the next tab. */
+.tab b { max-width: 100%; white-space: normal; text-align: center; text-wrap: balance; }
 .tab-sub { font: 500 10.5px/1.15 var(--body); font-variant-numeric: tabular-nums; }
 .tab-sub .clash { color: var(--alert); font-weight: 800; }
 .tab[aria-pressed="true"] { color: var(--accent-text); background: var(--glass-sel, var(--line)); }

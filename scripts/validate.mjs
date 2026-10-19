@@ -134,6 +134,7 @@ export function validate({ slug, dir, event: ev, schedule, artists, venue }) {
     if (!stageIds.has(s.stage)) err(`${at}: 舞台 "${s.stage}" 不在 event.json 的 stages 裡`);
     if (!s.name || typeof s.name !== 'string') err(`${at}: 缺少 name`);
     for (const k of ['en', 'note']) if (typeof s[k] !== 'string') err(`${at}: ${k} 要是字串（沒有就寫 ""）`);
+    if ('noteEn' in s && (typeof s.noteEn !== 'string' || !s.note)) err(`${at}: noteEn 要是字串，而且只在有 note 時才寫（官方英文版的講座標題）`);
     if (!HHMM.test(s.start || '') || !HHMM.test(s.end || '')) { err(`${at}: start／end 要是 HH:MM`); return; }
     const a = toMin(s.start);
     const b = toMin(s.end);

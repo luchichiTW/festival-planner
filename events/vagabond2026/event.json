@@ -1,14 +1,17 @@
 {
   "slug": "vagabond2026",
   "name": "浪人祭 2026",
+  "nameEn": "Vagabond Festival 2026",
   "shortName": "浪人祭",
   "description": "浪人祭 2026 排團工具：時間表、我的團序、撞團抽籤，離線也能用。",
   "lang": "zh-Hant-TW",
   "timezone": "Asia/Taipei",
+  "languages": ["zh", "en"],
   "wordmark": { "text": "浪人祭", "sub": "2026" },
   "subtitle": "11.07–08 臺南觀夕平臺大草皮",
   "dataDate": "2026-10-17",
   "sourceNote": "時間表取自浪人祭官方 Threads 公告（2026/10/17），藝人簡介整理自網路公開資料。演出異動以現場公告為準。",
+  "sourceNoteEn": "Timetable from Vagabond Festival’s official Threads post (2026/10/17); artist intros compiled from public sources and shown in Chinese. Follow on-site announcements for changes.",
   "rules": { "picks": true },
   "features": { "embeds": true, "pages": true },
   "organizer": { "name": "笨道策展有限公司", "url": "https://www.vagabondfest.com/" },
@@ -18,13 +21,13 @@
     { "label": "DAY 2", "date": "2026-11-08", "start": "11:00", "end": "22:00" }
   ],
   "stages": [
-    { "id": "K", "name": "鯤鯓", "color": { "dark": "#D9474A", "light": "#C9393D" } },
-    { "id": "J", "name": "劍獅", "color": { "dark": "#17A7B4", "light": "#0B8C98" } },
-    { "id": "H", "name": "金鶴廳", "color": { "dark": "#DFA02E", "light": "#C7871A" } },
-    { "id": "X", "name": "小嘻門", "color": { "dark": "#B77AC4", "light": "#9E5FAD" } },
-    { "id": "F", "name": "風獅", "color": { "dark": "#46B57A", "light": "#2B9660" } },
-    { "id": "R", "name": "浪人塾", "color": { "dark": "#E27530", "light": "#D0621E" } },
-    { "id": "L", "name": "Red Bull LUKA", "short": "LUKA", "long": true, "color": { "dark": "#4C64C4", "light": "#3E55B6" } }
+    { "id": "K", "name": "鯤鯓", "en": "Kun Shen Stage", "color": { "dark": "#D9474A", "light": "#C9393D" } },
+    { "id": "J", "name": "劍獅", "en": "Jian Shih Stage", "color": { "dark": "#17A7B4", "light": "#0B8C98" } },
+    { "id": "H", "name": "金鶴廳", "en": "Jin Ho Ting Stage", "color": { "dark": "#DFA02E", "light": "#C7871A" } },
+    { "id": "X", "name": "小嘻門", "en": "Xiao Si Men Stage", "color": { "dark": "#B77AC4", "light": "#9E5FAD" } },
+    { "id": "F", "name": "風獅", "en": "Fong Shih Stage", "color": { "dark": "#46B57A", "light": "#2B9660" } },
+    { "id": "R", "name": "浪人塾", "en": "Ronin Cram School", "color": { "dark": "#E27530", "light": "#D0621E" } },
+    { "id": "L", "name": "Red Bull LUKA", "short": "LUKA", "en": "Red Bull LUKA", "shortEn": "LUKA", "long": true, "color": { "dark": "#4C64C4", "light": "#3E55B6" } }
   ],
   "theme": {
     "dark": {
