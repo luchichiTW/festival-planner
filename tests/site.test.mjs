@@ -74,7 +74,7 @@ test('robots.txt: content signals for everyone, a block list, the site sitemap a
   assert.match(groups[1], /\nDisallow: \/$/);
   assert.ok(blocked.includes('Bingbot') && blocked.includes('Baiduspider') && blocked.includes('GPTBot'));
   // Search and answer crawlers that should still read the site stay in the * group, so the content signals reach them.
-  for (const ua of ['Googlebot', 'Google-Extended', 'Claude-SearchBot', 'Claude-User', 'OAI-SearchBot', 'ChatGPT-User', 'PerplexityBot', 'Perplexity-User', 'DuckDuckBot', 'DuckAssistBot']) {
+  for (const ua of ['Googlebot', 'Google-Extended', 'Claude-SearchBot', 'Claude-User', 'OAI-SearchBot', 'ChatGPT-User', 'PerplexityBot', 'Perplexity-User', 'DuckDuckBot', 'DuckAssistBot', 'Applebot', 'Amazonbot', 'YandexBot', 'facebookexternalhit']) {
     assert.ok(!blocked.includes(ua), `${ua} is not blocked`);
     assert.doesNotMatch(txt, new RegExp(`^User-agent: ${ua}$`, 'm'), `${ua} has no group of its own`);
   }
