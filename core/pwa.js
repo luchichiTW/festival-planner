@@ -56,24 +56,21 @@
   }
 
   function installBody() {
-    const E = window.FP_EVENT;
     const offline = t('完全離線運作、不蒐集任何資料。');
-    const links = [E.urls?.official && [E.urls.official, t('官方網站')], E.urls?.repo && [E.urls.repo, t('GitHub 原始碼')]].filter(Boolean);
-    const tail = links.length ? `<p class="ob-links">${links.map(([u, l]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(l)}</a>`).join('')}</p>` : '';
     let desc;
     if (inApp) {
       const url = location.origin + location.pathname;
       return `<p class="ob-desc">${t('你現在用的是 App 裡的瀏覽器，沒辦法加到主畫面。點右上角的三個點，選「用瀏覽器開啟」；或複製網址，貼到 Safari 或 Chrome，再加到主畫面。')}${offline}</p>
-        <p class="ob-url">${esc(url)}</p><button type="button" class="pill-btn ob-copy" data-act="ob-copy">${t('複製網址')}</button>${tail}`;
+        <p class="ob-url">${esc(url)}</p><button type="button" class="pill-btn ob-copy" data-act="ob-copy">${t('複製網址')}</button>`;
     }
     const moved = isIOS && FP.snapshot().picks.length ? `<p class="ob-desc">${t('已經排好的團序，到「我的團序」按「複製備份連結」，再到主畫面版的「我的團序」選「從備份連結還原」。')}</p>` : '';
-    if (pictures) return `<p class="ob-desc">${t('在 Safari 排好的團序，到主畫面還要再排一次。照下面 5 步加到主畫面，之後點圖示打開，離線也能用、不蒐集任何資料。')}</p>${guide()}${moved}${tail}`;
+    if (pictures) return `<p class="ob-desc">${t('在 Safari 排好的團序，到主畫面還要再排一次。照下面 5 步加到主畫面，之後點圖示打開，離線也能用、不蒐集任何資料。')}</p>${guide()}${moved}`;
     if (isIOS) desc = t('記得先點「分享」→「加入主畫面」再開始排團，不然在 Safari 排好的團序，到主畫面還要再排一次喔！（新版 Safari 的「分享」在網址列旁的「⋯」裡）');
     else if (offer) desc = phone ? t('點下面的「安裝」，就會加到主畫面，之後從圖示打開。') : t('點下面的「安裝」，就會裝到電腦上，之後從圖示打開。');
     else if (isAndroid) desc = t('點瀏覽器右上角的三個點（⋮），選「加到主畫面」或「安裝應用程式」，之後從主畫面的圖示打開。');
     else if (isMacSafari) desc = t('在選單列點「檔案」→「加入 Dock」，之後從 Dock 打開。');
     else desc = t('用 Chrome 或 Edge 打開時，網址列右邊會有「安裝」圖示；其他瀏覽器打開過一次後也能離線看，記得加入書籤。');
-    return `<p class="ob-desc">${desc}${offline}</p>${moved}${tail}`;
+    return `<p class="ob-desc">${desc}${offline}</p>${moved}`;
   }
 
   // Safari on iPhone: what to tap, as screenshots (iPhone 17 Pro, iOS 26), one per step, swiped sideways.

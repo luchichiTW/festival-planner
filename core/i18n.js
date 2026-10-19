@@ -161,8 +161,6 @@ window.FP_I18N = {
     '點瀏覽器右上角的三個點（⋮），選「加到主畫面」或「安裝應用程式」，之後從主畫面的圖示打開。': 'Tap the three dots (⋮) at the top right of the browser, choose "Add to Home screen" or "Install app", then open it from the icon.',
     '在選單列點「檔案」→「加入 Dock」，之後從 Dock 打開。': 'In the menu bar, choose File → Add to Dock, then open it from the Dock.',
     '用 Chrome 或 Edge 打開時，網址列右邊會有「安裝」圖示；其他瀏覽器打開過一次後也能離線看，記得加入書籤。': 'In Chrome or Edge, use the Install icon at the right of the address bar; other browsers also work offline after one visit, so bookmark the page.',
-    '官方網站': 'Official site',
-    'GitHub 原始碼': 'Source on GitHub',
     '場地圖': 'Venue map',
     '官方還沒公布場地圖。公布後會放在這裡：點舞台就能看接下來的團、一鍵導航。': 'The official venue map isn\'t out yet. It will be here once it is: tap a stage to see what\'s next there and get walking directions.',
     '官網的場地資訊': 'Venue info on the official site',

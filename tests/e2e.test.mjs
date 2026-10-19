@@ -467,7 +467,7 @@ test('first visit on an iPhone: the 大港撞團 cards — long-press, 我的團
   for (const w of [/分享/, /加入主畫面/, /離線/, /不蒐集/]) assert.match(s.text, w);
   assert.equal(await page.eval(() => document.querySelectorAll('#sheet .a2hs-step img').length), 5, "Safari's five steps as pictures");
   assert.deepEqual(s.buttons, ['上一步', '開始使用']);
-  assert.deepEqual(await page.eval(() => [...document.querySelectorAll('#sheet .ob-links a')].map((a) => [a.textContent, a.getAttribute('href')])), [['官方網站', 'https://www.vagabondfest.com/'], ['GitHub 原始碼', 'https://github.com/luchichiTW/festival-planner']]);
+  assert.equal(await page.eval(() => document.querySelectorAll('#sheet .ob a[href]').length), 0, 'no links on the card: nothing to leave the steps for');
   await page.tap('#sheet [data-act="ob-back"]');
   await onStep(page, '團序、時間表與地圖');
   await page.tap('#sheet [data-act="ob-next"]');
