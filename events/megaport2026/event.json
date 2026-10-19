@@ -70,7 +70,15 @@
       "glass-border": "rgb(255 255 255 / .15)",
       "glass-shadow": "0 8px 32px rgb(0 0 0 / .25)",
       "glass-sel": "rgb(255 255 255 / .14)",
-      "glass-solid": "#1A1A1F"
+      "glass-solid": "#1A1A1F",
+      "glass-tint": "rgb(40 34 34 / .30)",
+      "glass-sheen": "linear-gradient(180deg, rgb(255 240 230 / .16), rgb(255 240 230 / .02) 48%, rgb(255 240 230 / .07))",
+      "glass-rim": "rgb(255 240 230 / .38)",
+      "glass-rim-low": "rgb(255 240 230 / .10)",
+      "glass-lift": "0 12px 32px -10px rgb(0 0 0 / .6), 0 2px 8px rgb(0 0 0 / .25)",
+      "glass-lens": "rgb(255 240 230 / .14)",
+      "glass-lens-rim": "rgb(255 240 230 / .45)",
+      "glass-ink-glow": "rgb(0 0 0 / .55)"
     },
     "light": {
       "bg": "#F2F2F7",
@@ -101,7 +109,15 @@
       "glass-border": "rgb(255 255 255 / .55)",
       "glass-shadow": "0 8px 32px rgb(0 0 0 / .06)",
       "glass-sel": "rgb(0 0 0 / .06)",
-      "glass-solid": "#FAFAFC"
+      "glass-solid": "#FAFAFC",
+      "glass-tint": "rgb(255 255 255 / .16)",
+      "glass-sheen": "linear-gradient(180deg, rgb(255 255 255 / .42), rgb(255 255 255 / .06) 48%, rgb(255 255 255 / .16))",
+      "glass-rim": "rgb(255 255 255 / .85)",
+      "glass-rim-low": "rgb(255 255 255 / .28)",
+      "glass-lift": "0 12px 32px -10px rgb(50 25 20 / .28), 0 2px 8px rgb(50 25 20 / .08)",
+      "glass-lens": "rgb(255 255 255 / .58)",
+      "glass-lens-rim": "rgb(255 255 255 / .95)",
+      "glass-ink-glow": "rgb(255 255 255 / .75)"
     }
   },
   "css": "assets/event.css",

@@ -223,7 +223,7 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
   const site = path.join(out, slug);
   fs.rmSync(site, { recursive: true, force: true });
   fs.mkdirSync(site, { recursive: true });
-  const CORE_JS = ['i18n.js', 'app.js', 'embed.js', 'map.js', 'pwa.js'];
+  const CORE_JS = ['i18n.js', 'app.js', 'embed.js', 'map.js', 'pwa.js', 'glass.js'];
   const files = ['./', 'styles.css', 'data.js', ...CORE_JS, 'manifest.webmanifest'];
   const copy = (rel, name) => {
     fs.mkdirSync(path.dirname(path.join(site, name)), { recursive: true });
@@ -312,6 +312,7 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
     `<script>\n${read(path.join(CORE, 'i18n.js'))}</script>`,
     `<script>\n${app}</script>`,
     hasMap ? `<script>\n${read(path.join(CORE, 'map.js'))}</script>` : '',
+    `<script>\n${read(path.join(CORE, 'glass.js'))}</script>`,
     `<script>\n${read(path.join(CORE, 'cloud.js'))}</script>`,
   ].join('\n') + '\n';
   const artDir = path.join(artifactOut, slug);

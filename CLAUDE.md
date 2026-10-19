@@ -31,6 +31,7 @@ node scripts/og.mjs site                # 畫首頁與 /privacy/ 的分享預覽
 | `core/i18n.js` | 英文介面字串：鍵是 `core/` 裡寫的中文（含 `{變數}`），`t()` 在英文模式回傳英文 |
 | `core/embed.js` | 卡片內試聽（Spotify、Apple Music、YouTube、Podcast、街聲），打開卡片才載入、離線不顯示 |
 | `core/map.js` | 場地圖與官方圖：縮放、拖曳、舞台熱區（接下來的演出、步行導航） |
+| `core/glass.js` | 液態玻璃的動作，所有分頁列共用：選中分頁的玻璃泡（滑動、按住放大、可拖曳），底部列往下捲時縮小 |
 | `core/pwa.js` | 只在網站版：service worker 註冊、安靜更新、導覽最後一步「加到主畫面」（依 iPhone、Android、電腦、App 內建瀏覽器顯示不同做法） |
 | `core/sw.template.js` | service worker 樣板，build 填入版本與檔案清單 |
 | `core/cloud.js` | 只在 artifact 版：用 Claude 帳號同步團序（db＋user 能力） |

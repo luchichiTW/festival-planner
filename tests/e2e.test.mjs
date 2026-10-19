@@ -877,6 +877,56 @@ test('a phone on its side: no header, the timetable from the top edge, the dock 
   await main.close();
 });
 
+test('Liquid Glass: one lens per tab bar (dock and map page) follows the chosen tab and a dragging finger; the dock shrinks scrolling down, comes back scrolling up', { skip: SKIP }, async () => {
+  const main = await origin();
+  const page = await open(`${main.base}/${SLUG}/`, { width: 402, height: 874 });
+  await page.eval('document.fonts.ready');
+  const lensOn = (barSel) => page.eval((sel) => {
+    const bar = document.querySelector(sel);
+    const l = bar.querySelector('.glass-lens').getBoundingClientRect();
+    const on = bar.querySelector('.tab[aria-pressed="true"]').getBoundingClientRect();
+    return { glass: bar.classList.contains('has-lens'), off: Math.round(Math.abs(l.left - on.left) + Math.abs(l.width - on.width)) };
+  }, barSel);
+  const settle = () => sleep(600);
+  // The chosen tab is clear glass; the lens sits under it, also after switching.
+  assert.equal(await page.eval(() => getComputedStyle(document.querySelector('.dock .tab[aria-pressed="true"]')).backgroundColor), 'rgba(0, 0, 0, 0)');
+  assert.deepEqual(await lensOn('.dock .tabbar'), { glass: true, off: 0 });
+  await page.tap('#day2');
+  await settle();
+  assert.deepEqual(await lensOn('.dock .tabbar'), { glass: true, off: 0 }, 'slid to DAY 2');
+  // Drag from DAY 2 across to 我的團序 and let go there: that tab is chosen.
+  const pt = (sel) => page.eval((q) => { const r = document.querySelector(q).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, sel);
+  const a = await pt('#day2');
+  const b = await pt('#tabMine');
+  await page.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: a.x, y: a.y }] });
+  for (let i = 1; i <= 6; i++) await page.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: a.x + ((b.x - a.x) * i) / 6, y: a.y }] });
+  await page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await page.until(() => document.getElementById('tabMine').getAttribute('aria-pressed') === 'true');
+  await settle();
+  assert.deepEqual(await lensOn('.dock .tabbar'), { glass: true, off: 0 }, 'dragged onto 我的團序');
+  // Scrolling the timetable down shrinks the dock; back up, it returns. Sideways does nothing.
+  await page.tap('#day1');
+  const small = () => page.eval(() => document.getElementById('dock').classList.contains('small'));
+  const scrollBy = (dx, dy) => page.eval(async ([x, y]) => { const b = document.querySelector('.board'); for (let i = 0; i < 6; i++) { b.scrollBy(x / 6, y / 6); await new Promise((r) => requestAnimationFrame(r)); } }, [dx, dy]);
+  await scrollBy(240, 0);
+  assert.equal(await small(), false, 'sideways: no change');
+  await scrollBy(0, 400);
+  assert.equal(await small(), true, 'scrolling down: smaller');
+  await scrollBy(0, -120);
+  assert.equal(await small(), false, 'scrolling up: back');
+  // The map page's tab bar is the same glass, with its own lens.
+  await page.tap('#mapBtn');
+  await page.until(() => !document.querySelector('.mv:not(.mv-wait)').hidden);
+  await settle();
+  assert.deepEqual(await lensOn('.mv .tabbar'), { glass: true, off: 0 });
+  assert.equal(await page.eval(() => getComputedStyle(document.querySelector('.mv .tabbar')).backdropFilter), await page.eval(() => getComputedStyle(document.querySelector('.dock .tabbar')).backdropFilter), 'same glass');
+  await page.tap('.mv [data-mv="2"]');
+  await settle();
+  assert.deepEqual(await lensOn('.mv .tabbar'), { glass: true, off: 0 }, 'map lens slid to DAY 2');
+  await closePage(page);
+  await main.close();
+});
+
 test('controls live at the bottom: day tabs, 我的團序 and search in the dock; header has none', { skip: SKIP }, async () => {
   const main = await origin();
   const page = await open(`${main.base}/${SLUG}/`, { safeArea: { top: 59, bottom: 34 } });
