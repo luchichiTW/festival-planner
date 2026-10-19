@@ -15,9 +15,14 @@
   if (last && last !== EVT.build) setTimeout(() => FP.toast(FP.t('已更新到 {date} 的時間表', { date: FP.mmdd(EVT.dataDate) }), 4000), 500);
 
   /* ---------- the walkthrough's last step: add it to the home screen, use it offline ---------- */
-  // Shown once, to everyone not already in the installed app. What to tap depends on where the page is open:
-  // an app's built-in browser can't install at all, iPhone uses Share, Chrome and Edge can show their own prompt.
+  // For everyone not already in the installed app. On a phone it comes back, up to three times a day (on opening
+  // the page, or on coming back to it after half an hour away), until it is on the home screen: getting it there
+  // is the point. On a computer, once. What to tap depends on where the page is open: an app's built-in browser
+  // can't install at all; iPhone uses Share (in Safari, the five steps as pictures: event.json "iosInstallSteps");
+  // Chrome and Edge can show their own prompt.
   const KEY_INSTALL = key('install-hint');
+  const PER_DAY = 3;
+  const AWAY_MS = 30 * 60 * 1000;
   const t = FP.t;
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const ua = navigator.userAgent;
@@ -27,6 +32,8 @@
   const isMacSafari = !isIOS && /Macintosh/.test(ua) && /Version\/[\d.]+.*Safari/.test(ua) && !/Chrome|Chromium|Edg|Firefox/.test(ua);
   const standalone = navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
   const phone = isIOS || isAndroid || inApp;
+  const isSafari = isIOS && !inApp && !/CriOS|FxiOS|EdgiOS|OPiOS|GSA\/|YaBrowser|DuckDuckGo/.test(ua);
+  const pictures = isSafari && (EVT.iosInstallSteps || []).length === 5 ? EVT.iosInstallSteps : null;
   let offer = null; // Chrome / Edge's install prompt (beforeinstallprompt), once the browser makes one
 
   async function install() {
@@ -65,19 +72,57 @@
       return `<p class="ob-desc">${t('你現在用的是 App 裡的瀏覽器，沒辦法加到主畫面。點右上角的三個點，選「用瀏覽器開啟」；或複製網址，貼到 Safari 或 Chrome，再加到主畫面。')}${offline}</p>
         <p class="ob-url">${esc(url)}</p><button type="button" class="pill-btn ob-copy" data-act="ob-copy">${t('複製網址')}</button>${tail}`;
     }
+    const moved = isIOS && FP.snapshot().picks.length ? `<p class="ob-desc">${t('已經排好的團序，到「我的團序」按「複製備份連結」，再到主畫面版的「我的團序」選「從備份連結還原」。')}</p>` : '';
+    if (pictures) return `<p class="ob-desc">${t('在 Safari 排好的團序，到主畫面還要再排一次。照下面 5 步加到主畫面，之後點圖示打開，離線也能用、不蒐集任何資料。')}</p>${guide()}${moved}${tail}`;
     if (isIOS) desc = t('記得先點「分享」→「加入主畫面」再開始排團，不然在 Safari 排好的團序，到主畫面還要再排一次喔！（新版 Safari 的「分享」在網址列旁的「⋯」裡）');
     else if (offer) desc = phone ? t('點下面的「安裝」，就會加到主畫面，之後從圖示打開。') : t('點下面的「安裝」，就會裝到電腦上，之後從圖示打開。');
     else if (isAndroid) desc = t('點瀏覽器右上角的三個點（⋮），選「加到主畫面」或「安裝應用程式」，之後從主畫面的圖示打開。');
     else if (isMacSafari) desc = t('在選單列點「檔案」→「加入 Dock」，之後從 Dock 打開。');
     else desc = t('用 Chrome 或 Edge 打開時，網址列右邊會有「安裝」圖示；其他瀏覽器打開過一次後也能離線看，記得加入書籤。');
-    const moved = isIOS && FP.snapshot().picks.length ? `<p class="ob-desc">${t('已經排好的團序，到「我的團序」按「複製備份連結」，再到主畫面版的「我的團序」選「從備份連結還原」。')}</p>` : '';
     return `<p class="ob-desc">${desc}${offline}</p>${moved}${tail}`;
   }
 
-  if (!standalone && !store.get(KEY_INSTALL)) {
+  // Safari on iPhone: what to tap, as screenshots (iPhone 17 Pro, iOS 26), one per step, swiped sideways.
+  function guide() {
+    const say = [t('點網址列右邊的「⋯」'), t('點「分享」'), t('點「檢視較多」'), t('點「加入主畫面」'), t('點「加入」（網頁 App 保持開著）')];
+    return `<div class="a2hs" role="group" aria-label="${esc(t('加到主畫面的 5 個步驟'))}"><div class="a2hs-track">${pictures.map((src, i) => `<figure class="a2hs-step"><img src="${esc(src)}" alt="" width="360" height="270" decoding="async"><figcaption><b>${i + 1}</b><span>${esc(say[i])}</span></figcaption></figure>`).join('')}</div>
+      <div class="a2hs-dots" aria-hidden="true">${pictures.map((_, i) => `<i${i ? '' : ' class="on"'}></i>`).join('')}</div></div>
+      <p class="a2hs-old">${t('舊版 iOS 的分享鈕在下方工具列，點它之後往下滑，找「加入主畫面」。')}</p>`;
+  }
+  // The dots follow the swipe; tapping a picture goes to the next one (the last one back to the first).
+  const slide = (tr) => tr.clientWidth + (parseFloat(getComputedStyle(tr).columnGap) || 0);
+  document.addEventListener('scroll', (e) => {
+    const tr = e.target;
+    if (!tr.classList || !tr.classList.contains('a2hs-track')) return;
+    const i = Math.round(tr.scrollLeft / slide(tr));
+    tr.parentNode.querySelectorAll('.a2hs-dots i').forEach((d, j) => d.classList.toggle('on', j === i));
+  }, true);
+  document.addEventListener('click', (e) => {
+    const fig = e.target.closest && e.target.closest('.a2hs-step');
+    if (!fig) return;
+    const tr = fig.parentNode;
+    const i = fig.nextElementSibling ? [...tr.children].indexOf(fig) + 1 : 0;
+    tr.scrollTo({ left: i * slide(tr), behavior: 'smooth' });
+  });
+
+  // Phones: { d: the day, n: times shown that day }. Computers: '1' once seen. (Before 1.6.1, '1' everywhere.)
+  const today = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
+  function shownToday() {
+    try {
+      const v = JSON.parse(store.get(KEY_INSTALL) || 'null');
+      return v && v.d === today() ? v.n || 0 : 0;
+    } catch (err) {
+      console.warn('[fp] install-hint count unreadable, starting over', err);
+      return 0;
+    }
+  }
+  const due = () => (phone ? shownToday() < PER_DAY : !store.get(KEY_INSTALL));
+
+  // On a phone the step stays registered even when today's three are used up: the page may stay open past midnight.
+  if (!standalone && (phone || due())) {
     // Keep Chrome's own banner away while our step is still to come; the step offers the same prompt.
     // (iPhone and in-app browsers never offer one; their steps say what to tap instead.)
-    if (!isIOS && !inApp) addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); offer = e; FP.onboardRefresh('install'); });
+    if (!isIOS && !inApp && due()) addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); offer = e; FP.onboardRefresh('install'); });
     FP.onboardStep({
       id: 'install',
       icon: '📲',
@@ -85,7 +130,17 @@
       body: installBody,
       cta: () => (offer ? { act: 'ob-install', label: t('安裝') } : null),
       act: (name) => { if (name === 'ob-install') install(); else if (name === 'ob-copy') copyLink(); },
-      seen: () => store.set(KEY_INSTALL, '1'),
+      due,
+      seen: () => store.set(KEY_INSTALL, phone ? JSON.stringify({ d: today(), n: shownToday() + 1 }) : '1'),
+    });
+  }
+  // Back on the page after half an hour away (Safari keeps the page open between visits): again, if still due.
+  if (!standalone && phone) {
+    let hiddenAt = 0;
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { hiddenAt = Date.now(); return; }
+      if (hiddenAt && Date.now() - hiddenAt >= AWAY_MS && due()) FP.onboardStart();
+      hiddenAt = 0;
     });
   }
 

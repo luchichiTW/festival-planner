@@ -1060,10 +1060,11 @@
   /* ---------- first visit: the walkthrough (the cards of 大港撞團) ---------- */
   // A centred card, one step at a time: long-press for the artist card, 我的團序 and the map, then (website only,
   // from pwa.js) adding it to the home screen. People who already used the
-  // app — picks, or the old one-line hint dismissed — get only the add-on steps they haven't seen. 跳過 closes it;
+  // app — picks, or the old one-line hint dismissed — get only the add-on steps that are due (the home-screen step: up
+  // to three times a day on a phone). 跳過 closes it;
   // closing it any way counts as seen, and a step counts once it was on screen.
   const KEY_ONBOARD = key('onboard');
-  const obAddOns = []; // { id, icon, keep, title(), body(), cta?() → { act, label }, act?(name, button), seen?() }
+  const obAddOns = []; // { id, icon, keep, title(), body(), cta?() → { act, label }, act?(name, button), due?(), seen?() }
   let ob = null; // { steps, i, shown }
 
   // The example artist card: event.json "onboardExample" (a show id), else the first set with players.
@@ -1136,7 +1137,7 @@
   function startOnboard() {
     if (!sheet.hidden) return; // a backup link's question is open: next time
     const returning = !!(store.get(KEY_ONBOARD) || store.get(KEY_HINT) || picks.size);
-    const steps = [...(returning ? [] : [OB_PRESS, OB_MINE]), ...obAddOns];
+    const steps = [...(returning ? [] : [OB_PRESS, OB_MINE]), ...obAddOns.filter((st) => !st.due || st.due())];
     if (!steps.length) return;
     ob = { steps, i: 0, shown: new Set() };
     sheet.classList.add('ob-card');
@@ -1439,6 +1440,7 @@
     onCommit: (fn) => { commitHooks.push(fn); },
     onboardStep: (step) => { obAddOns.push(step); },
     onboardRefresh: (id) => { if (ob && ob.steps[ob.i].id === id) showStep(ob.i); },
+    onboardStart: () => startOnboard(),
     closeSheet: () => closeSheet(),
   };
 
@@ -1449,7 +1451,7 @@
     document.querySelectorAll('[data-i18n]').forEach((n) => { n.textContent = t(n.textContent.trim()); });
     document.querySelectorAll('[data-i18n-attr]').forEach((n) => n.dataset.i18nAttr.split(' ').forEach((a) => { if (n.hasAttribute(a)) n.setAttribute(a, t(n.getAttribute(a))); }));
     if (EVT.wordmark?.textEn) $('wordmarkText').textContent = EVT.wordmark.textEn;
-    $('topSub').textContent = subtitle;
+    if (!EVT.header) $('topSub').textContent = subtitle; // two-line header: no official English for the place, so it stays
     dayBtns.forEach((b, i) => { const d = DAYS[DAY_NUMS[i]]; b.querySelector('.tab-sub').textContent = `${d.dow} ${d.date}`; });
   }
   // EN／中: offered when the event has English; switching reloads with the other language.

@@ -103,6 +103,9 @@ button { font: inherit; color: inherit; }
   text-shadow: 1.5px 1.5px 0 var(--brand-shadow), 3px 3px 0 var(--brand-shadow-2);
 }
 .wordmark small { margin-left: 5px; font: 500 11px var(--mono); letter-spacing: 0; color: var(--muted); text-shadow: none; }
+.wordmark small:empty { display: none; }
+.top-sub .ts-l { display: block; }
+.top-sub .ts-l:first-child { white-space: nowrap; }
 /* ---------- 03 next-up bar (festival days only) ---------- */
 .next { display: flex; flex-direction: column; gap: 6px; }
 .nx {
@@ -659,6 +662,25 @@ button { font: inherit; color: inherit; }
 .ob-dots i { width: 7px; height: 7px; border-radius: 4px; background: var(--line-2); transition: width .2s, background-color .2s; }
 .ob-dots i.on { width: 20px; background: var(--accent-text); }
 .sheet.ob-card .sheet-actions { margin-top: 0; }
+/* Safari's 加入主畫面 steps (pwa.js): one screenshot per step, swiped sideways, the button to tap framed as the sun */
+.a2hs { width: 100%; display: grid; gap: 10px; }
+.a2hs-track { display: flex; gap: 12px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.a2hs-track::-webkit-scrollbar { display: none; }
+.a2hs-step { flex: 0 0 100%; margin: 0; scroll-snap-align: center; display: grid; gap: 10px; cursor: pointer; }
+.a2hs-step img { width: 100%; height: auto; aspect-ratio: 4 / 3; border-radius: 14px; border: 1px solid var(--line-2); display: block; }
+.a2hs-step figcaption { display: flex; gap: 8px; align-items: baseline; justify-content: center; font: 700 15px/1.4 var(--body); color: var(--fg); text-wrap: balance; }
+.a2hs-step figcaption b { flex: none; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 11px; background: var(--accent-text); color: var(--bg); font: 800 13px/1 var(--body); transform: translateY(-1px); }
+.a2hs-dots { display: flex; justify-content: center; gap: 5px; }
+.a2hs-dots i { width: 6px; height: 6px; border-radius: 3px; background: var(--line-2); transition: width .2s, background-color .2s; }
+.a2hs-dots i.on { width: 16px; background: var(--accent-text); }
+.a2hs-old { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--faint); }
+/* The card is tall with the pictures: on a short screen it loses the big icon, and its buttons stay at the bottom
+   while the rest scrolls, so 👌 is always in reach. */
+.sheet.ob-card:has(.a2hs) .sheet-actions { position: sticky; bottom: -24px; margin: 0 -24px -24px; padding: 12px 24px 24px; background: var(--surface); }
+@media (max-height: 740px) {
+  .sheet.ob-card:has(.a2hs) { padding-top: 22px; gap: 14px; }
+  .ob:has(.a2hs) .ob-icon { display: none; }
+}
 
 /* ---------- 05 search ---------- */
 .sp-scrim { position: fixed; inset: 0; z-index: 24; background: var(--scrim); backdrop-filter: blur(6px); }

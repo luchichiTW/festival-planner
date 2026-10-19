@@ -44,6 +44,26 @@ test('validate catches broken schedules', () => {
   }
 });
 
+test('validate checks the two-line header and the Safari step pictures', () => {
+  const cases = [
+    ['header without place', (ev) => { ev.event.header = { date: '2026.11.07–08' }; }, /header 要有 date 和 place/],
+    ['four step pictures', (ev) => { ev.event.iosInstallSteps = ev.event.iosInstallSteps.slice(0, 4); }, /iosInstallSteps 要是 5 張圖/],
+    ['missing picture', (ev) => { ev.event.iosInstallSteps[2] = 'assets/a2hs/nope.webp'; }, /iosInstallSteps 找不到圖片 assets\/a2hs\/nope\.webp/],
+  ];
+  for (const [name, breakIt, expected] of cases) {
+    const ev = fresh();
+    breakIt(ev);
+    const { errors } = validate(ev);
+    assert.ok(errors.some((e) => expected.test(e)), `${name}: expected ${expected}, got ${JSON.stringify(errors)}`);
+  }
+  // The pictures ship next to the page, go into the offline cache, and stay out of the single file.
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'fp-a2hs-'));
+  build('vagabond2026', { out, artifactOut: out + '-art' });
+  for (let i = 1; i <= 5; i++) assert.ok(fs.existsSync(path.join(out, 'vagabond2026', 'a2hs', `step${i}.webp`)));
+  assert.match(fs.readFileSync(path.join(out, 'vagabond2026', 'sw.js'), 'utf8'), /"a2hs\/step5\.webp"/);
+  assert.doesNotMatch(fs.readFileSync(path.join(out + '-art', 'vagabond2026', 'index.html'), 'utf8'), /a2hs\//);
+});
+
 test('validate catches bad artist data', () => {
   const cases = [
     ['one source', (a) => { a['ano'].sources = a['ano'].sources.slice(0, 1); }, /至少要 2 個不同網站/],

@@ -87,14 +87,18 @@ function privacyBody() {
   return body[1].replace(/<\/header>/, '</div>').replace(/^/, '<div class="pv-head">');
 }
 
+const a2hsName = (rel) => `a2hs/${path.basename(rel)}`;
+
 // What the page needs at run time: event.json minus the build-only parts, plus the build id.
 function clientConfig(ev, build, mode) {
   return {
     slug: ev.slug, name: ev.name, nameEn: ev.nameEn, shortName: ev.shortName, lang: ev.lang, timezone: ev.timezone,
     languages: ev.languages || ['zh'], wordmark: ev.wordmark,
-    subtitle: ev.subtitle || '', subtitleEn: ev.subtitleEn, dataDate: ev.dataDate, sourceNote: ev.sourceNote, sourceNoteEn: ev.sourceNoteEn,
+    subtitle: ev.subtitle || '', subtitleEn: ev.subtitleEn, header: ev.header, dataDate: ev.dataDate, sourceNote: ev.sourceNote, sourceNoteEn: ev.sourceNoteEn,
     days: ev.days, stages: ev.stages.map(({ id, name, short, en, shortEn, long }) => ({ id, name, short, en, shortEn, long })),
     features: ev.features || {}, lottery: ev.lottery, urls: ev.urls || {}, onboardExample: ev.onboardExample, build, mode,
+    // Safari's 加入主畫面 steps as pictures, next to the page (website only: the single file never asks to install).
+    iosInstallSteps: mode === 'artifact' || !ev.iosInstallSteps ? undefined : ev.iosInstallSteps.map(a2hsName),
     // Offline use, personal data and the questions, for the 關於 sheet, and the privacy page's text for the 隱私說明
     // sheet (so it opens inside the app, offline too): website only (scripts/lib/copy.mjs, site/privacy.html).
     about: mode === 'artifact' ? null : { ...aboutForPage(), privacyHtml: privacyBody() },
@@ -192,7 +196,9 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
   const app = read(path.join(CORE, 'app.js'));
   const common = {
     lang: ev.lang, title: esc(ev.name), description: esc(ev.description || ev.name), build: esc(build),
-    wordmark: esc(ev.wordmark?.text || ev.shortName), wordmarkSub: esc(ev.wordmark?.sub || ''), subtitle: esc(ev.subtitle || ''), dayTabs: dayTabs(ev),
+    // event.json "header": the year moves from beside the wordmark to the right, as two lines (date over place).
+    wordmark: esc(ev.wordmark?.text || ev.shortName), wordmarkSub: ev.header ? '' : esc(ev.wordmark?.sub || ''),
+    subtitle: ev.header ? `<span class="ts-l">${esc(ev.header.date)}</span><span class="ts-l">${esc(ev.header.place)}</span>` : esc(ev.subtitle || ''), dayTabs: dayTabs(ev),
   };
   // Venue images: on the website they're files next to the page (img/…); in the single file, data: URIs of the
   // Chinese versions only (the English ones would double the size).
@@ -231,6 +237,7 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
   if (ev.icons?.svg) icon.svg = copy(ev.icons.svg, 'icon.svg');
   for (const [size, rel] of Object.entries(ev.icons?.png || {})) icon[size] = copy(rel, `icon-${size}.png`);
   if (ev.icons?.maskable) icon.maskable = copy(ev.icons.maskable, 'icon-maskable-512.png');
+  for (const rel of ev.iosInstallSteps || []) copy(rel, a2hsName(rel)); // in the offline cache too
 
   const themeColor = ev.icons?.themeColor || ev.theme.dark.bg;
   const head = [

@@ -42,6 +42,10 @@ const rebuild = (root, buildId) => {
   try { build(SLUG, { out: root, artifactOut: path.join(tmp, 'rebuild-art') }); } finally { delete process.env.FP_BUILD; }
 };
 
+// The add-to-home-screen card's count (pwa.js): shown three times today, so not again today. FULL_JS makes it in the page.
+const FULL = '__shown-3-today__';
+const FULL_JS = "JSON.stringify({ d: new Date().getFullYear() + '-' + (new Date().getMonth() + 1) + '-' + new Date().getDate(), n: 3 })";
+
 // Page with the festival clock set to `time` and a controllable page visibility (window.__fpSetVis).
 // The first-visit walkthrough is marked as seen unless `onboard` is set; `seed` puts other values in localStorage
 // (only where nothing is saved yet); `ua` is [userAgent, platform]; `standalone` opens it as from the home screen.
@@ -50,15 +54,16 @@ async function open(url, { time = PRE_FESTIVAL, timezone = 'Asia/Taipei', safeAr
   if (theme) await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: theme }] });
   if (ua) await page.send('Emulation.setUserAgentOverride', { userAgent: ua[0], platform: ua[1] });
   const t = Date.parse(time);
-  const stored = { ...(onboard ? {} : Object.fromEntries(['vagabond2026', 'megaport2026'].flatMap((s) => [[`fp:${s}:onboard`, '1'], [`fp:${s}:install-hint`, '1']]))), ...seed };
+  const stored = { ...(onboard ? {} : Object.fromEntries(['vagabond2026', 'megaport2026'].flatMap((s) => [[`fp:${s}:onboard`, '1'], [`fp:${s}:install-hint`, FULL]]))), ...seed };
   await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
-    try { for (const [k, v] of Object.entries(${JSON.stringify(stored)})) if (localStorage.getItem(k) === null) localStorage.setItem(k, v); } catch (e) { /* opaque origin */ }
     // Headless Chrome offers to install the local site by itself; only a test's own offer (__fake) gets through.
     window.addEventListener('beforeinstallprompt', (e) => { if (!e.__fake) e.stopImmediatePropagation(); }, true);
     ${standalone ? "Object.defineProperty(Navigator.prototype, 'standalone', { get: () => true, configurable: true });" : ''}
     const off = ${t} - Date.now(); const R = Date;
     function D(...a) { if (!new.target) return new R(R.now() + off).toString(); return a.length ? new R(...a) : new R(R.now() + off); }
     D.prototype = R.prototype; D.now = () => R.now() + off; D.parse = R.parse; D.UTC = R.UTC; globalThis.Date = D;
+    // After the clock: FULL is "the add-to-home-screen card was shown three times today" on that day.
+    try { for (const [k, v] of Object.entries(${JSON.stringify(stored)})) if (localStorage.getItem(k) === null) localStorage.setItem(k, v === ${JSON.stringify(FULL)} ? ${FULL_JS} : v); } catch (e) { /* opaque origin */ }
     let v = 'visible';
     Object.defineProperty(Document.prototype, 'visibilityState', { get: () => v, configurable: true });
     Object.defineProperty(Document.prototype, 'hidden', { get: () => v === 'hidden', configurable: true });
@@ -74,7 +79,7 @@ async function open(url, { time = PRE_FESTIVAL, timezone = 'Asia/Taipei', safeAr
 }
 const closePage = (page) => chrome.conn.send('Target.closeTarget', { targetId: page.targetId });
 // For pages opened without open(): the first-visit walkthrough already seen, so it doesn't cover the page.
-const SEEN = "try { for (const s of ['vagabond2026', 'megaport2026']) { localStorage.setItem(`fp:${s}:onboard`, '1'); localStorage.setItem(`fp:${s}:install-hint`, '1'); } } catch (e) {}";
+const SEEN = `try { for (const s of ['vagabond2026', 'megaport2026']) { localStorage.setItem('fp:' + s + ':onboard', '1'); localStorage.setItem('fp:' + s + ':install-hint', ${FULL_JS}); } } catch (e) {}`;
 // Each test gets its own origin (a new port on the shared folder), so storage and service workers never leak between tests.
 const servers = [];
 async function origin() {
@@ -429,7 +434,7 @@ const onStep = (page, title) => page.until((t) => document.querySelector('#sheet
 const IOS_INSTALL = '先加主畫面再排團！';
 const PHONE_INSTALL = '加到主畫面，沒網路也能開';
 
-test('first visit on an iPhone: the 大港撞團 cards — long-press, 我的團序 and map, add to the home screen — then never again', { skip: SKIP }, async () => {
+test('first visit on an iPhone: the 大港撞團 cards — long-press, 我的團序 and map, add to the home screen — then that last card alone', { skip: SKIP }, async () => {
   const srv = await origin();
   const url = `${srv.base}/${SLUG}/`;
   const page = await open(url, { onboard: true, ua: UA.iphone });
@@ -459,6 +464,7 @@ test('first visit on an iPhone: the 大港撞團 cards — long-press, 我的團
   await onStep(page, IOS_INSTALL);
   s = await page.eval(readOnboard);
   for (const w of [/分享/, /加入主畫面/, /離線/, /不蒐集/]) assert.match(s.text, w);
+  assert.equal(await page.eval(() => document.querySelectorAll('#sheet .a2hs-step img').length), 5, "Safari's five steps as pictures");
   assert.deepEqual(s.buttons, ['上一步', '開始使用']);
   assert.deepEqual(await page.eval(() => [...document.querySelectorAll('#sheet .ob-links a')].map((a) => [a.textContent, a.getAttribute('href')])), [['官方網站', 'https://www.vagabondfest.com/'], ['GitHub 原始碼', 'https://github.com/luchichiTW/festival-planner']]);
   await page.tap('#sheet [data-act="ob-back"]');
@@ -470,13 +476,65 @@ test('first visit on an iPhone: the 大港撞團 cards — long-press, 我的團
   assert.equal(await page.eval(() => document.getElementById('sheet').className), 'sheet', 'back to an ordinary sheet for everything else');
   await closePage(page);
 
+  // Not in the home screen yet: the next visit brings back the last card alone (the walkthrough was today's first).
   const again = await open(url, { onboard: true, ua: UA.iphone });
-  await sleep(300);
-  assert.equal(await again.eval(() => document.getElementById('sheet').hidden), true, 'second visit: nothing in the way');
+  await onStep(again, IOS_INSTALL);
+  s = await again.eval(readOnboard);
+  assert.equal(s.dots, 0, 'one card, no dots');
+  assert.deepEqual(s.buttons, ['👌']);
   await closePage(again);
 });
 
-test('跳過 closes it, as in 大港撞團; the add-to-home-screen card comes back once; where the browser offers it, one tap installs', { skip: SKIP }, async () => {
+test("Safari on an iPhone: the five steps as pictures; the card comes back up to three times a day, also on returning after half an hour", { skip: SKIP }, async () => {
+  const srv = await origin();
+  const url = `${srv.base}/${SLUG}/`;
+  const opts = { onboard: true, ua: UA.iphone, seed: { [`fp:${SLUG}:onboard`]: '1' } };
+  const page = await open(url, opts);
+  await onStep(page, IOS_INSTALL);
+  await page.until(() => [...document.querySelectorAll('#sheet .a2hs-step img')].every((i) => i.complete && i.naturalWidth > 0));
+  const g = await page.eval(() => ({
+    src: [...document.querySelectorAll('#sheet .a2hs-step img')].map((i) => i.getAttribute('src')),
+    say: [...document.querySelectorAll('#sheet .a2hs-step figcaption')].map((f) => f.textContent),
+    dots: [...document.querySelectorAll('#sheet .a2hs-dots i')].map((d) => d.classList.contains('on')),
+  }));
+  assert.deepEqual(g.src, [1, 2, 3, 4, 5].map((i) => `a2hs/step${i}.webp`));
+  assert.deepEqual(g.say, ['1點網址列右邊的「⋯」', '2點「分享」', '3點「檢視較多」', '4點「加入主畫面」', '5點「加入」（網頁 App 保持開著）']);
+  assert.deepEqual(g.dots, [true, false, false, false, false]);
+  // A tap on the picture goes to the next one; the dots follow.
+  await page.tap('#sheet .a2hs-step img');
+  await page.until(() => document.querySelectorAll('#sheet .a2hs-dots i')[1].classList.contains('on'));
+  await page.tap('#sheet [data-act="ob-done"]');
+  await page.until(() => document.getElementById('sheet').hidden);
+  assert.equal(JSON.parse(await page.eval(() => localStorage.getItem('fp:vagabond2026:install-hint'))).n, 1);
+  // Safari keeps the page open: coming back after half an hour away brings it up again.
+  await page.eval(() => { window.__fpSetVis('hidden'); const now = Date.now(); Date.now = () => now + 31 * 60 * 1000; window.__fpSetVis('visible'); });
+  await onStep(page, IOS_INSTALL);
+  await page.tap('#sheet [data-act="ob-done"]');
+  await page.until(() => document.getElementById('sheet').hidden);
+  // A few minutes away is not enough.
+  await page.eval(() => { window.__fpSetVis('hidden'); window.__fpSetVis('visible'); });
+  await sleep(300);
+  assert.equal(await page.eval(() => document.getElementById('sheet').hidden), true);
+  await closePage(page);
+  const third = await open(url, opts);
+  await onStep(third, IOS_INSTALL);
+  await third.tap('#sheet [data-act="ob-done"]');
+  await third.until(() => document.getElementById('sheet').hidden);
+  await closePage(third);
+  const fourth = await open(url, opts);
+  await sleep(300);
+  assert.equal(await fourth.eval(() => document.getElementById('sheet').hidden), true, 'three a day, then not again today');
+  await closePage(fourth);
+  // Chrome on an iPhone: the words, without Safari's pictures.
+  const other = await origin();
+  const crios = await open(`${other.base}/${SLUG}/`, { ...opts, ua: ['Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/130.0.0.0 Mobile/15E148 Safari/604.1', 'iPhone'] });
+  await onStep(crios, IOS_INSTALL);
+  assert.equal(await crios.eval(() => document.querySelectorAll('#sheet .a2hs-step').length), 0);
+  assert.match((await crios.eval(readOnboard)).text, /「分享」→「加入主畫面」/);
+  await closePage(crios);
+});
+
+test('跳過 closes it, as in 大港撞團; the add-to-home-screen card comes back; where the browser offers it, one tap installs', { skip: SKIP }, async () => {
   const srv = await origin();
   const url = `${srv.base}/${SLUG}/`;
   const first = await open(url, { onboard: true, ua: UA.android });
@@ -508,7 +566,7 @@ test('跳過 closes it, as in 大港撞團; the add-to-home-screen card comes ba
   await closePage(page);
 });
 
-test('people who already use it see only the add-to-home-screen card, once; inside Instagram it says to open a browser first', { skip: SKIP }, async () => {
+test('people who already use it see only the add-to-home-screen card; inside Instagram it says to open a browser first', { skip: SKIP }, async () => {
   const srv = await origin();
   const url = `${srv.base}/${SLUG}/`;
   const page = await open(url, { onboard: true, ua: UA.instagram, seed: { [`fp:${SLUG}:hint-seen`]: '1' } });
@@ -521,11 +579,8 @@ test('people who already use it see only the add-to-home-screen card, once; insi
   // Closing it any way (here: tapping outside) counts as seen.
   await page.eval(() => document.getElementById('scrim').click());
   await page.until(() => document.getElementById('sheet').hidden);
+  assert.equal(JSON.parse(await page.eval(() => localStorage.getItem('fp:vagabond2026:install-hint'))).n, 1, 'counted as one of today’s three');
   await closePage(page);
-  const again = await open(url, { onboard: true, ua: UA.instagram });
-  await sleep(300);
-  assert.equal(await again.eval(() => document.getElementById('sheet').hidden), true);
-  await closePage(again);
 });
 
 test('from the home screen and in the Claude artifact: the two how-to cards, no install card; a link to one show opens on the show', { skip: SKIP }, async () => {
@@ -813,6 +868,28 @@ test('controls live at the bottom: day tabs, 我的團序 and search in the dock
   await page.until(() => document.querySelector('.about-faq'));
   assert.equal(await page.eval(`document.querySelectorAll('.sheet [data-theme-set], .sheet .about-theme').length`), 0);
   await closePage(page);
+  await main.close();
+});
+
+test('浪人祭 header: the year leaves the wordmark; date over place on its right, whole at 390 and 320 px, in Chinese and English', { skip: SKIP }, async () => {
+  const main = await origin();
+  for (const [width, lang] of [[390, 'zh'], [320, 'zh'], [320, 'en']]) {
+    const page = await open(`${main.base}/${SLUG}/`, { width, seed: { [`fp:${SLUG}:lang`]: lang } });
+    await page.eval('document.fonts.ready');
+    const h = await page.eval(() => {
+      const ls = [...document.querySelectorAll('#topSub .ts-l')];
+      const r = ls.map((l) => l.getBoundingClientRect());
+      const sub = document.querySelector('.wordmark small');
+      const wm = document.querySelector('.wordmark').getBoundingClientRect();
+      return {
+        lines: ls.map((l) => l.textContent), stacked: r.length === 2 && r[0].bottom <= r[1].top + 1,
+        year: sub ? getComputedStyle(sub).display : 'none', rightOfWordmark: r.every((x) => x.left >= wm.right),
+        whole: ls.every((l) => l.scrollWidth <= l.clientWidth + 1) && r[0].height < 20,
+      };
+    });
+    assert.deepEqual(h, { lines: ['2026.11.07–08', '臺南觀夕平臺大草皮'], stacked: true, year: 'none', rightOfWordmark: true, whole: true }, `${width}px ${lang}`);
+    await closePage(page);
+  }
   await main.close();
 });
 
