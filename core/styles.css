@@ -1005,7 +1005,10 @@ button { font: inherit; color: inherit; }
    The page arrives with class="nojs" on <html>; the first script removes it, so everyone running the app sees
    only the board, and anyone reading the HTML without scripts gets this list instead. */
 .static { display: none; }
-.nojs .pick, .nojs .mine, .nojs .dock, .nojs .hdr-btn, .nojs .coach { display: none; }
+.nojs #grid, .nojs .mine, .nojs .dock, .nojs .hdr-btn, .nojs .coach { display: none; }
+.nojs .pick { flex: none; }
+.nojs .board { flex: none; overflow: visible; border: 0; background: none; }
+.nojs .board-about { position: static; width: auto; margin-inline: auto; padding-bottom: 8px; }
 .nojs .static { display: block; flex: 1; min-height: 0; overflow-y: auto; padding: 4px 16px calc(28px + env(safe-area-inset-bottom)); font-size: 15px; line-height: 1.6; }
 .static > * { max-width: 680px; margin-inline: auto; }
 .static h2 { margin-block: 8px 6px; font: 800 22px/1.3 var(--display); }
@@ -1016,6 +1019,18 @@ button { font: inherit; color: inherit; }
 .static li { padding: 6px 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
 .static time { margin-right: 8px; font: 500 13px var(--mono); font-variant-numeric: tabular-nums; color: var(--muted); }
 .static a { color: var(--accent-text); text-underline-offset: 3px; }
-/* Where the timetable comes from, under the last row; it keeps the room the floating tab bar needs. */
-.board-note { position: sticky; left: 0; margin: 0; padding: 14px 14px var(--dock-space); font-size: 12px; line-height: 1.5; color: var(--muted); }
-.board:has(.board-note) .grid { padding-bottom: 0; }
+/* Under the last row: where the timetable comes from, the features and the questions (website only). It stays at
+   the board's left edge while the stages scroll sideways, clear of the right-edge fade, and keeps the room the
+   floating tab bar needs. */
+.board-about { position: sticky; left: 0; box-sizing: border-box; width: min(680px, calc(100% - 36px)); padding: 16px 16px var(--dock-space); font-size: 13.5px; line-height: 1.65; }
+.board-about .board-note { margin: 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+.board-about h2 { margin: 18px 0 6px; font-size: 15px; line-height: 1.4; }
+.ba-feats { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ba-feats li { display: grid; gap: 1px; }
+.ba-feats b { font-size: 14px; }
+.ba-feats span, .ba-faq p { color: var(--muted); overflow-wrap: anywhere; }
+.ba-faq h3 { margin: 12px 0 2px; font-size: 14px; line-height: 1.5; }
+.ba-faq p { margin: 0; }
+.ba-links { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 18px 0 0; }
+.ba-links a { color: var(--accent-text); text-underline-offset: 3px; }
+.board:has(.board-about) .grid { padding-bottom: 0; }

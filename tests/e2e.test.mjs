@@ -939,10 +939,12 @@ test('without JavaScript: the timetable, an artist page and the Claude page read
       nojs: document.documentElement.classList.contains('nojs'),
       list: getComputedStyle(document.getElementById('static')).display,
       rows: document.querySelectorAll('#static li').length,
-      board: getComputedStyle(document.getElementById('pickView')).display,
+      grid: getComputedStyle(document.getElementById('grid')).display,
+      about: getComputedStyle(document.querySelector('.board-about')).display,
       dock: getComputedStyle(document.getElementById('dock')).display,
     }));
-    assert.deepEqual(app, { nojs: true, list: 'block', rows: schedule.length, board: 'none', dock: 'none' });
+    // No empty board and no tab bar; the features and questions and the text timetable are there to read.
+    assert.deepEqual(app, { nojs: true, list: 'block', rows: schedule.length, grid: 'none', about: 'block', dock: 'none' });
     assert.deepEqual(await page.eval(NOJS_CLIPPED), [], `timetable at ${width}px`);
     for (const p of [`artists/${artists['拍謝少年'].slug}/`, 'claude/']) {
       await page.goto(`${main.base}/${SLUG}/${p}`);
@@ -1011,6 +1013,43 @@ test('an event waiting for its announcement: one page saying so, readable at 390
     assert.deepEqual(await page.eval(NOJS_CLIPPED), [], `clipped at ${width}px`);
     assert.equal(await page.eval('navigator.serviceWorker.controller'), null);
     assert.deepEqual(foreignOf(urls, main.base), []);
+    await closePage(page);
+  }
+  await main.close();
+});
+
+test('under the timetable: features and questions, readable at 390 and 320 px, in Chinese and in English', { skip: SKIP }, async () => {
+  const main = await origin();
+  for (const [slug, lng, width] of [[SLUG, 'zh', 390], [SLUG, 'zh', 320], [MP, 'en', 320]]) {
+    const page = await chrome.newPage({ width, height: 844 });
+    await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `try { localStorage.setItem('fp:${MP}:lang', '${lng}'); } catch (e) {}` });
+    await page.goto(`${main.base}/${slug}/`);
+    await page.until(() => document.querySelectorAll('#grid .block').length > 0);
+    // The app scrolls the board itself on its first frames; scroll to the bottom until it stays there.
+    await page.until(() => {
+      const b = document.getElementById('board');
+      b.scrollTop = b.scrollHeight;
+      return b.scrollTop + b.clientHeight >= b.scrollHeight - 1;
+    }, { ms: 5000 });
+    // The bottom spacing follows the tab bar's measured height (--dock-h); give the layout a moment to settle.
+    await page.until(() => {
+      const b = document.getElementById('board');
+      b.scrollTop = b.scrollHeight;
+      return document.querySelector('.board-about .ba-links').getBoundingClientRect().bottom <= document.getElementById('dock').getBoundingClientRect().top + 1;
+    }, { ms: 3000 }).catch(() => {});
+    const st = await page.eval(() => {
+      const box = document.querySelector('.board-about');
+      const r = box.getBoundingClientRect();
+      const dock = document.getElementById('dock').getBoundingClientRect();
+      const last = box.querySelector('.ba-links').getBoundingClientRect();
+      const out = [];
+      for (const el of box.querySelectorAll('*')) { const e = el.getBoundingClientRect(); if (e.right > innerWidth + 1) out.push(el.tagName); }
+      return { heads: [...box.querySelectorAll('h2')].map((h) => h.textContent), q: box.querySelector('h3').textContent, onScreen: r.left >= 0 && last.bottom <= dock.top + 1, wide: out };
+    });
+    assert.deepEqual(st.heads, lng === 'en' ? ['Features', 'FAQ'] : ['特色', '常見問題'], `${slug} ${lng}`);
+    assert.equal(st.q, lng === 'en' ? 'Does it work without a connection?' : '沒有網路能用嗎？');
+    assert.equal(st.onScreen, true, `${slug} ${width}px: the section ends above the tab bar`);
+    assert.deepEqual(st.wide, [], `${slug} ${width}px: nothing wider than the screen`);
     await closePage(page);
   }
   await main.close();

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>隱私說明｜chiparashi 音樂祭排團工具</title>
+<meta name="description" content="chiparashi.tw 的音樂祭排團工具不用註冊、不收集個人資料：團序只存在你的手機，不會上傳；沒有廣告，也沒有追蹤用的 cookie。">
+<link rel="canonical" href="https://chiparashi.tw/privacy/">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231A1617'/%3E%3Crect x='7' y='8' width='4.5' height='16' rx='2.25' fill='%23D9474A'/%3E%3Crect x='13.75' y='12' width='4.5' height='12' rx='2.25' fill='%23F1BE48'/%3E%3Crect x='20.5' y='6' width='4.5' height='14' rx='2.25' fill='%2317A7B4'/%3E%3C/svg%3E">
+<script>
+  // Same light/dark choice as the homepage (fp:home:theme); without one the page follows the system.
+  try { const t = localStorage.getItem('fp:home:theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) { /* follow the system */ }
+</script>
+<style>
+/* Privacy page of chiparashi.tw, built by scripts/build.mjs site. One reading column in the homepage's colours. */
+:root { --bg: #F1EEEC; --surface: #FBFAF9; --fg: #231C1B; --muted: #6B5F59; --faint: #94877F; --line: rgb(60 30 25 / .12); --accent: #9A5F0A;
+  --sans: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui, -apple-system, sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #1A1617; --surface: #252020; --fg: #F6EEE5; --muted: #AA9D92; --faint: #7D7068; --line: rgb(255 236 220 / .10); --accent: #F1BE48; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg: #1A1617; --surface: #252020; --fg: #F6EEE5; --muted: #AA9D92; --faint: #7D7068; --line: rgb(255 236 220 / .10); --accent: #F1BE48; color-scheme: dark; }
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.75 var(--sans); }
+.page { max-width: 680px; margin: 0 auto; padding: calc(20px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(40px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 28px; }
+a { color: var(--accent); text-underline-offset: 3px; overflow-wrap: anywhere; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.home { font-weight: 700; text-decoration: none; color: var(--fg); }
+h1 { margin: 0; font-size: 30px; line-height: 1.3; text-wrap: balance; }
+.date { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
+.lede { margin: 12px 0 0; }
+section { display: grid; gap: 8px; }
+h2 { margin: 0; font-size: 19px; line-height: 1.4; }
+h3 { margin: 6px 0 0; font-size: 16px; }
+p { margin: 0; }
+ul { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+.muted { color: var(--muted); }
+.en { padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); }
+.en h2 { color: var(--fg); }
+footer { font-size: 13px; color: var(--faint); }
+</style>
+</head>
+<body>
+<div class="page">
+  <a class="home" href="/">chiparashi</a>
+
+  <header>
+    <h1>隱私說明</h1>
+    <p class="date">最後更新：{{updated}}</p>
+    <p class="lede">chiparashi.tw 上的音樂祭排團工具不用註冊，也不收集個人資料。這一頁說明網站實際上在你的裝置存了什麼、對外連了什麼。</p>
+  </header>
+
+  <section>
+    <h2>不收集的東西</h2>
+    <ul>
+      <li>帳號、姓名、email、電話、位置：網站沒有註冊或登入，也不會要你提供這些資料。</li>
+      <li>團序不會上傳：你排的團只存在你的手機，網站沒有任何程式把它送出去。</li>
+      <li>沒有廣告，也沒有追蹤用的 cookie。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>存在你裝置上的東西</h2>
+    <p>下面這些存在瀏覽器的本機儲存（localStorage）和快取裡，只有你的裝置讀得到：</p>
+    <ul>
+      <li>團序：選了哪些團，撞團時決定去哪一團。</li>
+      <li>介面設定：語言、深淺色、目前看時間表還是我的團序、看過哪些提示。</li>
+      <li>離線快取：網頁和時間表的檔案，讓沒有網路時也打得開。</li>
+    </ul>
+    <p>按「複製備份連結」時，團序會變成一段網址，複製到你的剪貼簿。這段網址只有在你自己貼出去時，別人才看得到。</p>
+    <h3>怎麼清除</h3>
+    <ul>
+      <li>iPhone 的 Safari：到「設定」→「Safari」→「進階」→「網站資料」，找 chiparashi.tw 刪除（較新的 iOS 在「設定」→「App」→「Safari」裡）。</li>
+      <li>加到主畫面的版本：長按圖示，刪除這個 App，資料會一起刪掉。</li>
+      <li>Android 的 Chrome：到 Chrome 的「設定」→「網站設定」→「所有網站」，找 chiparashi.tw，清除資料。</li>
+      <li>電腦的瀏覽器：在網站設定裡清除 chiparashi.tw 的資料。</li>
+    </ul>
+    <p class="muted">清除後團序就不見了。要留著的話，先在「我的團序」複製一份備份連結。</p>
+  </section>
+
+  <section>
+    <h2>流量統計</h2>
+    <p>我們用 <a href="https://www.cloudflare.com/web-analytics/">Cloudflare Web Analytics</a> 看有多少人在用。它不用 cookie、不辨識個人，我們看到的只有彙總的數字：看了哪一頁、從哪個網站來、國家、裝置類型（手機或電腦、哪種瀏覽器），以及頁面的載入速度。</p>
+  </section>
+
+  <section>
+    <h2>Cloudflare 的傳送與防護</h2>
+    <p>網站經過 Cloudflare 傳送和防護。為了擋掉惡意流量（例如攻擊或濫用的機器人），Cloudflare 會處理連線資訊，例如 IP 位址和瀏覽器資訊，也可能設定防機器人的安全 cookie。這類 cookie 只用來分辨真人和機器人，不用來追蹤你。詳見 <a href="https://www.cloudflare.com/zh-tw/privacypolicy/">Cloudflare 隱私政策</a>。</p>
+  </section>
+
+  <section>
+    <h2>外部播放器與連結（例外）</h2>
+    <p>長按打開藝人卡片時，網站才會載入外部的試聽播放器。播放器載入後就由那個服務處理，適用它們的隱私政策：</p>
+    <ul>
+      <li>YouTube（使用 youtube-nocookie.com）：<a href="https://policies.google.com/privacy">Google 隱私權政策</a></li>
+      <li>Spotify：<a href="https://www.spotify.com/tw/legal/privacy-policy/">Spotify 隱私政策</a></li>
+      <li>Apple Music：<a href="https://www.apple.com/tw/legal/privacy/">Apple 隱私權政策</a></li>
+      <li>StreetVoice 街聲：<a href="https://streetvoice.com/legal/privacy/">StreetVoice 隱私權保護政策</a></li>
+    </ul>
+    <p>排團工具裡連到 Spotify、Apple Music、YouTube、Instagram 的按鈕，以及地圖的「導航前往」（Apple 地圖或 Google 地圖），都是你點了才會打開那個網站或 App。</p>
+  </section>
+
+  <section>
+    <h2>聯絡</h2>
+    <p>有問題或建議，可以到 Instagram <a href="https://www.instagram.com/luchichitw/">@luchichitw</a> 留言，或寫信到 chi@chiparashi.tw。</p>
+  </section>
+
+  <section class="en" lang="en">
+    <h2>In English</h2>
+    <p>The festival planners on chiparashi.tw need no account and collect no personal data. Your picks stay in your browser's local storage and are never uploaded; there are no ads and no tracking cookies. Visits are counted with cookie-free Cloudflare Web Analytics (page, referring site, country, device type, load speed). Cloudflare also carries and protects the site and may set a security cookie against bots, not for tracking. Players from YouTube, Spotify, Apple Music and StreetVoice load only when you open an artist card, and then their own privacy policies apply. Contact: Instagram @luchichitw or chi@chiparashi.tw.</p>
+  </section>
+
+  <footer>非官方工具。演出異動以主辦方現場公告為準。<a href="/">回首頁</a></footer>
+</div>
+</body>
+</html>

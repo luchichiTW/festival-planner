@@ -5,6 +5,7 @@
 // assistants that fetch a page without running scripts get the same facts the app shows.
 import fs from 'node:fs';
 import path from 'node:path';
+import { faqJsonLd, webAppJsonLd, PRIVACY_PATH } from './copy.mjs';
 
 const DOW = '日一二三四五六';
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -152,8 +153,8 @@ export function makePages({ ev, schedule, artists, site, out, pageCSS }) {
     '<!-- /static -->',
   ].join('\n');
   const appTitle = `${ev.name} 排團工具：時間表、我的團序、撞團抽籤（非官方）`;
-  const appDesc = `${ev.name}（${ev.subtitle}）非官方排團工具：兩天${schedule.length}場演出的時間表與藝人介紹，排出自己的團序、撞團時抽籤，加到手機主畫面後沒訊號也能開。${unofficial}`;
-  const appHead = head('', appTitle, appDesc, [webPage('', appTitle, appDesc, { about: { '@id': festId } }), festival(true)]);
+  const appDesc = `${ev.name}（${ev.subtitle}）非官方排團工具，離線可用、免註冊、不收集個資：兩天${schedule.length}場演出的時間表與藝人介紹，排出自己的團序、撞團時抽籤。${unofficial}`;
+  const appHead = head('', appTitle, appDesc, [webPage('', appTitle, appDesc, { about: { '@id': festId } }), festival(true), webAppJsonLd({ name: `${ev.name} 排團工具`, url: base, lang: ev.lang }), faqJsonLd()]);
   const appMd = [
     `# ${ev.name} 時間表（非官方排團工具）`, '',
     `${ev.subtitle}。${unofficial}`, '',
@@ -194,7 +195,7 @@ ${themeBoot}
 <main class="pg">
 ${body}
 </main>
-<footer class="pg-foot"><p>${esc(unofficial)}</p><p><a href="${up}">打開排團工具</a>・<a href="${up}claude/">用 Claude 做你自己的</a>・<a href="${esc(official)}">官方網站</a></p></footer>
+<footer class="pg-foot"><p>${esc(unofficial)}</p><p><a href="${up}">打開排團工具</a>・<a href="${up}claude/">用 Claude 做你自己的</a>・<a href="${PRIVACY_PATH}">隱私說明</a>・<a href="${esc(official)}">官方網站</a></p></footer>
 </body>
 </html>
 `;

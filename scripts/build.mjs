@@ -10,6 +10,7 @@ import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { ROOT, loadEvent, listEvents, validate } from './validate.mjs';
 import { makePages } from './lib/pages.mjs';
+import { boardAbout, webAppJsonLd, PRIVACY_PATH, PRIVACY_UPDATED } from './lib/copy.mjs';
 
 const CORE = path.join(ROOT, 'core');
 const STACKS = {
@@ -153,7 +154,7 @@ ${read(path.join(CORE, 'tba.css'))}${ev.css ? '\n' + read(path.join(dir, ev.css)
   ${ev.noticeEn ? `<p class="tba-en" lang="en">${esc(ev.nameEn || '')}${ev.nameEn ? ' — ' : ''}${esc(ev.noticeEn)}</p>` : ''}
   <p class="tba-text">陣容和時間表公布後，這裡會變成排團工具：看時間表、排出自己的團序、撞團時抽籤，加到手機主畫面後沒訊號也能開。</p>
   ${links.length ? `<p class="tba-links">${links.map(([l, u]) => `<a href="${esc(u)}">${esc(l)}</a>`).join('')}</p>` : ''}
-  <p class="tba-foot">非官方排團工具。活動資訊以主辦方公告為準。</p>
+  <p class="tba-foot">非官方排團工具。活動資訊以主辦方公告為準。<a href="/privacy/">隱私說明</a></p>
 </main>
 </body>
 </html>
@@ -246,8 +247,10 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
     : null;
   if (pg && ev.ogImage) fs.copyFileSync(path.join(dir, ev.ogImage), path.join(site, 'og.png'));
   const page = pg
-    ? { title: esc(pg.appTitle), description: esc(pg.appDesc), head: `${head}\n${pg.appHead}`, static: pg.staticBlock, boardNote: `<p class="board-note">${esc(pg.dataLine)}</p>` }
-    : { static: '', boardNote: '' };
+    ? { title: esc(pg.appTitle), description: esc(pg.appDesc), head: `${head}\n${pg.appHead}`, static: pg.staticBlock }
+    : { static: '' };
+  // Under the timetable: where the data is from, offline use and personal data, the questions (scripts/lib/copy.mjs).
+  page.boardAbout = boardAbout({ dataLine: pg?.dataLine, claude: !!pg });
   fs.writeFileSync(path.join(site, 'index.html'), fill(template, { ...common, head, scripts, ...page }).replace(/ *<!-- \/?fp:(web|body) -->\n/g, ''));
   fs.writeFileSync(path.join(site, 'styles.css'), themeCSS(ev, fontName) + '\n' + styles + eventCSS);
   fs.writeFileSync(path.join(site, 'data.js'), dataJS('web', imgName));
@@ -280,7 +283,7 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
     if (!imgURIs.has(rel)) imgURIs.set(rel, `data:${MIME[path.extname(rel).toLowerCase()] || 'application/octet-stream'};base64,${fs.readFileSync(path.join(dir, rel)).toString('base64')}`);
     return imgURIs.get(rel);
   };
-  const body = /<!-- fp:body -->\n([\s\S]*?)<!-- \/fp:body -->/.exec(fill(template, { ...common, head: '', scripts: '', static: '', boardNote: '' }))[1]
+  const body = /<!-- fp:body -->\n([\s\S]*?)<!-- \/fp:body -->/.exec(fill(template, { ...common, head: '', scripts: '', static: '', boardAbout: '' }))[1]
     .replace(/ *<!-- fp:web -->[\s\S]*?<!-- \/fp:web -->\n/g, '');
   const single = [
     `<title>${esc(ev.name)}</title>`,
@@ -362,7 +365,8 @@ export function buildSite({ out = path.join(ROOT, 'dist-site') } = {}) {
   events.sort((a, b) => state(a) - state(b) || (state(a) === 2 ? b.days.at(-1).date.localeCompare(a.days.at(-1).date) : (a.days?.[0]?.date || '').localeCompare(b.days?.[0]?.date || '')));
   const repo = events.find((ev) => ev.urls?.repo)?.urls.repo || 'https://github.com/luchichiTW/festival-planner';
   const html = fill(read(path.join(ROOT, 'site', 'index.html')), {
-    description: esc(`非官方音樂祭排團工具：${events.map((ev) => ev.name).join('、')}。看時間表、排出自己的團序、撞團抽籤，加到手機主畫面後沒訊號也能開。`),
+    description: esc(`非官方音樂祭排團工具，離線可用、免註冊、不收集個資：${events.map((ev) => ev.name).join('、')}。看時間表、排出自己的團序、撞團抽籤。`),
+    jsonld: `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', ...webAppJsonLd({ name: 'chiparashi 音樂祭排團工具', url: `${HOST}/` }) }).replace(/</g, '\\u003c')}</script>`,
     tickets: events.map(ticket).join('\n\n'),
     repo: esc(repo),
     repoLabel: esc(repo.replace(/^https:\/\//, '')),
@@ -376,6 +380,10 @@ export function buildSite({ out = path.join(ROOT, 'dist-site') } = {}) {
     const rel = ev.icons?.png?.['192'];
     if (rel) fs.copyFileSync(path.join(ROOT, 'events', ev.slug, rel), path.join(out, 'icons', `${ev.slug}.png`));
   }
+
+  /* ---------- privacy page: what is and isn't collected (wording follows scripts/lib/copy.mjs) ---------- */
+  fs.mkdirSync(path.join(out, 'privacy'), { recursive: true });
+  fs.writeFileSync(path.join(out, 'privacy', 'index.html'), fill(read(path.join(ROOT, 'site', 'privacy.html')), { updated: PRIVACY_UPDATED.replace(/-/g, '/') }));
 
   /* ---------- robots.txt: one group for every crawler, and where the sitemaps are ---------- */
   const live = events.filter((ev) => !ev.urls?.archive);
@@ -406,6 +414,7 @@ export function buildSite({ out = path.join(ROOT, 'dist-site') } = {}) {
   fs.writeFileSync(path.join(out, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${HOST}/</loc></url>
+  <url><loc>${HOST}${PRIVACY_PATH}</loc><lastmod>${PRIVACY_UPDATED}</lastmod></url>
 ${live.map((ev) => `  <url><loc>${HOST}/${ev.slug}/</loc>${ev.dataDate ? `<lastmod>${ev.dataDate}</lastmod>` : ''}</url>`).join('\n')}
 </urlset>
 `);

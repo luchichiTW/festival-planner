@@ -19,7 +19,7 @@ const read = (f) => fs.readFileSync(path.join(out, f), 'utf8');
 const ticketOf = (html, slug) => new RegExp(`<a class="ticket"[^>]* href="${slug}/"[\\s\\S]*?</a>`).exec(html)?.[0] || '';
 
 test('the homepage ships its own files, icons included, and loads nothing from other sites', () => {
-  assert.deepEqual(fs.readdirSync(out).sort(), ['icons', 'index.html', 'llms.txt', 'robots.txt', 'sitemap.xml']);
+  assert.deepEqual(fs.readdirSync(out).sort(), ['icons', 'index.html', 'llms.txt', 'privacy', 'robots.txt', 'sitemap.xml']);
   // Icons are the homepage's own copies: an event's path may redirect elsewhere once the event moves (urls.archive).
   for (const ev of events) {
     assert.ok(fs.existsSync(path.join(out, 'icons', `${ev.slug}.png`)), `${ev.slug} icon copied`);
@@ -61,7 +61,7 @@ test('contact and footer', () => {
   const html = read('index.html');
   assert.ok(html.includes('href="https://www.instagram.com/luchichitw/"'));
   assert.ok(html.includes('chi@chiparashi.tw') && /id="copyMail"/.test(html), 'email with a copy button');
-  assert.match(html, /<footer class="foot">\s*<p>非官方工具。演出異動以主辦方現場公告為準。<\/p>\s*<\/footer>/);
+  assert.match(html, /<footer class="foot">\s*<p>非官方工具。演出異動以主辦方現場公告為準。<\/p>\s*<p><a href="\/privacy\/">隱私說明<\/a><\/p>\s*<\/footer>/);
 });
 
 test('robots.txt: content signals for everyone, a block list, the site sitemap and each event sitemap', () => {
@@ -105,7 +105,7 @@ test('llms.txt: the festivals from event.json, moved ones linking to where they 
 
 test('sitemap.xml: the homepage and every event still served here, not the ones that moved', () => {
   const locs = [...read('sitemap.xml').matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-  assert.deepEqual(locs.sort(), [`${HOST}/`, ...events.filter((ev) => !archived(ev)).map((ev) => `${HOST}/${ev.slug}/`)].sort());
+  assert.deepEqual(locs.sort(), [`${HOST}/`, `${HOST}/privacy/`, ...events.filter((ev) => !archived(ev)).map((ev) => `${HOST}/${ev.slug}/`)].sort());
 });
 
 test('the homepage deploys itself on pushes to main that change it; events stay manual; nothing with the token runs on pull requests', () => {
