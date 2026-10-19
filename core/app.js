@@ -89,7 +89,7 @@
     }
   }
 
-  /* ---------- theme: follow the system unless 關於 sets light or dark ---------- */
+  /* ---------- theme: follow the system unless the header icon picked light or dark ---------- */
   const tr = t;
   const themeMode = () => { const t = root.getAttribute('data-theme'); return t === 'light' || t === 'dark' ? t : 'system'; };
   function setTheme(mode) {
@@ -98,19 +98,21 @@
   }
   const savedTheme = store.get(KEY_THEME);
   if (savedTheme === 'light' || savedTheme === 'dark') root.setAttribute('data-theme', savedTheme);
-  // The header button flips light ↔ dark from whatever is showing; 關於 can set it back to follow the system.
+  // The header icon flips light ↔ dark from whatever is showing. Flipping to what the system shows anyway means
+  // "follow the system" again, so a later system switch (e.g. dark at night) is followed with no tap.
   const themeBtn = $('themeBtn');
-  const effectiveTheme = () => {
-    const t = themeMode();
-    if (t !== 'system') return t;
-    return window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-  };
+  const systemTheme = () => (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  const effectiveTheme = () => { const t = themeMode(); return t === 'system' ? systemTheme() : t; };
   function syncThemeBtn() {
     const t = effectiveTheme();
     themeBtn.dataset.mode = t;
     themeBtn.setAttribute('aria-label', t === 'dark' ? tr('切換成淺色模式') : tr('切換成深色模式'));
   }
-  themeBtn.addEventListener('click', () => { setTheme(effectiveTheme() === 'dark' ? 'light' : 'dark'); syncThemeBtn(); });
+  themeBtn.addEventListener('click', () => {
+    const next = effectiveTheme() === 'dark' ? 'light' : 'dark';
+    setTheme(next === systemTheme() ? 'system' : next);
+    syncThemeBtn();
+  });
   try { matchMedia('(prefers-color-scheme: light)').addEventListener('change', syncThemeBtn); } catch (e) { /* old Safari: the button still works */ }
   syncThemeBtn();
 
@@ -956,8 +958,6 @@
       <ul class="about-feats">${EVT.about.features.map((f) => `<li><b>${esc(t(f.title))}</b><span>${esc(t(f.text))}</span></li>`).join('')}</ul>
       <p class="about-h">${t('常見問題')}</p>
       <div class="about-faq">${EVT.about.faq.map((x) => `<h3>${esc(t(x.q))}</h3><p>${esc(t(x.a))}</p>`).join('')}<a href="${esc(EVT.about.privacy)}">${t('隱私說明')}</a></div>` : ''}
-      <p class="about-h">${t('外觀')}</p>
-      <div class="about-theme" role="radiogroup" aria-label="${t('外觀')}">${[['system', t('跟隨系統')], ['light', t('淺色')], ['dark', t('深色')]].map(([m, label]) => `<button type="button" role="radio" data-theme-set="${m}" aria-checked="${themeMode() === m}">${label}</button>`).join('')}</div>
       <p class="about-meta" id="aboutMeta">${t('版本 {build}・時間表資料 {date}', { build: esc(EVT.build), date: mmdd(EVT.dataDate) })}</p>
       <div class="sheet-actions"><button type="button" class="primary" data-act="close">${t('完成')}</button></div>`;
     openSheet(opener);
@@ -987,13 +987,6 @@
   }
 
   sheet.addEventListener('click', (e) => {
-    const ts = e.target.closest('[data-theme-set]');
-    if (ts) {
-      setTheme(ts.dataset.themeSet);
-      syncThemeBtn();
-      sheet.querySelectorAll('[data-theme-set]').forEach((x) => x.setAttribute('aria-checked', String(x === ts)));
-      return;
-    }
     if (e.target.closest('#aboutMeta') && ++metaTaps >= 5) {
       metaTaps = 0;
       const m = $('aboutMeta');

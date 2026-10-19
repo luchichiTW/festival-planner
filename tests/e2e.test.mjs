@@ -210,13 +210,11 @@ test('AC-03 picks, clashes, deciding, lottery, search, card, theme — and they 
   await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
   await page.until(() => document.getElementById('lpCard').hidden);
 
-  // Theme (set in 關於) persists; picks and decisions persist.
-  await page.tap('#tabMine');
-  await page.until(() => document.getElementById('aboutBtn'));
-  await page.tap('#aboutBtn');
-  await page.tap('[data-theme-set="dark"]');
+  // Theme (the header icon) persists; picks and decisions persist. One tap shows the opposite of the system's look.
+  const system = await page.eval(`matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'`);
+  await page.tap('#themeBtn');
   const toggled = await page.eval(`document.documentElement.getAttribute('data-theme')`);
-  assert.equal(toggled, 'dark');
+  assert.equal(toggled, system === 'dark' ? 'light' : 'dark');
   const snap = await page.eval(`JSON.stringify(FP.snapshot().picks.sort())`);
   await page.reload();
   await page.until(() => document.querySelectorAll('#grid .block').length > 0);
@@ -584,22 +582,12 @@ test('controls live at the bottom: day tabs, 我的團序 and search in the dock
   assert.match(await page.eval(`document.getElementById('spRes').innerText`), /名字相近[\s\S]*ano/);
   await page.tap('#spClose');
 
-  // Theme lives in 關於: follow the system, or force light / dark; remembered.
+  // The header icon is the one place to switch the theme: 關於 has no second copy of it.
   await page.tap('#tabMine');
   await page.until(() => document.getElementById('aboutBtn'));
   await page.tap('#aboutBtn');
-  const opts = await page.eval(() => [...document.querySelectorAll('[data-theme-set]')].map((b) => b.textContent + (b.getAttribute('aria-checked') === 'true' ? '*' : '')));
-  assert.deepEqual(opts, ['跟隨系統*', '淺色', '深色']);
-  await page.tap('[data-theme-set="light"]');
-  assert.equal(await page.eval(`document.documentElement.getAttribute('data-theme')`), 'light');
-  await page.reload();
-  await page.until(() => document.querySelectorAll('#grid .block').length > 0 || !document.getElementById('mineView').hidden);
-  assert.equal(await page.eval(`document.documentElement.getAttribute('data-theme')`), 'light');
-  await page.tap('#tabMine');
-  await page.until(() => document.getElementById('aboutBtn'));
-  await page.tap('#aboutBtn');
-  await page.tap('[data-theme-set="system"]');
-  assert.equal(await page.eval(`document.documentElement.hasAttribute('data-theme')`), false);
+  await page.until(() => document.querySelector('.about-faq'));
+  assert.equal(await page.eval(`document.querySelectorAll('.sheet [data-theme-set], .sheet .about-theme').length`), 0);
   await closePage(page);
   await main.close();
 });
@@ -632,21 +620,26 @@ test('no text is cut off or replaced with "…" at 390, 375 and 320 px', { skip:
   await main.close();
 });
 
-test('light/dark switch in the header flips the theme and stays in sync with 關於', { skip: SKIP }, async () => {
+test('light/dark icon in the header flips the theme, and flipping back to what the system shows follows the system again', { skip: SKIP }, async () => {
   const main = await origin();
   const page = await open(`${main.base}/${SLUG}/`, { theme: 'dark' });
+  const state = () => page.eval(`[document.documentElement.getAttribute('data-theme'), localStorage.getItem('fp:${SLUG}:theme'), document.getElementById('themeBtn').getAttribute('aria-label')].join('|')`);
   assert.equal(await page.eval(`document.getElementById('themeBtn').getAttribute('aria-label')`), '切換成淺色模式');
   await page.tap('#themeBtn');
-  assert.equal(await page.eval(`document.documentElement.getAttribute('data-theme') + '|' + document.getElementById('themeBtn').getAttribute('aria-label')`), 'light|切換成深色模式');
-  await page.tap('#tabMine');
-  await page.until(() => document.getElementById('aboutBtn'));
-  await page.tap('#aboutBtn');
-  assert.equal(await page.eval(`document.querySelector('[data-theme-set][aria-checked="true"]').dataset.themeSet`), 'light');
-  await page.tap('[data-theme-set="system"]');
-  assert.equal(await page.eval(`document.getElementById('themeBtn').getAttribute('aria-label')`), '切換成淺色模式', 'back to the system (dark) theme');
+  assert.equal(await state(), 'light|light|切換成深色模式', 'light, chosen and remembered');
+  await page.reload();
+  await page.until(() => document.querySelectorAll('#grid .block').length > 0);
+  assert.equal(await page.eval(`document.documentElement.getAttribute('data-theme')`), 'light', 'still light after a reload');
+  await page.tap('#themeBtn');
+  assert.equal(await state(), '|system|切換成淺色模式', 'back to dark, which is what the system shows: follows the system again');
+  // Following the system means a system switch to light now shows light, with no tap.
+  await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: 'light' }] });
+  await page.until(() => document.getElementById('themeBtn').getAttribute('aria-label') === '切換成深色模式');
+  assert.equal(await page.eval(`document.documentElement.hasAttribute('data-theme')`), false);
   await closePage(page);
   await main.close();
 });
+
 
 test('no × buttons: tap a 我的團序 item for its card (remove from there); tap outside to close the card', { skip: SKIP }, async () => {
   const main = await origin();

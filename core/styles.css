@@ -946,9 +946,6 @@ a.about-link { display: inline-block; }
 .about-meta { margin: 0; text-align: center; font: 500 11.5px var(--mono); color: var(--faint); }
 
 /* Appearance (in 關於): follow the system, or force light / dark. */
-.about-theme { display: flex; gap: 3px; padding: 3px; border-radius: 12px; background: var(--bg-2); border: 1px solid var(--line); }
-.about-theme button { flex: 1; appearance: none; border: 0; border-radius: 9px; padding: 9px 4px; background: transparent; color: var(--muted); font: 700 13px/1 var(--body); cursor: pointer; white-space: nowrap; }
-.about-theme button[aria-checked="true"] { background: var(--surface-2); color: var(--fg); box-shadow: inset 0 0 0 1px var(--line-2); }
 .about-h { margin: 4px 0 -2px; font: 700 12px var(--body); letter-spacing: .04em; color: var(--muted); }
 
 /* Visually hidden, still announced by screen readers (e.g. the artist card's close button). */

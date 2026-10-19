@@ -107,10 +107,6 @@ window.FP_I18N = {
     '單一 HTML，貼給 Claude 發成你自己的': 'One HTML file — give it to Claude to publish your own',
     '{name} 排團工具。': '{name} schedule planner. ',
     '程式和資料都公開在 GitHub。照著活動資料夾裡的 CLAUDE.md，就能做出你自己的音樂祭版本。': 'The code and data are on GitHub. Follow the CLAUDE.md in the event folder to make one for your own festival.',
-    '外觀': 'Appearance',
-    '跟隨系統': 'System',
-    '淺色': 'Light',
-    '深色': 'Dark',
     '版本 {build}・時間表資料 {date}': 'Version {build} · timetable {date}',
     '完成': 'Done',
     // artist card
