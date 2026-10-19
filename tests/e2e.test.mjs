@@ -1161,6 +1161,26 @@ test('an event waiting for its announcement: one page saying so, readable at 390
   await main.close();
 });
 
+test('a long sheet opens at its top: the 關於 sheet starts at its title, not at the 完成 button', { skip: SKIP }, async () => {
+  const srv = await origin();
+  const page = await open(`${srv.base}/${SLUG}/`);
+  await page.tap('#tabMine');
+  await page.until(() => document.getElementById('aboutBtn'));
+  await page.tap('#aboutBtn');
+  await page.until(() => !document.getElementById('sheet').hidden);
+  await sleep(300);
+  const s = await page.eval(() => {
+    const sh = document.getElementById('sheet');
+    const t = sh.querySelector('h2').getBoundingClientRect();
+    const r = sh.getBoundingClientRect();
+    return { long: sh.scrollHeight > sh.clientHeight + 40, top: sh.scrollTop, titleShown: t.top >= r.top - 1 && t.bottom <= r.bottom, focusInSheet: sh.contains(document.activeElement) };
+  });
+  assert.ok(s.long, 'the 關於 sheet is taller than the screen, so this test means something');
+  assert.deepEqual({ top: s.top, titleShown: s.titleShown }, { top: 0, titleShown: true });
+  assert.ok(s.focusInSheet, 'keyboard focus still moves into the sheet');
+  await closePage(page);
+});
+
 test('我的團序 footer: 關於・自己做一個 and 隱私說明 side by side; the 關於 sheet shows the features and questions, in Chinese and English', { skip: SKIP }, async () => {
   const main = await origin();
   for (const [slug, lng, width] of [[SLUG, 'zh', 390], [SLUG, 'zh', 320], [MP, 'en', 320]]) {

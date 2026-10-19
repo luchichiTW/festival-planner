@@ -785,8 +785,10 @@
     lastFocus = opener || document.activeElement;
     scrim.hidden = false;
     sheet.hidden = false;
+    // Focus moves into the sheet without scrolling it: a long sheet (關於) opens at its title, not at its 完成 button.
     const f = sheet.querySelector('.primary') || sheet.querySelector('button');
-    if (f) f.focus();
+    if (f) f.focus({ preventScroll: true });
+    sheet.scrollTop = 0;
   }
   function closeSheet() {
     endOnboard(); // closing the walkthrough any way (button, outside, Esc) counts as seen
@@ -863,7 +865,7 @@
       + (lot.rigged && L.emoji && !reduceMotion() ? `<div class="lot-burst" aria-hidden="true">${Array.from({ length: 12 }, (_, k) => `<i style="--a:${k * 30}deg">${esc(L.emoji)}</i>`).join('')}</div>` : '');
     r.hidden = false;
     $('lotActions').innerHTML = `<button type="button" class="ghost" data-act="spin">${t('再抽一次')}</button><button type="button" class="primary" data-act="accept">${t('就去這團')}</button>`;
-    sheet.querySelector('.primary').focus();
+    sheet.querySelector('.primary').focus({ preventScroll: true });
   }
 
   // Drawing again after the favourite won: a telling-off, and only "accept" left.
@@ -872,7 +874,7 @@
     const r = $('lotResult');
     if (!r.querySelector('.lot-scold')) r.insertAdjacentHTML('beforeend', `<div class="lot-scold">${esc((lang === 'en' && L.scoldEn) || L.scold || '')}</div>`);
     $('lotActions').innerHTML = `<button type="button" class="primary" data-act="accept">${t('接受結果')}</button>`;
-    sheet.querySelector('.primary').focus();
+    sheet.querySelector('.primary').focus({ preventScroll: true });
   }
 
   function accept() {
@@ -1068,7 +1070,7 @@
       ${steps.length > 1 ? `<div class="ob-dots" role="img" aria-label="${esc(t('第 {i} 步，共 {n} 步', { i: i + 1, n: steps.length }))}">${steps.map((_, j) => `<i${j === i ? ' class="on"' : ''}></i>`).join('')}</div>` : ''}
       <div class="sheet-actions">${left ? `<button type="button" class="ghost" data-act="${left[0]}">${esc(left[1])}</button>` : ''}<button type="button" class="primary" data-act="${esc(right[0])}">${esc(right[1])}</button></div>`;
     sheet.scrollTop = 0;
-    if (!sheet.hidden) sheet.querySelector('.primary').focus();
+    if (!sheet.hidden) sheet.querySelector('.primary').focus({ preventScroll: true });
   }
 
   function startOnboard() {
