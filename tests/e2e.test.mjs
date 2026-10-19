@@ -222,6 +222,12 @@ test('AC-03 picks, clashes, deciding, lottery, search, card, theme — and they 
   assert.equal(card.bio, artists.ano.bio);
   assert.deepEqual(card.players, Object.keys(artists.ano.embeds));
   assert.equal(await page.eval(`document.querySelector('.block[data-id="d1-ano"]').classList.contains('sel')`), false, 'a long press is not a tap');
+  // Once in the picks, the card has just the 移出團序 button: no 「已在團序」 line above it.
+  await page.eval(() => document.querySelector('#lpCard [data-lp-act="add"]').click());
+  await page.until(() => document.querySelector('#lpCard [data-lp-act="remove"]'));
+  assert.deepEqual(await page.eval(() => ({ state: document.querySelector('#lpCard .lp-state'), text: /已在團序/.test(document.getElementById('lpCard').innerText), buttons: [...document.querySelectorAll('#lpCard [data-lp-act]')].map((b) => b.textContent) })), { state: null, text: false, buttons: ['移出團序'] });
+  await page.eval(() => document.querySelector('#lpCard [data-lp-act="remove"]').click());
+  await page.until(() => document.querySelector('#lpCard [data-lp-act="add"]'));
   await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
   await page.until(() => document.getElementById('lpCard').hidden);
 

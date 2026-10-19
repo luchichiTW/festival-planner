@@ -837,7 +837,6 @@ button { font: inherit; color: inherit; }
 .lp-warn { padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--alert) 12%, transparent); color: color-mix(in srgb, var(--alert) 55%, var(--fg)); font-size: 12.5px; line-height: 1.55; }
 .lp-warn b { color: var(--alert); margin-right: 4px; }
 .lp-state { font-size: 12.5px; color: var(--muted); }
-.lp-state b { color: var(--fg); }
 .lp-state .go { display: inline-block; margin-right: 6px; padding: 3px 7px 2px; border-radius: 6px; background: var(--ok); color: var(--on-stage); font: 700 11px/1.3 var(--body); }
 .lp-btns { display: flex; gap: 8px; }
 .lp-btns button { flex: 1; appearance: none; padding: 11px 8px; border-radius: 11px; font: 800 13.5px/1.1 var(--body); cursor: pointer; }

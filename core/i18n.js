@@ -119,7 +119,6 @@ window.FP_I18N = {
     '撞時段，還沒決定': 'Clashes, undecided',
     '同時選了 {list}': 'also picked {list}',
     '撞團已決定': 'Clash decided',
-    '已在團序': 'In your schedule',
     '已加入 {name}': 'Added {name}',
     '已移除 {name}': 'Removed {name}',
     '試聽': 'Listen',

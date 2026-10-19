@@ -1372,7 +1372,8 @@
       html = `<div class="lp-warn"><b>${t('撞時段，還沒決定')}</b>${t('同時選了 {list}', { list: names(others) })}</div>
         <div class="lp-btns">${btn('remove', t('移出團序'), 'ghost')}${btn('choose', t('就去這團'), 'primary')}</div>`;
     } else {
-      html = `<div class="lp-state">${prefs.has(s.id) ? `<span class="go">${t('要去')}</span>${t('撞團已決定')}` : `<b>${t('已在團序')}</b>`}</div>
+      // In the picks, nothing to decide: the 移出團序 button says it all (a decided clash still says so).
+      html = `${prefs.has(s.id) ? `<div class="lp-state"><span class="go">${t('要去')}</span>${t('撞團已決定')}</div>` : ''}
         <div class="lp-btns">${btn('remove', t('移出團序'), 'ghost')}</div>`;
     }
     box.innerHTML = html;
