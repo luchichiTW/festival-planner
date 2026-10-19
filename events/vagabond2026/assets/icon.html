@@ -1,44 +1,46 @@
 <!doctype html>
-<!-- Icon source for vagabond2026. An original mark, not the festival's logo: the app's wordmark style
-     (gold 「浪」 with a red offset shadow, Chiron GoRound TC 900) on a red seal, over the charcoal sunburst
-     the official 2026 poster uses. Render the PNGs with: node scripts/icons.mjs vagabond2026 -->
+<!-- Icon for vagabond2026: a round window in a ring of radial bricks, the sun setting into the sea behind it with a
+     sunburst. An original mark, not the festival's logo. Built on one construction: ring 89 % / 70 % of the canvas,
+     20 voussoirs with the keystone at 12 o'clock, 16 rays from the sun on the horizon, two wave bands.
+     Square and unmasked (iOS adds the rounded corners); filled shapes only.
+     Render with: node scripts/icons.mjs vagabond2026 -->
 <html><head><meta charset="utf-8">
 <style>
-@font-face { font-family: "Chiron GoRound TC"; src: url(fonts/display.woff2) format("woff2"); font-weight: 900; }
-html, body { margin: 0; background: #1A1617; }
+html, body { margin: 0; background: #FBF6E2; }
 svg { display: block; width: 100vmin; height: 100vmin; }
-text { font-family: "Chiron GoRound TC"; font-weight: 900; }
 </style></head>
 <body>
 <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-      <stop offset="0" stop-color="#F1BE48" stop-opacity=".22"/>
-      <stop offset="1" stop-color="#F1BE48" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <rect width="512" height="512" fill="#1A1617"/>
-  <g id="rays" fill="#F1BE48" fill-opacity=".09"></g>
-  <circle cx="256" cy="256" r="256" fill="url(#glow)"/>
-  <!-- seal: stays inside the maskable safe zone (radius 204) -->
-  <circle cx="256" cy="256" r="176" fill="#F1BE48"/>
-  <circle cx="256" cy="256" r="164" fill="#D9474A"/>
-  <circle cx="256" cy="256" r="150" fill="none" stroke="#1A1617" stroke-opacity=".45" stroke-width="3"/>
-  <g fill="#17A7B4">
-    <path d="M256 84 l9 9 -9 9 -9 -9z"/><path d="M256 410 l9 9 -9 9 -9 -9z"/>
-    <path d="M84 256 l9 -9 9 9 -9 9z"/><path d="M410 256 l9 -9 9 9 -9 9z"/>
+  <defs><clipPath id="win"><circle cx="256" cy="256" r="180"/></clipPath></defs>
+  <rect width="512" height="512" fill="#FBF6E2"/>
+  <g>
+    <path d="M233.44 77.42 L227.42 29.80 A228 228 0 0 1 284.58 29.80 L278.56 77.42 A180 180 0 0 0 233.44 77.42 Z" fill="#DA4640"/>
+    <path d="M289.73 79.19 L298.72 32.04 A228 228 0 0 1 353.08 49.70 L332.64 93.13 A180 180 0 0 0 289.73 79.19 Z" fill="#C93D38"/>
+    <path d="M342.72 98.26 L365.84 56.20 A228 228 0 0 1 412.08 89.80 L379.22 124.79 A180 180 0 0 0 342.72 98.26 Z" fill="#DA4640"/>
+    <path d="M387.21 132.78 L422.20 99.92 A228 228 0 0 1 455.80 146.16 L413.74 169.28 A180 180 0 0 0 387.21 132.78 Z" fill="#C93D38"/>
+    <path d="M418.87 179.36 L462.30 158.92 A228 228 0 0 1 479.96 213.28 L432.81 222.27 A180 180 0 0 0 418.87 179.36 Z" fill="#DA4640"/>
+    <path d="M434.58 233.44 L482.20 227.42 A228 228 0 0 1 482.20 284.58 L434.58 278.56 A180 180 0 0 0 434.58 233.44 Z" fill="#C93D38"/>
+    <path d="M432.81 289.73 L479.96 298.72 A228 228 0 0 1 462.30 353.08 L418.87 332.64 A180 180 0 0 0 432.81 289.73 Z" fill="#DA4640"/>
+    <path d="M413.74 342.72 L455.80 365.84 A228 228 0 0 1 422.20 412.08 L387.21 379.22 A180 180 0 0 0 413.74 342.72 Z" fill="#C93D38"/>
+    <path d="M379.22 387.21 L412.08 422.20 A228 228 0 0 1 365.84 455.80 L342.72 413.74 A180 180 0 0 0 379.22 387.21 Z" fill="#DA4640"/>
+    <path d="M332.64 418.87 L353.08 462.30 A228 228 0 0 1 298.72 479.96 L289.73 432.81 A180 180 0 0 0 332.64 418.87 Z" fill="#C93D38"/>
+    <path d="M278.56 434.58 L284.58 482.20 A228 228 0 0 1 227.42 482.20 L233.44 434.58 A180 180 0 0 0 278.56 434.58 Z" fill="#DA4640"/>
+    <path d="M222.27 432.81 L213.28 479.96 A228 228 0 0 1 158.92 462.30 L179.36 418.87 A180 180 0 0 0 222.27 432.81 Z" fill="#C93D38"/>
+    <path d="M169.28 413.74 L146.16 455.80 A228 228 0 0 1 99.92 422.20 L132.78 387.21 A180 180 0 0 0 169.28 413.74 Z" fill="#DA4640"/>
+    <path d="M124.79 379.22 L89.80 412.08 A228 228 0 0 1 56.20 365.84 L98.26 342.72 A180 180 0 0 0 124.79 379.22 Z" fill="#C93D38"/>
+    <path d="M93.13 332.64 L49.70 353.08 A228 228 0 0 1 32.04 298.72 L79.19 289.73 A180 180 0 0 0 93.13 332.64 Z" fill="#DA4640"/>
+    <path d="M77.42 278.56 L29.80 284.58 A228 228 0 0 1 29.80 227.42 L77.42 233.44 A180 180 0 0 0 77.42 278.56 Z" fill="#C93D38"/>
+    <path d="M79.19 222.27 L32.04 213.28 A228 228 0 0 1 49.70 158.92 L93.13 179.36 A180 180 0 0 0 79.19 222.27 Z" fill="#DA4640"/>
+    <path d="M98.26 169.28 L56.20 146.16 A228 228 0 0 1 89.80 99.92 L124.79 132.78 A180 180 0 0 0 98.26 169.28 Z" fill="#C93D38"/>
+    <path d="M132.78 124.79 L99.92 89.80 A228 228 0 0 1 146.16 56.20 L169.28 98.26 A180 180 0 0 0 132.78 124.79 Z" fill="#DA4640"/>
+    <path d="M179.36 93.13 L158.92 49.70 A228 228 0 0 1 213.28 32.04 L222.27 79.19 A180 180 0 0 0 179.36 93.13 Z" fill="#C93D38"/>
   </g>
-  <text x="263" y="270" font-size="232" text-anchor="middle" dominant-baseline="central" fill="#1A1617" fill-opacity=".55">浪</text>
-  <text x="256" y="263" font-size="232" text-anchor="middle" dominant-baseline="central" fill="#F1BE48">浪</text>
+  <circle cx="256" cy="256" r="180" fill="#FFF5C8"/>
+  <g clip-path="url(#win)">
+    <path d="M256 296 L216.79 -102.07 L295.21 -102.07 Z M256 296 L372.11 -86.78 L444.56 -56.77 Z M256 296 L509.76 -13.20 L565.20 42.24 Z M256 296 L608.77 107.44 L638.78 179.89 Z M256 296 L654.07 256.79 L654.07 335.21 Z M256 296 L638.78 412.11 L608.77 484.56 Z M256 296 L565.20 549.76 L509.76 605.20 Z M256 296 L444.56 648.77 L372.11 678.78 Z M256 296 L295.21 694.07 L216.79 694.07 Z M256 296 L139.89 678.78 L67.44 648.77 Z M256 296 L2.24 605.20 L-53.20 549.76 Z M256 296 L-96.77 484.56 L-126.78 412.11 Z M256 296 L-142.07 335.21 L-142.07 256.79 Z M256 296 L-126.78 179.89 L-96.77 107.44 Z M256 296 L-53.20 42.24 L2.24 -13.20 Z M256 296 L67.44 -56.77 L139.89 -86.78 Z" fill="#F2D65A"/>
+    <circle cx="256" cy="296" r="84" fill="#E25440"/>
+    <path d="M-24 328 a40 40 0 0 1 80 0 a40 40 0 0 1 80 0 a40 40 0 0 1 80 0 a40 40 0 0 1 80 0 a40 40 0 0 1 80 0 a40 40 0 0 1 80 0 a40 40 0 0 1 80 0 V446 H-24 Z" fill="#7CCBBE"/>
+    <path d="M16 366 a40 40 0 0 1 80 0 a40 40 0 0 1 80 0 a40 40 0 0 1 80 0 a40 40 0 0 1 80 0 a40 40 0 0 1 80 0 a40 40 0 0 1 80 0 V446 H16 Z" fill="#44AE9F"/>
+  </g>
 </svg>
-<script>
-  // 24 sunburst rays from the centre.
-  const g = document.getElementById('rays');
-  for (let i = 0; i < 24; i++) {
-    const a = (i * 15) * Math.PI / 180, b = (i * 15 + 7.5) * Math.PI / 180, R = 420;
-    const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    p.setAttribute('d', `M256 256 L${256 + R * Math.cos(a)} ${256 + R * Math.sin(a)} L${256 + R * Math.cos(b)} ${256 + R * Math.sin(b)} Z`);
-    g.append(p);
-  }
-</script>
 </body></html>
