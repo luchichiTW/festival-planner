@@ -16,7 +16,6 @@ window.FP_I18N = {
     '時間表': 'Timetable',
     '我的團序': 'My Schedule',
     '知道了': 'Got it',
-    '已更新到 {date} 的時間表': 'Updated to the {date} timetable',
     // board
     '{name}，{stage}，{start} 到 {end}': '{name}, {stage}, {start} to {end}',
     '現在': 'Now',

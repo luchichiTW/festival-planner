@@ -377,7 +377,7 @@ test('AC-07 a new deploy switches in only when nobody is using the page, and kee
     const swState = () => page.eval(`navigator.serviceWorker.getRegistration().then((r) => JSON.stringify({ installing: r.installing?.state, waiting: r.waiting?.state, active: r.active?.state, build: FP_EVENT.build, here: window.__stillHere }))`);
 
     // v2 is deployed. Opening the app again: the cached v1 page shows first (never v2 HTML with v1 files), v2
-    // downloads, and since nothing was touched yet it takes over at once and says so. The switch is the page
+    // downloads, and since nothing was touched yet it takes over at once, quietly. The switch is the page
     // reloading itself once it has loaded and gone quiet: wait for that load.
     rebuild(root, 'e2e-v2');
     await page.reload();
@@ -385,7 +385,8 @@ test('AC-07 a new deploy switches in only when nobody is using the page, and kee
       throw new Error(`${e.message}: v2 never switched in\nservice worker: ${await swState()}`);
     });
     assert.deepEqual(await page.eval(consistent), { build: 'e2e-v2', meta: 'e2e-v2' });
-    await page.until(() => /已更新到 10\/17 的時間表/.test(document.getElementById('toast').textContent));
+    await sleep(1200);
+    assert.doesNotMatch(await page.eval(() => document.getElementById('toast').textContent), /已更新/, 'no "updated" toast: it covered the walkthrough card');
     assert.deepEqual(await page.eval(`FP.snapshot().picks`), ['d2-milena']);
 
     // v3 is deployed while someone is using the page: it downloads but waits. (Tap first: an update found in the

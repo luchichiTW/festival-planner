@@ -1,18 +1,12 @@
 /* Website only: offline service worker, quiet updates, and the walkthrough's 「加到主畫面」 step.
    Update rule: a new version downloads in the background (sw.js), and is switched in only when nobody is using
-   the page — when the app goes to the background, or right as it is opened again. Then a toast says which
-   timetable date is showing. Picks are in localStorage and are never touched by an update. */
+   the page — when the app goes to the background, or right as it is opened again, without a word (the 關於 sheet
+   shows the version and the timetable date). Picks are in localStorage and are never touched by an update. */
 (() => {
   const EVT = window.FP_EVENT;
   const FP = window.FP;
   if (!FP) return;
   const { store, key } = FP;
-
-  /* ---------- "已更新" after a new version took over ---------- */
-  const KEY_BUILD = key('build');
-  const last = store.get(KEY_BUILD);
-  store.set(KEY_BUILD, EVT.build);
-  if (last && last !== EVT.build) setTimeout(() => FP.toast(FP.t('已更新到 {date} 的時間表', { date: FP.mmdd(EVT.dataDate) }), 4000), 500);
 
   /* ---------- the walkthrough's last step: add it to the home screen, use it offline ---------- */
   // For everyone not already in the installed app. On a phone it comes back, up to three times a day (on opening

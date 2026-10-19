@@ -1425,7 +1425,6 @@
   window.FP = {
     store,
     key,
-    mmdd,
     toast,
     setSync,
     adopt,
