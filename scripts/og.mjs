@@ -68,7 +68,7 @@ html, body { width: 1200px; height: 630px; overflow: hidden; }
     <span class="brand">${brand}</span>
     <h1>音樂祭排團工具</h1>
     <p class="lede">看時間表、排出自己的團序、撞團時抽籤。<br>加到手機主畫面，現場沒訊號也打得開。</p>
-    <p class="feats">非官方・免費・離線可用・不收集個資</p>
+    <p class="feats">非官方・免費・離線可用・不蒐集個資</p>
   </div>
   <div class="og-r">
 ${evs.map(ticket).join('\n')}

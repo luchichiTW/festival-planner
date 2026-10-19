@@ -54,7 +54,7 @@ test('the event page carries FAQPage and WebApplication data, and its descriptio
   const app = graph.find((n) => n['@type'] === 'WebApplication');
   assert.equal(app.isAccessibleForFree, true);
   assert.equal(app.offers.price, '0');
-  assert.deepEqual(app.featureList, ['離線可用', '免註冊', '不收集個人資料']);
+  assert.deepEqual(app.featureList, ['離線可用', '免註冊', '不蒐集個人資料']);
   assert.match(app.operatingSystem, /瀏覽器/);
   for (const d of [meta(html, 'name', 'description'), meta(html, 'property', 'og:description')]) {
     assert.match(d, /離線可用/);
@@ -98,7 +98,7 @@ test('every page links to the privacy page, and the site sitemap lists it', () =
 
 test('the homepage says it too: features, WebApplication data, description', () => {
   const html = read(site, 'index.html');
-  assert.ok(html.includes('離線可用') && html.includes('不用註冊、不收集個資'), 'visible features');
+  assert.ok(html.includes('離線可用') && html.includes('不用註冊、不蒐集個資'), 'visible features');
   const app = graphOf(html).find((n) => n['@type'] === 'WebApplication');
   assert.ok(app && app.isAccessibleForFree === true && app.offers.price === '0');
   assert.match(meta(html, 'name', 'description'), /離線可用.*免註冊|免註冊.*離線可用/);
@@ -106,7 +106,7 @@ test('the homepage says it too: features, WebApplication data, description', () 
 
 test('llms.txt leads with offline use and no personal data, and points to the privacy page', () => {
   const txt = read(site, 'llms.txt');
-  assert.match(txt, /^# chiparashi\n\n> chiparashi\.tw 上放的是非官方的音樂祭排團工具：看時間表、排出自己的團序、撞團時抽籤。離線可用、不用註冊、不收集個資。演出異動以主辦方現場公告為準。\n/);
+  assert.match(txt, /^# chiparashi\n\n> chiparashi\.tw 上放的是非官方的音樂祭排團工具：看時間表、排出自己的團序、撞團時抽籤。離線可用、不用註冊、不蒐集個資。演出異動以主辦方現場公告為準。\n/);
   const feats = /## 特色\n\n([\s\S]*?)\n\n## /.exec(txt)?.[1] || '';
   assert.match(feats, /離線可用/);
   assert.match(feats, /不會上傳/);

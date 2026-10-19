@@ -1184,7 +1184,7 @@ test('我的團序 footer: 關於・自己做一個 and 隱私說明 side by sid
       q: [...document.querySelectorAll('.about-faq h3')].map((h) => h.textContent),
       wide: [...document.querySelectorAll('.sheet *')].filter((el) => el.getBoundingClientRect().right > innerWidth + 1).map((el) => el.tagName),
     }));
-    assert.deepEqual(sheet.feats, lng === 'en' ? ['Works offline', 'No sign-up, no personal data'] : ['離線可用', '不用註冊、不收集個資']);
+    assert.deepEqual(sheet.feats, lng === 'en' ? ['Works offline', 'No sign-up, no personal data'] : ['離線可用', '不用註冊、不蒐集個資']);
     assert.equal(sheet.q.length, 3);
     assert.equal(sheet.q[0], lng === 'en' ? 'Does it work without a connection?' : '沒有網路能用嗎？');
     assert.deepEqual(sheet.wide, [], `${slug} ${width}px: nothing wider than the screen`);

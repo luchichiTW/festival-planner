@@ -366,7 +366,7 @@ export function buildSite({ out = path.join(ROOT, 'dist-site') } = {}) {
   const state = (ev) => (!ev.days?.length ? 1 : ev.days.at(-1).date < today ? 2 : 0);
   events.sort((a, b) => state(a) - state(b) || (state(a) === 2 ? b.days.at(-1).date.localeCompare(a.days.at(-1).date) : (a.days?.[0]?.date || '').localeCompare(b.days?.[0]?.date || '')));
   const repo = events.find((ev) => ev.urls?.repo)?.urls.repo || 'https://github.com/luchichiTW/festival-planner';
-  const description = `非官方音樂祭排團工具，離線可用、免註冊、不收集個資：${events.map((ev) => ev.name).join('、')}。看時間表、排出自己的團序、撞團抽籤。`;
+  const description = `非官方音樂祭排團工具，離線可用、免註冊、不蒐集個資：${events.map((ev) => ev.name).join('、')}。看時間表、排出自己的團序、撞團抽籤。`;
   // What the site is and who runs it. The only account named is the Instagram on the page.
   const graph = [
     { '@type': 'WebSite', '@id': `${HOST}/#website`, name: 'chiparashi', url: `${HOST}/`, description, inLanguage: 'zh-Hant-TW', publisher: { '@id': `${HOST}/#chi` } },
