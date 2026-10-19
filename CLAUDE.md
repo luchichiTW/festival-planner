@@ -107,6 +107,8 @@ node scripts/og.mjs <slug>              # 畫分享預覽圖（1200×630）→ a
 
 service worker 只把工具頁本身當 App；其他頁面直接走網路，不會被換成工具頁。
 
+不做 `Accept: text/markdown` 的內容協商（同一個網址依請求回 Markdown）：每頁的 Markdown 版用 `<link rel="alternate">` 和 `Link` 標頭指出就夠了，搜尋與回答用的爬蟲抓的是 HTML。要做的話得在活動的 Worker 加程式（每次開頁都計入 Workers 額度）。等主要的搜尋爬蟲需要，或 Cloudflare 的 Markdown for Agents 在 Free 方案也能用時再考慮。（2026-10-19 決定）
+
 ## 網站與更新（PWA）
 
 - 每個活動自己的 service worker，scope `/<slug>/`，快取名稱 `fp-<slug>-<版本>`，只清自己的舊快取。
