@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Renders an event's link-preview image (1200×630, the picture chat apps and social sites show for a shared link)
 // with headless Chrome, from event.json: the stage colours as a strip across the top, the wordmark, dates and
-// place, and a tear-off stub saying it's an unofficial planner.
+// place, and a tear-off stub with what it does. (Only the homepage's picture names the site.)
 //   node scripts/og.mjs <slug>    → events/<slug>/assets/og.png (point event.json "ogImage" at it)
 //   node scripts/og.mjs site      → site/og.png, the homepage's picture (also used by /privacy/)
 import fs from 'node:fs';
@@ -68,7 +68,7 @@ html, body { width: 1200px; height: 630px; overflow: hidden; }
     <span class="brand">${brand}</span>
     <h1>音樂祭排團工具</h1>
     <p class="lede">看時間表、排出自己的團序、撞團時抽籤。<br>加到手機主畫面，現場沒訊號也打得開。</p>
-    <p class="feats">非官方・免費・離線可用・不蒐集個資</p>
+    <p class="feats">免費・離線可用・免註冊・不蒐集個資</p>
   </div>
   <div class="og-r">
 ${evs.map(ticket).join('\n')}
@@ -104,7 +104,7 @@ html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; backgrou
   <div class="meta">${esc(ev.subtitle || '')}</div>
   <div class="count">${ev.stages.length} 個舞台・${schedule.length} 場演出</div>
 </div>
-<div class="stub"><span>排團・撞團抽籤・沒訊號也能開</span><b>非官方排團工具</b></div>
+<div class="stub"><span>排團・撞團抽籤・沒訊號也能開</span></div>
 </div></body></html>`;
 
 await render(html, path.join(dir, 'assets', 'og.png'));

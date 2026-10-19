@@ -100,7 +100,7 @@ node scripts/og.mjs site                # 畫首頁與 /privacy/ 的分享預覽
 
 工具本身是 JavaScript 畫出來的，只抓 HTML、不執行程式的讀者（搜尋引擎、連結預覽、螢幕閱讀器、幫人查資料的 AI 工具）會看到空殼。開了 `features.pages`，build 會多產生：
 
-- 工具頁裡的文字版時間表（`#static`）。頁面送出時 `<html class="nojs">`，第一個 script 就拿掉它，所以用工具的人只看到互動版；不執行程式的讀者看到這份清單。時間表下方有一行資料日期與「非官方」。
+- 工具頁裡的文字版時間表（`#static`）。頁面送出時 `<html class="nojs">`，第一個 script 就拿掉它，所以用工具的人只看到互動版；不執行程式的讀者看到這份清單。時間表下方有一行資料來源與日期，以及「演出異動以主辦方現場公告為準」。
 - 每位有簡介或平台連結的藝人一頁：`artists/<slug>/`，有演出時間（連回工具上那一團：`#show-<id>`）、介紹與來源、推薦曲目、平台連結。開頁不載入任何播放器。
 - `claude/`：用 Claude 做自己版本的說明、可複製的提示（跟 README 同一段，`pages.test.mjs` 會比對）、單檔與資料 JSON（`data/schedule.json`、`data/artists.json`）的網址。
 - 每頁：自己的標題與描述、canonical、`og:*` 預覽、JSON-LD（`Festival` 與每場 `MusicEvent`，時間帶 `+08:00`，performer 附已驗證的連結）、一份 `index.md`（HTML 裡用 `<link rel="alternate" type="text/markdown">` 指出，`_headers` 也在回應標頭加 `Link`）。

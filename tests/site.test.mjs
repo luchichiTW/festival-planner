@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { ROOT, loadEvent, listEvents } from '../scripts/validate.mjs';
-import { buildSite } from '../scripts/build.mjs';
+import { build, buildSite } from '../scripts/build.mjs';
 
 const HOST = 'https://chiparashi.tw';
 const events = listEvents().map((s) => loadEvent(s).event);
@@ -100,11 +100,22 @@ test('link preview: the homepage and the privacy page share the homepage picture
   }
 });
 
+// The pages describe a tool and cite their sources; whose tool it is, is in the repo's README.
+test('no page calls itself unofficial: not the homepage, privacy page, llms.txt, nor any event page', () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'fp-noun-'));
+  process.env.FP_BUILD = 'copy-check';
+  try { for (const s of listEvents()) build(s, { out: tmp, artifactOut: tmp + '-art' }); } finally { delete process.env.FP_BUILD; }
+  const files = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? files(path.join(d, e.name)) : /\.(html|md|js|txt|xml|json|webmanifest)$/.test(e.name) ? [path.join(d, e.name)] : []));
+  const hits = [...files(out), ...files(tmp)].filter((f) => /非官方|unofficial/i.test(fs.readFileSync(f, 'utf8')));
+  fs.rmSync(tmp, { recursive: true, force: true }); fs.rmSync(tmp + '-art', { recursive: true, force: true });
+  assert.deepEqual(hits.map((f) => path.relative(f.startsWith(out) ? out : tmp, f)), []);
+});
+
 test('contact and footer', () => {
   const html = read('index.html');
   assert.ok(html.includes('href="https://www.instagram.com/luchichitw/"'));
   assert.ok(html.includes('chi@chiparashi.tw') && /id="copyMail"/.test(html), 'email with a copy button');
-  assert.match(html, /<footer class="foot">\s*<p>非官方工具。演出異動以主辦方現場公告為準。<\/p>\s*<p><a href="\/privacy\/">隱私說明<\/a><\/p>\s*<\/footer>/);
+  assert.match(html, /<footer class="foot">\s*<p>演出異動以主辦方現場公告為準。<\/p>\s*<p><a href="\/privacy\/">隱私說明<\/a><\/p>\s*<\/footer>/);
 });
 
 test('robots.txt: content signals for everyone, a block list, the site sitemap and each event sitemap', () => {
@@ -128,7 +139,7 @@ test('robots.txt: content signals for everyone, a block list, the site sitemap a
 
 test('llms.txt: the festivals from event.json, moved ones linking to where they went, and the pages for assistants', () => {
   const txt = read('llms.txt');
-  assert.match(txt, /^# chiparashi\n\n> .*非官方/);
+  assert.match(txt, /^# chiparashi\n\n> .*音樂祭排團工具/);
   const list = /## 音樂祭排團工具\n\n([\s\S]*?)\n\n## /.exec(txt)?.[1] || '';
   for (const ev of events) {
     const url = archived(ev) ? ev.urls.archive : `${HOST}/${ev.slug}/`;

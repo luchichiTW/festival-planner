@@ -92,11 +92,11 @@ test('every page has its own title, description, canonical, language, preview im
     assert.ok(fs.existsSync(path.join(site, 'og.png')), 'preview image ships');
     assert.match(html, /<html lang="zh-Hant-TW"/);
     assert.ok(html.includes('2026/10/17'), `${p}: visible data date`);
-    assert.ok(html.includes('非官方'), `${p}: says it is unofficial`);
+    assert.ok(html.includes('演出異動以主辦方現場公告為準'), `${p}: where the data comes from and what to trust on the day`);
     assert.equal(link(html, 'alternate" type="text/markdown'), 'index.md', `${p}: points to its Markdown copy`);
     const md = read(`${p}index.md`);
     assert.match(md, /^# /, `${p}: Markdown starts with a heading`);
-    assert.ok(md.includes('非官方'), `${p}: Markdown says it is unofficial`);
+    assert.ok(md.includes('演出異動以主辦方現場公告為準'), `${p}: Markdown says it too`);
   }
 });
 
@@ -110,7 +110,7 @@ test('structured data: the festival, its organizer and venue, and every show wit
   assert.equal(fest.endDate, EV.days.at(-1).date);
   assert.equal(fest.subEvent.length, schedule.length);
   const page = graph.find((n) => n['@type'] === 'WebPage');
-  assert.match(page.description, /非官方/);
+  assert.match(page.description, /排團工具/);
   assert.equal(page.dateModified, EV.dataDate);
   for (const s of schedule) {
     const e = fest.subEvent.find((x) => x.identifier === s.id);

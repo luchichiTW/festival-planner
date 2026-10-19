@@ -106,7 +106,7 @@ test('the homepage says it too: features, WebApplication data, description', () 
 
 test('llms.txt leads with offline use and no personal data, and points to the privacy page', () => {
   const txt = read(site, 'llms.txt');
-  assert.match(txt, /^# chiparashi\n\n> chiparashi\.tw 上放的是非官方的音樂祭排團工具：看時間表、排出自己的團序、撞團時抽籤。離線可用、不用註冊、不蒐集個資。演出異動以主辦方現場公告為準。\n/);
+  assert.match(txt, /^# chiparashi\n\n> chiparashi\.tw 上放的是音樂祭排團工具：看時間表、排出自己的團序、撞團時抽籤。離線可用、不用註冊、不蒐集個資。演出異動以主辦方現場公告為準。\n/);
   const feats = /## 特色\n\n([\s\S]*?)\n\n## /.exec(txt)?.[1] || '';
   assert.match(feats, /離線可用/);
   assert.match(feats, /不會上傳/);

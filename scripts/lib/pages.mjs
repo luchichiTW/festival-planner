@@ -61,7 +61,7 @@ export function makePages({ ev, schedule, artists, site, out, pageCSS }) {
   const showsOf = (name) => schedule.filter((s) => people(s).includes(name)).sort((a, b) => a.day - b.day || a.start.localeCompare(b.start));
   const dataDate = ymd(ev.dataDate);
   const official = ev.organizer?.url || ev.urls.official;
-  const unofficial = `時間表資料：${ev.shortName}官方公告 ${dataDate}・非官方排團工具，演出異動以主辦方現場公告為準。`;
+  const sourceLine = `時間表取自${ev.shortName}官方公告（${dataDate}）。演出異動以主辦方現場公告為準。`;
   const repo = ev.urls.repo || 'https://github.com/luchichiTW/festival-planner';
   const rawArtifact = `${repo.replace('https://github.com/', 'https://raw.githubusercontent.com/')}/main/events/${ev.slug}/artifact/index.html`;
   const claudeMd = `${repo}/blob/main/events/${ev.slug}/CLAUDE.md`;
@@ -137,7 +137,7 @@ export function makePages({ ev, schedule, artists, site, out, pageCSS }) {
   const staticBlock = [
     '<section class="static" id="static" aria-label="文字版時間表">',
     `  <h2>${esc(ev.name)} 時間表</h2>`,
-    `  <p>${esc(ev.subtitle || '')}。${esc(unofficial)}</p>`,
+    `  <p>${esc(ev.subtitle || '')}。${esc(sourceLine)}</p>`,
     ...ev.days.map((d, i) => [
       `  <div class="static-day"><h3>${esc(dayLabel(d))}</h3>`,
       ...ev.stages.filter((st) => schedule.some((s) => s.day === i + 1 && s.stage === st.id)).map((st) => [
@@ -153,12 +153,12 @@ export function makePages({ ev, schedule, artists, site, out, pageCSS }) {
     '</section>',
     '<!-- /static -->',
   ].join('\n');
-  const appTitle = `${ev.name} 排團工具：時間表、我的團序、撞團抽籤（非官方）`;
-  const appDesc = `${ev.name}（${ev.subtitle}）非官方排團工具，離線可用、免註冊、不蒐集個資：兩天${schedule.length}場演出的時間表與藝人介紹，排出自己的團序、撞團時抽籤。${unofficial}`;
+  const appTitle = `${ev.name} 排團工具：時間表、我的團序、撞團抽籤`;
+  const appDesc = `${ev.name}（${ev.subtitle}）排團工具：${schedule.length} 場演出的時間表與藝人介紹，排出自己的團序、撞團抽籤。離線可用、免註冊、不蒐集個資。`;
   const appHead = head('', appTitle, appDesc, [webPage('', appTitle, appDesc, { about: { '@id': festId } }), festival(true), webAppJsonLd({ name: `${ev.name} 排團工具`, url: base, lang: ev.lang }), faqJsonLd()]);
   const appMd = [
-    `# ${ev.name} 時間表（非官方排團工具）`, '',
-    `${ev.subtitle}。${unofficial}`, '',
+    `# ${ev.name} 時間表`, '',
+    `${ev.subtitle}。${sourceLine}`, '',
     `- 排團工具：${base}`, `- 官方網站：${official}`, ...(ev.urls.tickets ? [`- 售票：${ev.urls.tickets}`] : []), `- 用 Claude 做你自己的：${base}claude/`, '',
     ...ev.days.flatMap((d, i) => [
       `## ${dayLabel(d)}`, '',
@@ -192,11 +192,11 @@ ${ev.icons?.png?.['192'] ? `<link rel="icon" href="${up}icon-192.png" sizes="192
 ${themeBoot}
 </head>
 <body>
-<header class="pg-top"><a class="pg-brand" href="${up}">${esc(ev.wordmark?.text || ev.shortName)}<small>${esc(ev.wordmark?.sub || '')}</small></a><span class="pg-sub">非官方排團工具</span></header>
+<header class="pg-top"><a class="pg-brand" href="${up}">${esc(ev.wordmark?.text || ev.shortName)}<small>${esc(ev.wordmark?.sub || '')}</small></a><span class="pg-sub">排團工具</span></header>
 <main class="pg">
 ${body}
 </main>
-<footer class="pg-foot"><p>${esc(unofficial)}</p><p><a href="${up}">打開排團工具</a>・<a href="${up}claude/">用 Claude 做你自己的</a>・<a href="${PRIVACY_PATH}">隱私說明</a>・<a href="${esc(official)}">官方網站</a></p></footer>
+<footer class="pg-foot"><p>${esc(sourceLine)}</p><p><a href="${up}">打開排團工具</a>・<a href="${up}claude/">用 Claude 做你自己的</a>・<a href="${PRIVACY_PATH}">隱私說明</a>・<a href="${esc(official)}">官方網站</a></p></footer>
 </body>
 </html>
 `;
@@ -211,7 +211,7 @@ ${body}
     const first = shows[0];
     const where = first ? `${when(first)} ${stage(first.stage).name}` : '';
     const lede = (a.bio || '').split('\n')[0];
-    const title = `${name}｜${ev.name} 演出時間與介紹（非官方排團工具）`;
+    const title = `${name}｜${ev.name} 演出時間與介紹`;
     const description = `${name}${en ? `（${en}）` : ''}在${ev.name}的演出${first ? `：${where}` : ''}。${lede.slice(0, 90)}${lede.length > 90 ? '…' : ''}`.trim();
     const picks = Object.entries(a.picks || {}).filter(([k]) => a.embeds?.[k]);
     const showRows = shows.map((s) => `<li><span class="pg-stage" style="--c: var(--stage-${esc(s.stage)})">${esc(stage(s.stage).name)}</span><span class="pg-when">${esc(when(s))}</span>${s.name !== name ? `<span class="pg-bill">${esc(s.note ? `${s.note}（${s.name}）` : s.name)}</span>` : ''}<a class="pg-btn" href="../../#show-${esc(s.id)}">在時間表上看</a></li>`).join('\n');
@@ -231,7 +231,7 @@ ${body}
     fs.writeFileSync(path.join(site, p, 'index.html'), shell({ p, title, description, graph, body, up: '../../' }));
     const mdPage = [
       `# ${name}${en ? `（${en}）` : ''}`, '',
-      `${ev.name} 演出藝人。${unofficial}`, '',
+      `${ev.name} 演出藝人。${sourceLine}`, '',
       ...(shows.length ? ['## 演出時間', '', ...shows.map((s) => `- ${when(s)} ${stage(s.stage).name}${s.name !== name ? `（${s.note ? `${s.note}，` : ''}${s.name}）` : ''}`), ''] : []),
       '## 介紹', '', a.bio || '目前沒有找到可靠的介紹資料。', '',
       ...(a.sources?.length ? [`資料來源：${a.sources.join(' ')}`, ''] : []),
@@ -248,7 +248,7 @@ ${body}
     const p = 'claude/';
     const prompt = claudePrompt(ev);
     const promptEn = claudePromptEn(ev);
-    const title = `用 Claude 做你自己的排團工具｜${ev.name}（非官方）`;
+    const title = `用 Claude 做你自己的排團工具｜${ev.name}`;
     const description = `${ev.name}排團工具的做法公開：一段可以直接貼給 Claude 的提示、可以發成 artifact 的單一 HTML、時間表與藝人資料的 JSON，以及 GitHub 上的原始碼與 CLAUDE.md。Make your own festival planner with Claude.`;
     const en = (html) => `<p class="pg-en-text" lang="en">${html}</p>`;
     const files = [
@@ -297,8 +297,8 @@ for (const [id, label, done] of [['prompt', '複製', '已複製'], ['promptEn',
     fs.writeFileSync(path.join(site, p, 'index.html'), shell({ p, title, description, graph, body, up: '../' }));
     fs.writeFileSync(path.join(site, p, 'index.md'), [
       '# 用 Claude 做你自己的排團工具 · Make your own festival planner with Claude', '',
-      `${ev.name}排團工具（非官方）的程式和資料都公開。把下面這段提示貼給 Claude，附上你要做的音樂祭的官方時間表圖片。`, '',
-      'This unofficial planner\'s code and data are open. Paste the prompt below into Claude with the official timetable image of the festival you want.', '',
+      `${ev.name}排團工具的程式和資料都公開。把下面這段提示貼給 Claude，附上你要做的音樂祭的官方時間表圖片。`, '',
+      'This planner\'s code and data are open. Paste the prompt below into Claude with the official timetable image of the festival you want.', '',
       '## 提示 · Prompt', '',
       '```', prompt, '```', '',
       '```', promptEn, '```', '',
@@ -306,7 +306,7 @@ for (const [id, label, done] of [['prompt', '複製', '已複製'], ['promptEn',
       ...files.map(([u, label, zh, e]) => `- ${label}：${u} —— ${zh} / ${e}`), '',
       '## 做出來會有什麼 · What you get', '',
       ...features.map(([zh, e]) => `- ${zh} / ${e}`), '',
-      unofficial,
+      sourceLine,
     ].join('\n'));
     pages.push({ path: p });
   }
@@ -321,5 +321,5 @@ for (const [id, label, done] of [['prompt', '複製', '已複製'], ['promptEn',
 ${pages.map((pg) => `  <url><loc>${base + pg.path}</loc><lastmod>${ev.dataDate}</lastmod></url>`).join('\n')}
 </urlset>
 `);
-  return { appHead, appTitle, appDesc, staticBlock, pages: pages.map((pg) => pg.path), dataLine: unofficial };
+  return { appHead, appTitle, appDesc, staticBlock, pages: pages.map((pg) => pg.path), dataLine: sourceLine };
 }

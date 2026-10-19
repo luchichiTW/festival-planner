@@ -131,7 +131,7 @@ function buildTba({ event: ev, dir }, out) {
   }
   const base = ev.urls?.site || '';
   const title = `${ev.name} 排團工具（${ev.notice}）`;
-  const description = `${ev.name}非官方排團工具：${ev.notice}。陣容與時間表公布後，這裡會變成排團工具。`;
+  const description = `${ev.name}排團工具：${ev.notice}。陣容與時間表公布後，這裡會變成排團工具。`;
   const links = [ev.urls?.official && ['官方網站', ev.urls.official], ev.urls?.instagram && ['官方 Instagram', ev.urls.instagram], ev.urls?.previous && [ev.urls.previousLabel || '上一屆的排團工具', ev.urls.previous]].filter(Boolean);
   const html = `<!doctype html>
 <html lang="${esc(ev.lang)}">
@@ -157,7 +157,7 @@ ${read(path.join(CORE, 'tba.css'))}${ev.css ? '\n' + read(path.join(dir, ev.css)
   ${ev.noticeEn ? `<p class="tba-en" lang="en">${esc(ev.nameEn || '')}${ev.nameEn ? ' — ' : ''}${esc(ev.noticeEn)}</p>` : ''}
   <p class="tba-text">陣容和時間表公布後，這裡會變成排團工具：看時間表、排出自己的團序、撞團時抽籤，加到手機主畫面後沒訊號也能開。</p>
   ${links.length ? `<p class="tba-links">${links.map(([l, u]) => `<a href="${esc(u)}">${esc(l)}</a>`).join('')}</p>` : ''}
-  <p class="tba-foot">非官方排團工具。活動資訊以主辦方公告為準。<a href="/privacy/">隱私說明</a></p>
+  <p class="tba-foot">活動資訊以主辦方公告為準。<a href="/privacy/">隱私說明</a></p>
 </main>
 </body>
 </html>
@@ -366,7 +366,7 @@ export function buildSite({ out = path.join(ROOT, 'dist-site') } = {}) {
   const state = (ev) => (!ev.days?.length ? 1 : ev.days.at(-1).date < today ? 2 : 0);
   events.sort((a, b) => state(a) - state(b) || (state(a) === 2 ? b.days.at(-1).date.localeCompare(a.days.at(-1).date) : (a.days?.[0]?.date || '').localeCompare(b.days?.[0]?.date || '')));
   const repo = events.find((ev) => ev.urls?.repo)?.urls.repo || 'https://github.com/luchichiTW/festival-planner';
-  const description = `非官方音樂祭排團工具，離線可用、免註冊、不蒐集個資：${events.map((ev) => ev.name).join('、')}。看時間表、排出自己的團序、撞團抽籤。`;
+  const description = `音樂祭排團工具：${events.map((ev) => ev.name).join('、')}。看時間表、排出自己的團序、撞團抽籤，離線可用、免註冊、不蒐集個資。`;
   // What the site is and who runs it. The only account named is the Instagram on the page.
   const graph = [
     { '@type': 'WebSite', '@id': `${HOST}/#website`, name: 'chiparashi', url: `${HOST}/`, description, inLanguage: 'zh-Hant-TW', publisher: { '@id': `${HOST}/#chi` } },
