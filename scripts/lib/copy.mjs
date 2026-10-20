@@ -5,7 +5,7 @@
 // English versions are for events with "languages": ["zh", "en"]; core/i18n.js carries the same pairs.
 
 export const PRIVACY_PATH = '/privacy/';
-export const PRIVACY_UPDATED = '2026-10-20';
+export const PRIVACY_UPDATED = '2026-10-19';
 
 export const FEATURES = [
   {

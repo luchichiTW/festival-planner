@@ -2,6 +2,10 @@
 
 每個版本對應一個 git tag `vagabond2026@<版本>`。
 
+## 1.8.2
+
+- 撤回 1.8.1：YouTube 播放器改回 youtube-nocookie.com，隱私說明改回原本的寫法。1.8.1 沒有解決 iPhone 主畫面版的空白頁。
+
 ## 1.8.1
 
 - iPhone 主畫面版：點卡片裡 YouTube 播放器的標題，跳到 YouTube 之後回來，不再停在空白頁要按 ×。YouTube 播放器改用 youtube.com 的播放器（和大港撞團一樣）；隱私說明跟著改：YouTube 播放器可能設定它自己的 cookie。

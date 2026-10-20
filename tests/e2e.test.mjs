@@ -209,7 +209,7 @@ test('AC-03 picks, clashes, deciding, lottery, search, card, theme — and they 
   await page.tap('#spClose');
 
   // Long press → artist card with bio, sources and a recommended song per platform (players, not loaded here).
-  await page.send('Network.setBlockedURLs', { urls: ['*open.spotify.com*', '*embed.music.apple.com*', '*youtube.com/embed*'] });
+  await page.send('Network.setBlockedURLs', { urls: ['*open.spotify.com*', '*embed.music.apple.com*', '*youtube-nocookie.com*'] });
   await page.tap('#day1');
   await page.longPress('.block[data-id="d1-ano"]');
   await page.until(() => !document.getElementById('lpCard').hidden);
@@ -247,7 +247,7 @@ test('AC-03 picks, clashes, deciding, lottery, search, card, theme — and they 
 });
 
 // Third-party players stay out of the tests: the cards still build their iframes, nothing loads.
-const PLAYER_HOSTS = ['*open.spotify.com*', '*embed.music.apple.com*', '*youtube.com/embed*', '*streetvoice.com*'];
+const PLAYER_HOSTS = ['*open.spotify.com*', '*embed.music.apple.com*', '*youtube-nocookie.com*', '*streetvoice.com*'];
 const EMBED_LINK = { spotify: 'spotify', spotifyTrack: 'spotify', appleMusic: 'apple', appleMusicSong: 'apple', youtube: 'youtube' };
 
 test('AC-04 every card: no-bio message where data is missing, a player or a verified link per platform', { skip: SKIP }, async () => {
@@ -462,7 +462,7 @@ test('first visit on an iPhone: the 大港撞團 cards — long-press, 我的團
   assert.equal(await page.eval(() => document.querySelector('#sheet iframe')), null, 'no player before a tap');
   await page.tap('#sheet [data-act="ob-play"]');
   await page.until(() => document.querySelector('#sheet .ob-embed iframe'));
-  assert.match(await page.eval(() => document.querySelector('#sheet .ob-embed iframe').src), /www\.youtube\.com\/embed\/TErGiheo20k/, '〈三不娶〉, C.Holly’s official MV');
+  assert.match(await page.eval(() => document.querySelector('#sheet .ob-embed iframe').src), /youtube-nocookie\.com\/embed\/TErGiheo20k/, '〈三不娶〉, C.Holly’s official MV');
   assert.equal(await page.eval(() => document.querySelector('#sheet [data-act="ob-play"]')), null, 'the tap target gives way to the player');
 
   await page.tap('#sheet [data-act="ob-next"]');
@@ -1356,7 +1356,7 @@ test('vagabond card: one recommended song per platform, each tab its own song', 
   const [album, song] = a.embeds.appleMusicSong.split('?i=');
   assert.match(srcs[0], new RegExp(`^https://open\\.spotify\\.com/embed/track/${a.embeds.spotifyTrack}\\?`));
   assert.match(srcs[1], new RegExp(`^https://embed\\.music\\.apple\\.com/tw/album/${album}\\?i=${song}&`));
-  assert.equal(srcs[2], `https://www.youtube.com/embed/${a.embeds.youtube}`);
+  assert.equal(srcs[2], `https://www.youtube-nocookie.com/embed/${a.embeds.youtube}`);
   assert.deepEqual(await page.eval(`[...document.querySelectorAll('#lpPlat a')].length`), 0, 'every platform has a song, so no link buttons');
   await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
   await page.until(() => document.getElementById('lpCard').hidden);
