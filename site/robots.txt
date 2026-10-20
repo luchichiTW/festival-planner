@@ -24,7 +24,6 @@ User-agent: CCBot
 User-agent: Applebot-Extended
 User-agent: meta-externalagent
 User-agent: FacebookBot
-User-agent: Bingbot
 User-agent: Baiduspider
 User-agent: Sogou
 User-agent: 360Spider
