@@ -1321,6 +1321,9 @@ test('homepage: theme switch top-right, nothing clipped, no arrows or 前往, on
       return out;
     });
     assert.deepEqual(found, [], `clipped at ${width}px`);
+    // The festivals come first: the first ticket starts on the first screen, above the make-your-own card.
+    const first = await page.eval(() => ({ ticket: Math.round(document.querySelector('#next .ticket').getBoundingClientRect().top), make: Math.round(document.querySelector('.make').getBoundingClientRect().top), h: innerHeight }));
+    assert.ok(first.ticket < first.h * 0.6 && first.ticket < first.make, `${width}px: ticket at ${first.ticket} of ${first.h}`);
     assert.doesNotMatch(await page.eval('document.body.innerText'), /前往|→|›|»/);
     const btn = await page.eval(() => { const r = document.getElementById('themeBtn').getBoundingClientRect(); return { right: innerWidth - r.right < 40, top: r.top < 80, label: document.getElementById('themeBtn').getAttribute('aria-label') }; });
     assert.deepEqual(btn, { right: true, top: true, label: '切換成淺色模式' });

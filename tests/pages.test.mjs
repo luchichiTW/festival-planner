@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { loadEvent, validate } from '../scripts/validate.mjs';
-import { build } from '../scripts/build.mjs';
+import { build, readSiteConfig, SITE_GUIDE } from '../scripts/build.mjs';
 import { claudePrompt } from '../scripts/lib/pages.mjs';
 import { ROOT } from '../scripts/validate.mjs';
 
@@ -168,8 +168,10 @@ test('events without features.pages build no extra pages', () => {
   fs.rmSync(tmp + '-art', { recursive: true, force: true });
 });
 
-test('the README carries the same prompt as the Claude page', () => {
+test('the README carries the prompt of the site-wide /claude/ page; the event page keeps its own', () => {
   const readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
-  assert.ok(readme.includes(claudePrompt(EV)), 'README prompt matches the Claude page; update README.md when the prompt changes');
-  assert.ok(read('claude/index.html').includes(claudePrompt(EV).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')));
+  const example = loadEvent(readSiteConfig().claudeExample).event;
+  assert.ok(readme.includes(claudePrompt(example, SITE_GUIDE)), 'README prompt matches /claude/; update README.md when the prompt or site/site.json claudeExample changes');
+  assert.ok(readme.includes(`都在 ${SITE_GUIDE} 。`));
+  assert.ok(read('claude/index.html').includes(claudePrompt(EV).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')), '/vagabond2026/claude/ unchanged');
 });

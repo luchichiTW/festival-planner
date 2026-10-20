@@ -50,6 +50,10 @@ export function listEvents() {
 
 const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; } };
 
+// What the homepage (fp-home, dist-site/) serves at the top of chiparashi.tw. tests/site.test.mjs checks the list
+// against the build.
+export const HOME_PATHS = ['claude', 'privacy', 'icons', 'index.html', 'llms.txt', 'og.png', 'robots.txt', 'sitemap.xml'];
+
 export function validate({ slug, dir, event: ev, schedule, artists, venue }) {
   const errors = [];
   const warnings = [];
@@ -62,6 +66,9 @@ export function validate({ slug, dir, event: ev, schedule, artists, venue }) {
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) err(`活動代號 "${slug}" 只能用小寫英文、數字與連字號`);
   // Reserved for the homepage: "site" is its build and deploy name, "home" its Worker (fp-home).
   if (['site', 'home'].includes(slug)) err(`活動代號不能叫 "${slug}"，這個名字留給首頁`);
+  // An event is served at <slug>*: a slug that starts one of the homepage's own paths (/claude/, /privacy/, …) would take it over.
+  const taken = HOME_PATHS.find((p) => p.startsWith(slug));
+  if (taken) err(`活動代號 "${slug}" 會蓋到首頁的 /${taken}，換一個代號`);
   // Each event is served at <slug>* — a slug that starts another one would take over its paths.
   for (const other of listEvents()) {
     if (other !== slug && (other.startsWith(slug) || slug.startsWith(other))) err(`活動代號 "${slug}" 和 "${other}" 開頭相同，網址會互相蓋到，換一個代號`);
@@ -70,6 +77,7 @@ export function validate({ slug, dir, event: ev, schedule, artists, venue }) {
   if (ev.status !== undefined && ev.status !== 'tba') err(`event.json: status 只能是 "tba"（還沒公布日期與時間表），或不寫`);
   if (ev.status === 'tba') {
     for (const k of ['name', 'shortName', 'lang', 'notice']) if (!ev[k]) err(`event.json: 缺少 ${k}（status tba 的頁面要用）`);
+    if (ev.ticketNote !== undefined && (typeof ev.ticketNote !== 'string' || !ev.ticketNote.trim())) err('event.json: ticketNote（首頁票券上的副標）要是文字');
     if (!ev.theme?.dark?.bg || !ev.theme?.light?.bg) err('event.json: theme 要有 dark 與 light（至少 bg）');
     if ((schedule || []).length || (ev.days || []).length) err('event.json: 有日期或時間表就不是 tba 了，把 status 拿掉再補完整資料');
     return { errors, warnings, notes: ['待官方資訊公布：只產生一頁說明'] };

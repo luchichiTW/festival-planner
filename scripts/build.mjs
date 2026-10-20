@@ -9,7 +9,7 @@ import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { ROOT, loadEvent, listEvents, validate } from './validate.mjs';
-import { makePages } from './lib/pages.mjs';
+import { makePages, claudePrompt, claudePromptEn, claudeFiles, CLAUDE_FEATURES } from './lib/pages.mjs';
 import { aboutForPage, webAppJsonLd, PRIVACY_PATH, PRIVACY_UPDATED } from './lib/copy.mjs';
 
 const CORE = path.join(ROOT, 'core');
@@ -113,6 +113,20 @@ function dayTabs(ev) {
   }).join('\n');
 }
 
+// The homepage's own _headers rules; every other rule belongs to the events.
+const SITE_HEADER_PATHS = ['/claude/'];
+// One _headers may hold events and the homepage (a local build of both into one folder): each writer replaces its
+// own rules, by path, and keeps the others'. Deployed, events (dist/) and the homepage (dist-site/) are apart.
+function mergeHeaders(out, rules, isMine) {
+  const file = path.join(out, '_headers');
+  const kept = fs.existsSync(file)
+    ? fs.readFileSync(file, 'utf8').split(/\n(?=\S)/).map((b) => b.trim()).filter((b) => b && !isMine(b.split('\n')[0]))
+    : [];
+  const all = [...kept, ...rules];
+  if (all.length) fs.writeFileSync(file, all.join('\n') + '\n');
+  else fs.rmSync(file, { force: true });
+}
+
 // _redirects and _headers for every event built into `out` (one deploy may hold several when built locally).
 function writeRouting(out) {
   // /<slug> → /<slug>/ (relative links and the service worker scope need the slash).
@@ -121,10 +135,9 @@ function writeRouting(out) {
   fs.writeFileSync(path.join(out, '_redirects'), built.map((s) => `/${s} /${s}/ 301`).join('\n') + '\n');
   // Each page that has a Markdown copy says so in its response headers too (events built with features.pages).
   const withPages = built.filter((s) => fs.existsSync(path.join(out, s, 'sitemap.xml')));
-  const headerRules = withPages.map((s) => [`/${s}/`, `/${s}/claude/`, `/${s}/artists/*`]
-    .map((r) => `${r}\n  Link: <index.md>; rel="alternate"; type="text/markdown"`).join('\n'));
-  if (headerRules.length) fs.writeFileSync(path.join(out, '_headers'), headerRules.join('\n') + '\n');
-  else fs.rmSync(path.join(out, '_headers'), { force: true });
+  const headerRules = withPages.flatMap((s) => [`/${s}/`, `/${s}/claude/`, `/${s}/artists/*`]
+    .map((r) => `${r}\n  Link: <index.md>; rel="alternate"; type="text/markdown"`));
+  mergeHeaders(out, headerRules, (p) => !SITE_HEADER_PATHS.includes(p));
 }
 
 // "status": "tba": one page in the event's colours saying the details are on the way. No planner, no service
@@ -360,7 +373,7 @@ export function ticket(ev) {
           ${img ? `<img class="t-icon" src="${img}" alt="" width="56" height="56">` : ''}
           <div class="t-title">
             <p class="t-mark">${esc(ev.wordmark?.text || ev.shortName)}<small>${esc(ev.wordmark?.sub || '')}</small></p>
-            <p class="t-where">${esc(tba ? ev.notice : ev.venue?.name || ev.subtitle || '')}</p>
+            <p class="t-where">${esc(tba ? ev.ticketNote || ev.notice : ev.venue?.name || ev.subtitle || '')}</p>
           </div>
         </div>
 ${tba ? '' : `        <dl class="t-days">\n${days.join('\n')}\n        </dl>\n        <ul class="t-stages" aria-label="${stages.length} 個舞台">\n          ${stages.map((st) => `<li style="--s:${esc(st.color.dark)}">${esc(chip(st))}</li>`).join('')}\n        </ul>\n`}      </div>
@@ -371,7 +384,12 @@ ${tba ? '' : `        <dl class="t-days">\n${days.join('\n')}\n        </dl>\n  
     </a>`;
 }
 
-export function buildSite({ out = path.join(ROOT, 'dist-site') } = {}) {
+// site/site.json: the homepage description, and claudeExample, the event whose single file and data /claude/ uses as
+// its example (switch it when another event becomes the better example).
+export const SITE_GUIDE = `${HOST}/claude/`;
+export function readSiteConfig() { return JSON.parse(read(path.join(ROOT, 'site', 'site.json'))); }
+
+export function buildSite({ out = path.join(ROOT, 'dist-site'), config = readSiteConfig() } = {}) {
   const events = listEvents().map((slug) => {
     const loaded = loadEvent(slug);
     const report = validate(loaded);
@@ -384,7 +402,11 @@ export function buildSite({ out = path.join(ROOT, 'dist-site') } = {}) {
   const state = (ev) => (!ev.days?.length ? 1 : ev.days.at(-1).date < today ? 2 : 0);
   events.sort((a, b) => state(a) - state(b) || (state(a) === 2 ? b.days.at(-1).date.localeCompare(a.days.at(-1).date) : (a.days?.[0]?.date || '').localeCompare(b.days?.[0]?.date || '')));
   const repo = events.find((ev) => ev.urls?.repo)?.urls.repo || 'https://github.com/luchichiTW/festival-planner';
-  const description = `音樂祭排團工具：${events.map((ev) => ev.name).join('、')}。看時間表、排出自己的團序、撞團抽籤，離線可用、免註冊、不蒐集個資。`;
+  const description = config.description;
+  const example = events.find((ev) => ev.slug === config.claudeExample);
+  if (!example || !example.features?.pages || example.status === 'tba' || example.urls?.archive) {
+    throw new Error(`site/site.json: claudeExample "${config.claudeExample}" 要是有 features.pages、還在 chiparashi.tw 上的活動`);
+  }
   // What the site is and who runs it. The only account named is the Instagram on the page.
   const graph = [
     { '@type': 'WebSite', '@id': `${HOST}/#website`, name: 'chiparashi', url: `${HOST}/`, description, inLanguage: 'zh-Hant-TW', publisher: { '@id': `${HOST}/#chi` } },
@@ -411,8 +433,43 @@ export function buildSite({ out = path.join(ROOT, 'dist-site') } = {}) {
   /* ---------- privacy page: what is and isn't collected (wording follows scripts/lib/copy.mjs) ---------- */
   fs.mkdirSync(path.join(out, 'privacy'), { recursive: true });
   fs.writeFileSync(path.join(out, 'privacy', 'index.html'), fill(read(path.join(ROOT, 'site', 'privacy.html')), { updated: PRIVACY_UPDATED.replace(/-/g, '/') }));
-  // The link-preview picture for the homepage and /privacy/ (made by node scripts/og.mjs site).
+  // The link-preview picture for the homepage, /privacy/ and /claude/ (made by node scripts/og.mjs site).
   fs.copyFileSync(path.join(ROOT, 'site', 'og.png'), path.join(out, 'og.png'));
+
+  /* ---------- /claude/: make a planner for any festival with Claude, one event as the example ---------- */
+  {
+    const prompt = claudePrompt(example, SITE_GUIDE);
+    const promptEn = claudePromptEn(example, SITE_GUIDE);
+    const files = claudeFiles(example);
+    const desc = `替任何音樂祭做自己的排團工具：一段可以直接貼給 Claude 的提示、可以發成 artifact 的單一 HTML、時間表與藝人資料的 JSON，以及 GitHub 上的原始碼與 CLAUDE.md。Make your own festival planner with Claude.`;
+    const ld = { '@context': 'https://schema.org', '@type': 'WebPage', '@id': `${SITE_GUIDE}#page`, url: SITE_GUIDE, name: '用 Claude 做你自己的排團工具', description: desc, inLanguage: 'zh-Hant-TW', isPartOf: { '@id': `${HOST}/#website`, '@type': 'WebSite', name: 'chiparashi', url: `${HOST}/` }, about: { '@type': 'SoftwareSourceCode', name: 'festival-planner', codeRepository: repo, programmingLanguage: 'JavaScript' } };
+    fs.mkdirSync(path.join(out, 'claude'), { recursive: true });
+    fs.writeFileSync(path.join(out, 'claude', 'index.html'), fill(read(path.join(ROOT, 'site', 'claude.html')), {
+      description: esc(desc),
+      jsonld: `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>`,
+      exampleName: esc(example.name),
+      exampleNameEn: esc(example.nameEn || example.name),
+      prompt: esc(prompt),
+      promptEn: esc(promptEn),
+      files: files.map(([u, label, zh, en]) => `      <li><a href="${esc(u)}">${esc(label)}</a><span>${esc(zh)}</span><span lang="en">${esc(en)}</span></li>`).join('\n'),
+      features: CLAUDE_FEATURES.map(([zh, en]) => `      <li><span>${esc(zh)}</span><span lang="en">${esc(en)}</span></li>`).join('\n'),
+    }));
+    fs.writeFileSync(path.join(out, 'claude', 'index.md'), [
+      '# 用 Claude 做你自己的排團工具 · Make your own festival planner with Claude', '',
+      `這個排團工具的程式和資料都公開。把下面這段提示貼給 Claude，附上你要做的音樂祭的官方時間表圖片。範例用的是${example.name}。`, '',
+      `This planner's code and data are open. Paste the prompt below into Claude with the official timetable image of the festival you want. The example is ${example.nameEn || example.name}.`, '',
+      '## 提示 · Prompt', '',
+      '```', prompt, '```', '',
+      '```', promptEn, '```', '',
+      '## 會用到的檔案 · Files', '',
+      ...files.map(([u, label, zh, en]) => `- ${label}：${u} —— ${zh} / ${en}`), '',
+      '## 做出來會有什麼 · What you get', '',
+      ...CLAUDE_FEATURES.map(([zh, en]) => `- ${zh} / ${en}`), '',
+      '演出異動以主辦方現場公告為準。',
+    ].join('\n') + '\n');
+    // Its Markdown copy in the response headers too, as on the event pages (Workers static assets read _headers).
+    mergeHeaders(out, SITE_HEADER_PATHS.map((r) => `${r}\n  Link: <index.md>; rel="alternate"; type="text/markdown"`), (p) => SITE_HEADER_PATHS.includes(p));
+  }
 
   /* ---------- robots.txt: one group for every crawler, and where the sitemaps are ---------- */
   const live = events.filter((ev) => !ev.urls?.archive);
@@ -432,11 +489,13 @@ export function buildSite({ out = path.join(ROOT, 'dist-site') } = {}) {
     return ev.urls?.archive ? `- [${ev.name}（舊版）](${ev.urls.archive})：${facts}` : `- [${ev.name}](${HOST}/${ev.slug}/)：${facts}`;
   });
   const withPages = live.filter((ev) => ev.features?.pages);
-  const assistants = withPages.flatMap((ev) => [
-    `- [用 Claude 做你自己的排團工具${withPages.length > 1 ? `（${ev.name}）` : ''}](${HOST}/${ev.slug}/claude/)：可以直接貼給 Claude 的提示、可以發成 artifact 的單一 HTML、時間表與藝人資料的 JSON`,
-    `- [${ev.name} 時間表 JSON](${HOST}/${ev.slug}/data/schedule.json)：各舞台、各天的演出時間`,
-    `- [${ev.name} 藝人資料 JSON](${HOST}/${ev.slug}/data/artists.json)：藝人簡介與推薦曲`,
-  ]);
+  const assistants = [
+    `- [用 Claude 做你自己的排團工具](${SITE_GUIDE})：替任何音樂祭做一份，可以直接貼給 Claude 的提示、可以發成 artifact 的單一 HTML，範例是${example.name}`,
+    ...withPages.flatMap((ev) => [
+      `- [${ev.name} 時間表 JSON](${HOST}/${ev.slug}/data/schedule.json)：各舞台、各天的演出時間`,
+      `- [${ev.name} 藝人資料 JSON](${HOST}/${ev.slug}/data/artists.json)：藝人簡介與推薦曲`,
+    ]),
+  ];
   fs.writeFileSync(path.join(out, 'llms.txt'), fill(read(path.join(ROOT, 'site', 'llms.txt')), { festivals: festivals.join('\n'), assistants: assistants.join('\n') }));
 
   /* ---------- sitemap.xml: the homepage and each event's page; an event's own pages are in its own sitemap ---------- */
@@ -444,6 +503,7 @@ export function buildSite({ out = path.join(ROOT, 'dist-site') } = {}) {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${HOST}/</loc></url>
   <url><loc>${HOST}${PRIVACY_PATH}</loc><lastmod>${PRIVACY_UPDATED}</lastmod></url>
+  <url><loc>${SITE_GUIDE}</loc></url>
 ${live.map((ev) => `  <url><loc>${HOST}/${ev.slug}/</loc>${ev.dataDate ? `<lastmod>${ev.dataDate}</lastmod>` : ''}</url>`).join('\n')}
 </urlset>
 `);

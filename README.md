@@ -18,10 +18,10 @@
 
 ### 用 Claude 做成 artifact（不用架網站）
 
-把下面這段貼給 Claude，再附上你要做的音樂祭的官方時間表圖片，「（活動名稱）」換成那個音樂祭。做法、會用到的檔案和資料格式都在 https://chiparashi.tw/vagabond2026/claude/ 。
+把下面這段貼給 Claude，再附上你要做的音樂祭的官方時間表圖片，「（活動名稱）」換成那個音樂祭。做法、會用到的檔案和資料格式都在 https://chiparashi.tw/claude/ 。
 
 ```
-請讀 https://chiparashi.tw/vagabond2026/claude/ ，照上面的做法，幫我做一個音樂祭排團工具的 artifact：
+請讀 https://chiparashi.tw/claude/ ，照上面的做法，幫我做一個音樂祭排團工具的 artifact：
 1. 用那頁連到的單檔（https://raw.githubusercontent.com/luchichiTW/festival-planner/main/events/vagabond2026/artifact/index.html）當起點，保留時間表、我的團序、撞團抽籤、搜尋與藝人介紹這些功能。
 2. 把活動換成「（活動名稱）」，時間表照我附上的官方時間表圖片逐格轉，格式跟 https://chiparashi.tw/vagabond2026/data/schedule.json 一樣。
 3. 發佈成 artifact，開 db 和 user 能力，讓每個人的團序存在自己的帳號裡。

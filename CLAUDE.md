@@ -42,6 +42,7 @@ node scripts/og.mjs site                # 畫首頁與 /privacy/ 的分享預覽
 | `events/<slug>/artifact/` | 單檔版本與發佈說明，跟著 git tag 走 |
 | `events/<slug>/CLAUDE.md` | 這個活動的來源、限制、資料規則、待辦 |
 | `site/index.html` | 首頁樣板：每個活動一張票券（配色、舞台色條、日期、舞台、還有幾天／今天／日期待公布），已結束的收成小票根；單一檔案、不載入其他網站的東西 |
+| `site/claude.html`、`site/site.json` | `/claude/`：替任何音樂祭用 Claude 做排團工具的說明（提示、單檔、資料格式），範例活動是 `site.json` 的 `claudeExample`（換成別的活動時改這裡，README 的提示跟著改）；`site.json` 另有首頁的 `description` |
 | `site/robots.txt`、`site/llms.txt` | 網站層級的 robots.txt（Content Signals、封鎖的爬蟲、各 sitemap）與 llms.txt 樣板，活動清單由 build 從 `event.json` 填入 |
 | `site/wrangler.jsonc`、`site/worker.js` | 首頁的 Worker（`fp-home`）：首頁由 `dist-site/` 的檔案回應，其他路徑原封不動交給原站 |
 | `core/page.css` | 藝人頁與 Claude 頁的樣式（`features.pages`），配色和字型沿用活動的 tokens |

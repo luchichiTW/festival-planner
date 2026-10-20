@@ -155,6 +155,19 @@ test('site and home are kept for the homepage and cannot be event names', () => 
   }
 });
 
+test('a slug may not take over a homepage path: claude, privacy, or any start of one (routes are <slug>*)', () => {
+  for (const name of ['claude', 'c', 'cl', 'privacy', 'p', 'robots', 'icons', 'sitemap']) {
+    const ev = fresh();
+    ev.slug = name;
+    ev.event.slug = name;
+    assert.ok(validate(ev).errors.some((e) => /會蓋到首頁/.test(e)), name);
+  }
+  const ok = fresh();
+  ok.slug = 'claudefest2027';
+  ok.event.slug = 'claudefest2027';
+  assert.ok(!validate(ok).errors.some((e) => /會蓋到首頁/.test(e)), 'a longer name is fine');
+});
+
 test('deploy.yml offers every event and the homepage, and each has its wrangler config', () => {
   const yml = fs.readFileSync(path.join(path.dirname(new URL(import.meta.url).pathname), '..', '.github', 'workflows', 'deploy.yml'), 'utf8');
   const options = [...yml.match(/options:\n((?:\s+- .+\n)+)/)[1].matchAll(/- (\S+)/g)].map((m) => m[1]);

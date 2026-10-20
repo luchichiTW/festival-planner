@@ -106,7 +106,7 @@ test('the homepage says it too: features, WebApplication data, description', () 
 
 test('llms.txt leads with offline use and no personal data, and points to the privacy page', () => {
   const txt = read(site, 'llms.txt');
-  assert.match(txt, /^# chiparashi\n\n> chiparashi\.tw 上放的是音樂祭排團工具：看時間表、排出自己的團序、撞團時抽籤。離線可用、不用註冊、不蒐集個資。演出異動以主辦方現場公告為準。\n/);
+  assert.match(txt, /^# chiparashi\n\n> chiparashi\.tw 教你替任何音樂祭做自己的排團工具：可以直接貼給 Claude 的提示、單檔 HTML、公開的原始碼。現成的有大港開唱（每年跟著官方時間表更新）和浪人祭 2026：看時間表、排出自己的團序、撞團時抽籤。離線可用、不用註冊、不蒐集個資。演出異動以主辦方現場公告為準。\n/);
   const feats = /## 特色\n\n([\s\S]*?)\n\n## /.exec(txt)?.[1] || '';
   assert.match(feats, /離線可用/);
   assert.match(feats, /不會上傳/);

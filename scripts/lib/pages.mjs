@@ -23,26 +23,50 @@ const pickURL = (k, id) => (k === 'spotifyTrack' ? `https://open.spotify.com/tra
   : k === 'appleMusicSong' ? `https://music.apple.com/tw/album/${id.split('?i=')[0]}?i=${id.split('?i=')[1]}`
     : `https://www.youtube.com/watch?v=${id}`);
 
-// The prompt on the Claude page (and in the README): paste it into Claude with another festival's timetable image.
-export function claudePrompt(ev) {
+// The prompt on a Claude page: paste it into Claude with another festival's timetable image. `guide` is the page that
+// prompt asks Claude to read: the event's own /<slug>/claude/, or the site's /claude/ (and the README), which uses
+// one event as its example. The single file and the data format always come from the event `ev`.
+export function claudePrompt(ev, guide = `${ev.urls.site}claude/`) {
   const base = ev.urls.site;
   const repo = ev.urls.repo || 'https://github.com/luchichiTW/festival-planner';
   const raw = `${repo.replace('https://github.com/', 'https://raw.githubusercontent.com/')}/main/events/${ev.slug}/artifact/index.html`;
-  return `請讀 ${base}claude/ ，照上面的做法，幫我做一個音樂祭排團工具的 artifact：
+  return `請讀 ${guide} ，照上面的做法，幫我做一個音樂祭排團工具的 artifact：
 1. 用那頁連到的單檔（${raw}）當起點，保留時間表、我的團序、撞團抽籤、搜尋與藝人介紹這些功能。
 2. 把活動換成「（活動名稱）」，時間表照我附上的官方時間表圖片逐格轉，格式跟 ${base}data/schedule.json 一樣。
 3. 發佈成 artifact，開 db 和 user 能力，讓每個人的團序存在自己的帳號裡。`;
 }
 
-export function claudePromptEn(ev) {
+export function claudePromptEn(ev, guide = `${ev.urls.site}claude/`) {
   const base = ev.urls.site;
   const repo = ev.urls.repo || 'https://github.com/luchichiTW/festival-planner';
   const raw = `${repo.replace('https://github.com/', 'https://raw.githubusercontent.com/')}/main/events/${ev.slug}/artifact/index.html`;
-  return `Read ${base}claude/ and follow it to build a festival planner artifact for me:
+  return `Read ${guide} and follow it to build a festival planner artifact for me:
 1. Start from the single file it links (${raw}) and keep the timetable, my schedule, the clash draw, search and the artist intros.
 2. Switch the festival to "(festival name)" and convert the official timetable image I attach, cell by cell, into the same format as ${base}data/schedule.json.
 3. Publish it as an artifact with the db and user capabilities, so each person's picks are saved to their own account.`;
 }
+
+// What a Claude page links to, with the example event `ev`: [url, label, 中文說明, English].
+export function claudeFiles(ev) {
+  const base = ev.urls.site;
+  const repo = ev.urls.repo || 'https://github.com/luchichiTW/festival-planner';
+  const rawArtifact = `${repo.replace('https://github.com/', 'https://raw.githubusercontent.com/')}/main/events/${ev.slug}/artifact/index.html`;
+  const claudeMd = `${repo}/blob/main/events/${ev.slug}/CLAUDE.md`;
+  return [
+    [rawArtifact, 'artifact 單檔（index.html）', '整個工具在一個 HTML 裡，Claude 可以直接發成 artifact。', 'The whole planner in one HTML file; Claude can publish it as an artifact.'],
+    [`${base}data/schedule.json`, `${base}data/schedule.json`, '時間表：一筆一場演出（id、day、stage、start、end、name、en、note）。', 'Timetable: one entry per show (id, day, stage, start, end, name, en, note).'],
+    [`${base}data/artists.json`, `${base}data/artists.json`, '藝人：以名稱為鍵，簡介、來源、平台連結與試聽 ID。', 'Artists, keyed by name: intro, sources, platform links and player IDs.'],
+    [claudeMd, '這個活動的 CLAUDE.md', '資料怎麼轉、簡介和連結怎麼查證，照著做資料品質會一樣。', 'How the data was converted and checked, so yours can match.'],
+    [repo, `GitHub：${repo.replace('https://', '')}`, '想做成網站：fork 之後複製一個活動資料夾，改資料再部署。', 'For a website: fork, copy an event folder, change the data, deploy.'],
+  ];
+}
+// What the planner does, on a Claude page: [中文, English].
+export const CLAUDE_FEATURES = [
+  ['舞台 × 時間的時間表，點一下加入「我的團序」。', 'A stage-by-time timetable; tap a show to add it to your schedule.'],
+  ['撞團時分組，選一團去、其他留作備選；也可以抽籤決定。', 'Clashing shows are grouped: pick one and keep the rest as back-ups, or let a draw decide.'],
+  ['長按看藝人介紹與資料來源、試聽與平台連結；中英文名稱都搜得到。', 'Long-press for the artist intro, sources, players and links; search works in Chinese and English.'],
+  ['活動當天標出現在時間和下一團。', 'On festival days it marks the current time and what is next.'],
+];
 
 export function hasPage(a) { return !!(a && a.slug && (a.bio || Object.keys(a.links || {}).length)); }
 
@@ -63,8 +87,6 @@ export function makePages({ ev, schedule, artists, site, out, pageCSS }) {
   const official = ev.organizer?.url || ev.urls.official;
   const sourceLine = `時間表取自${ev.shortName}官方公告（${dataDate}）。演出異動以主辦方現場公告為準。`;
   const repo = ev.urls.repo || 'https://github.com/luchichiTW/festival-planner';
-  const rawArtifact = `${repo.replace('https://github.com/', 'https://raw.githubusercontent.com/')}/main/events/${ev.slug}/artifact/index.html`;
-  const claudeMd = `${repo}/blob/main/events/${ev.slug}/CLAUDE.md`;
   const pages = []; // { path, title } for the sitemap
 
   /* ---------- structured data ---------- */
@@ -251,19 +273,8 @@ ${body}
     const title = `用 Claude 做你自己的排團工具｜${ev.name}`;
     const description = `${ev.name}排團工具的做法公開：一段可以直接貼給 Claude 的提示、可以發成 artifact 的單一 HTML、時間表與藝人資料的 JSON，以及 GitHub 上的原始碼與 CLAUDE.md。Make your own festival planner with Claude.`;
     const en = (html) => `<p class="pg-en-text" lang="en">${html}</p>`;
-    const files = [
-      [rawArtifact, 'artifact 單檔（index.html）', '整個工具在一個 HTML 裡，Claude 可以直接發成 artifact。', 'The whole planner in one HTML file; Claude can publish it as an artifact.'],
-      [`${base}data/schedule.json`, `${base}data/schedule.json`, '時間表：一筆一場演出（id、day、stage、start、end、name、en、note）。', 'Timetable: one entry per show (id, day, stage, start, end, name, en, note).'],
-      [`${base}data/artists.json`, `${base}data/artists.json`, '藝人：以名稱為鍵，簡介、來源、平台連結與試聽 ID。', 'Artists, keyed by name: intro, sources, platform links and player IDs.'],
-      [claudeMd, '這個活動的 CLAUDE.md', '資料怎麼轉、簡介和連結怎麼查證，照著做資料品質會一樣。', 'How the data was converted and checked, so yours can match.'],
-      [repo, `GitHub：${repo.replace('https://', '')}`, '想做成網站：fork 之後複製一個活動資料夾，改資料再部署。', 'For a website: fork, copy an event folder, change the data, deploy.'],
-    ];
-    const features = [
-      ['舞台 × 時間的時間表，點一下加入「我的團序」。', 'A stage-by-time timetable; tap a show to add it to your schedule.'],
-      ['撞團時分組，選一團去、其他留作備選；也可以抽籤決定。', 'Clashing shows are grouped: pick one and keep the rest as back-ups, or let a draw decide.'],
-      ['長按看藝人介紹與資料來源、試聽與平台連結；中英文名稱都搜得到。', 'Long-press for the artist intro, sources, players and links; search works in Chinese and English.'],
-      ['活動當天標出現在時間和下一團。', 'On festival days it marks the current time and what is next.'],
-    ];
+    const files = claudeFiles(ev);
+    const features = CLAUDE_FEATURES;
     const body = `<p class="pg-kicker">${esc(ev.name)} 排團工具 <span lang="en">· Festival planner</span></p>
 <h1>用 Claude 做你自己的排團工具</h1>
 <p class="pg-en-h1" lang="en">Make your own festival planner with Claude</p>

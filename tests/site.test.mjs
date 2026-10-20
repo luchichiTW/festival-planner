@@ -5,8 +5,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { ROOT, loadEvent, listEvents } from '../scripts/validate.mjs';
-import { build, buildSite } from '../scripts/build.mjs';
+import { ROOT, loadEvent, listEvents, HOME_PATHS } from '../scripts/validate.mjs';
+import { build, buildSite, readSiteConfig, SITE_GUIDE } from '../scripts/build.mjs';
+import { claudePrompt, claudePromptEn, claudeFiles } from '../scripts/lib/pages.mjs';
 
 const HOST = 'https://chiparashi.tw';
 const events = listEvents().map((s) => loadEvent(s).event);
@@ -16,10 +17,13 @@ let out;
 before(() => { out = fs.mkdtempSync(path.join(os.tmpdir(), 'fp-site-')); buildSite({ out }); });
 after(() => fs.rmSync(out, { recursive: true, force: true }));
 const read = (f) => fs.readFileSync(path.join(out, f), 'utf8');
+const graphOf = (html) => [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].flatMap((m) => { const j = JSON.parse(m[1]); return j['@graph'] || [j]; });
 const ticketOf = (html, slug) => new RegExp(`<a class="ticket"[^>]* href="${slug}/"[\\s\\S]*?</a>`).exec(html)?.[0] || '';
 
 test('the homepage ships its own files, icons included, and loads nothing from other sites', () => {
-  assert.deepEqual(fs.readdirSync(out).sort(), ['icons', 'index.html', 'llms.txt', 'og.png', 'privacy', 'robots.txt', 'sitemap.xml']);
+  assert.deepEqual(fs.readdirSync(out).sort(), ['_headers', 'claude', 'icons', 'index.html', 'llms.txt', 'og.png', 'privacy', 'robots.txt', 'sitemap.xml']);
+  // Every path the homepage serves is reserved, so no event slug (route <slug>*) can take it over (scripts/validate.mjs).
+  assert.deepEqual(fs.readdirSync(out).filter((f) => f !== '_headers').sort(), [...HOME_PATHS].sort());
   // Icons are the homepage's own copies: an event's path may redirect elsewhere once the event moves (urls.archive).
   for (const ev of events) {
     assert.ok(fs.existsSync(path.join(out, 'icons', `${ev.slug}.png`)), `${ev.slug} icon copied`);
@@ -139,7 +143,7 @@ test('robots.txt: content signals for everyone, a block list, the site sitemap a
 
 test('llms.txt: the festivals from event.json, moved ones linking to where they went, and the pages for assistants', () => {
   const txt = read('llms.txt');
-  assert.match(txt, /^# chiparashi\n\n> .*音樂祭排團工具/);
+  assert.match(txt, /^# chiparashi\n\n> chiparashi\.tw 教你替任何音樂祭做自己的排團工具：/);
   const list = /## 音樂祭排團工具\n\n([\s\S]*?)\n\n## /.exec(txt)?.[1] || '';
   for (const ev of events) {
     const url = archived(ev) ? ev.urls.archive : `${HOST}/${ev.slug}/`;
@@ -151,15 +155,59 @@ test('llms.txt: the festivals from event.json, moved ones linking to where they 
   assert.match(vb, /2026 年 11 月 7–8 日/);
   assert.match(vb, /7 個舞台/);
   const ai = /## 給 AI 助理\n\n([\s\S]*?)\n\n## /.exec(txt)?.[1] || '';
+  assert.ok(ai.includes(`[用 Claude 做你自己的排團工具](${SITE_GUIDE})`), 'make your own: the site-wide /claude/');
   for (const ev of events.filter((e) => e.features?.pages && !archived(e))) {
-    for (const p of ['claude/', 'data/schedule.json', 'data/artists.json']) assert.ok(ai.includes(`${HOST}/${ev.slug}/${p}`), `${ev.slug} ${p}`);
+    for (const p of ['data/schedule.json', 'data/artists.json']) assert.ok(ai.includes(`${HOST}/${ev.slug}/${p}`), `${ev.slug} ${p}`);
+    assert.ok(!ai.includes(`${HOST}/${ev.slug}/claude/`), `${ev.slug}: its own Claude page is not listed`);
   }
   assert.match(txt, /## Optional\n\n- \[festival-planner 原始碼\]\(https:\/\/github\.com\/luchichiTW\/festival-planner\)/);
 });
 
+test('/claude/: make a planner for any festival, the example event from site/site.json, with its Markdown copy in the headers', () => {
+  const { claudeExample } = readSiteConfig();
+  const example = events.find((ev) => ev.slug === claudeExample);
+  assert.ok(example?.features?.pages, 'the example is an event with pages');
+  const html = read('claude/index.html');
+  const unesc = (s) => s.replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+  const prompt = unesc(/<pre class="prompt" id="prompt">([\s\S]*?)<\/pre>/.exec(html)[1]);
+  assert.equal(prompt, claudePrompt(example, SITE_GUIDE));
+  assert.match(prompt, /^請讀 https:\/\/chiparashi\.tw\/claude\/ ，/);
+  assert.equal(unesc(/<pre class="prompt" id="promptEn" lang="en">([\s\S]*?)<\/pre>/.exec(html)[1]), claudePromptEn(example, SITE_GUIDE));
+  // The single file, the data and CLAUDE.md come from the example event.
+  for (const [url] of claudeFiles(example)) assert.ok(html.includes(`href="${url}"`), url);
+  assert.ok(html.includes(`https://raw.githubusercontent.com/luchichiTW/festival-planner/main/events/${claudeExample}/artifact/index.html`));
+  assert.ok(html.includes(`範例用的是${example.name}。`));
+  assert.ok(html.includes('<link rel="canonical" href="https://chiparashi.tw/claude/">'));
+  assert.ok(html.includes('<link rel="alternate" type="text/markdown" href="index.md">'));
+  assert.ok(html.includes('href="/privacy/"'), 'links to the privacy page');
+  assert.doesNotMatch(html, /<script[^>]+src=|<link[^>]+rel="stylesheet"/, 'nothing loaded from elsewhere');
+  const md = read('claude/index.md');
+  assert.ok(md.includes(claudePrompt(example, SITE_GUIDE)) && md.includes(claudePromptEn(example, SITE_GUIDE)));
+  assert.equal(read('_headers'), '/claude/\n  Link: <index.md>; rel="alternate"; type="text/markdown"\n');
+  // A wrong example stops the build instead of publishing a guide with broken links.
+  assert.throws(() => buildSite({ out: fs.mkdtempSync(path.join(os.tmpdir(), 'fp-site-x-')), config: { ...readSiteConfig(), claudeExample: 'megaport2027' } }), /claudeExample/);
+});
+
+test('homepage: the description from site/site.json, a link to make your own in the lede, the card right after the tickets', () => {
+  const html = read('index.html');
+  const { description } = readSiteConfig();
+  assert.equal(description, '音樂祭排團工具：替任何音樂祭做自己的排團表，做法和原始碼都公開。現成的有大港開唱（每年跟著官方時間表更新）和浪人祭 2026。離線可用、免註冊、不蒐集個資。');
+  assert.ok(html.includes(`<meta name="description" content="${description}">`));
+  assert.equal(graphOf(html).find((n) => n['@type'] === 'WebSite').description, description);
+  assert.equal(graphOf(html).find((n) => n['@type'] === 'WebApplication').name, 'chiparashi 音樂祭排團工具');
+  assert.match(html, /<title>chiparashi — 音樂祭排團工具<\/title>/);
+  assert.match(html, /<p class="lede">[^<]*想替別的音樂祭做一份，<a href="claude\/">也可以自己做<\/a>。<\/p>/);
+  const order = ['id="next"', 'class="make"', 'id="past"', 'class="does"', 'class="contact"'].map((k) => html.indexOf(k));
+  assert.deepEqual([...order].sort((a, b) => a - b), order, 'tickets, then make your own, then the rest');
+  const make = /<section class="make"[\s\S]*?<\/section>/.exec(html)[0];
+  assert.ok(make.includes('href="claude/"') && make.includes('href="https://github.com/luchichiTW/festival-planner"'));
+  // 大港開唱 2027, waiting for its dates, says it is updated every year.
+  assert.match(ticketOf(html, 'megaport2027'), /<p class="t-where">待官方資訊公布・每年更新<\/p>/);
+});
+
 test('sitemap.xml: the homepage and every event still served here, not the ones that moved', () => {
   const locs = [...read('sitemap.xml').matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-  assert.deepEqual(locs.sort(), [`${HOST}/`, `${HOST}/privacy/`, ...events.filter((ev) => !archived(ev)).map((ev) => `${HOST}/${ev.slug}/`)].sort());
+  assert.deepEqual(locs.sort(), [`${HOST}/`, `${HOST}/privacy/`, SITE_GUIDE, ...events.filter((ev) => !archived(ev)).map((ev) => `${HOST}/${ev.slug}/`)].sort());
 });
 
 test('the homepage deploys itself on pushes to main that change it; events stay manual; nothing with the token runs on pull requests', () => {

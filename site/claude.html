@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>用 Claude 做你自己的排團工具｜chiparashi</title>
+<meta name="description" content="{{description}}">
+<link rel="canonical" href="https://chiparashi.tw/claude/">
+<link rel="alternate" type="text/markdown" href="index.md">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="chiparashi">
+<meta property="og:title" content="用 Claude 做你自己的排團工具｜chiparashi">
+<meta property="og:description" content="{{description}}">
+<meta property="og:url" content="https://chiparashi.tw/claude/">
+<meta property="og:image" content="https://chiparashi.tw/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="chiparashi 音樂祭排團工具：浪人祭、大港開唱等音樂祭的票券，看時間表、排團序、撞團抽籤，離線可用">
+<meta property="og:locale" content="zh_TW">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="color-scheme" content="light dark">
+{{jsonld}}
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231A1617'/%3E%3Crect x='7' y='8' width='4.5' height='16' rx='2.25' fill='%23D9474A'/%3E%3Crect x='13.75' y='12' width='4.5' height='12' rx='2.25' fill='%23F1BE48'/%3E%3Crect x='20.5' y='6' width='4.5' height='14' rx='2.25' fill='%2317A7B4'/%3E%3C/svg%3E">
+<script>
+  // Same light/dark choice as the homepage (fp:home:theme); without one the page follows the system.
+  try { const t = localStorage.getItem('fp:home:theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) { /* follow the system */ }
+</script>
+<style>
+/* /claude/ of chiparashi.tw, built by scripts/build.mjs site: how to make a planner for any festival with Claude.
+   One reading column in the homepage's colours; the example event is site/site.json "claudeExample". */
+:root { --bg: #F1EEEC; --surface: #FBFAF9; --fg: #231C1B; --muted: #6B5F59; --faint: #94877F; --line: rgb(60 30 25 / .12); --accent: #9A5F0A; --ink: #231C1B; --gold: #EBB33C;
+  --sans: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui, -apple-system, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #1A1617; --surface: #252020; --fg: #F6EEE5; --muted: #AA9D92; --faint: #7D7068; --line: rgb(255 236 220 / .10); --accent: #F1BE48; --ink: #231C1B; --gold: #F1BE48; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg: #1A1617; --surface: #252020; --fg: #F6EEE5; --muted: #AA9D92; --faint: #7D7068; --line: rgb(255 236 220 / .10); --accent: #F1BE48; --ink: #231C1B; --gold: #F1BE48; color-scheme: dark; }
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.75 var(--sans); }
+.page { max-width: 680px; margin: 0 auto; padding: calc(20px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(40px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 28px; }
+a { color: var(--accent); text-underline-offset: 3px; overflow-wrap: anywhere; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.home { font-weight: 700; text-decoration: none; color: var(--fg); }
+.kicker { margin: 0 0 4px; font-size: 14px; color: var(--muted); }
+h1 { margin: 0; font-size: 30px; line-height: 1.3; text-wrap: balance; }
+.h1-en { margin: 2px 0 0; font-size: 17px; color: var(--muted); }
+section { display: grid; gap: 10px; }
+h2 { margin: 0; font-size: 19px; line-height: 1.4; }
+h2 span { font-weight: 500; color: var(--muted); }
+p { margin: 0; }
+.en { color: var(--muted); font-size: 15px; }
+.prompt { margin: 0; padding: 14px 16px; border-radius: 14px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); font: 14px/1.7 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; -webkit-user-select: text; user-select: text; }
+.copy { justify-self: start; appearance: none; border: 0; border-radius: 999px; padding: 8px 18px; cursor: pointer; background: var(--gold); color: var(--ink); font: 700 14px/1.4 var(--sans); }
+.note { font-size: 14px; color: var(--muted); }
+ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+.files li, .feats li { display: grid; gap: 2px; }
+.files li span, .feats li span { font-size: 15px; color: var(--muted); }
+.files li span[lang="en"], .feats li span[lang="en"] { font-size: 14px; color: var(--faint); }
+.feats li span:first-child { color: var(--fg); }
+footer { display: grid; gap: 2px; font-size: 13px; color: var(--faint); }
+footer p { margin: 0; }
+</style>
+</head>
+<body>
+<div class="page">
+  <a class="home" href="/">chiparashi</a>
+
+  <header>
+    <p class="kicker">音樂祭排團工具 <span lang="en">· Festival planner</span></p>
+    <h1>用 Claude 做你自己的排團工具</h1>
+    <p class="h1-en" lang="en">Make your own festival planner with Claude</p>
+  </header>
+
+  <section>
+    <p>這個排團工具的程式和資料都公開。想替別的音樂祭做一份，最快的方法是把下面這段提示貼給 Claude，再附上那個音樂祭的官方時間表圖片。範例用的是{{exampleName}}。</p>
+    <p class="en" lang="en">This planner's code and data are open. The quickest way to make one for another festival: paste the prompt below into Claude and attach that festival's official timetable image. The example is {{exampleNameEn}}.</p>
+  </section>
+
+  <section>
+    <h2>貼給 Claude 的提示 <span lang="en">· Prompt</span></h2>
+    <pre class="prompt" id="prompt">{{prompt}}</pre>
+    <button type="button" class="copy" data-copy="prompt" data-done="已複製">複製</button>
+    <pre class="prompt" id="promptEn" lang="en">{{promptEn}}</pre>
+    <button type="button" class="copy" data-copy="promptEn" data-done="Copied">Copy</button>
+    <p class="note">「（活動名稱）」換成你的音樂祭。Claude 讀不到網址時，把單檔下載下來附上也可以。</p>
+    <p class="note" lang="en">Replace “(festival name)” with your festival. If Claude cannot open the links, download the single file and attach it.</p>
+  </section>
+
+  <section>
+    <h2>會用到的檔案 <span lang="en">· Files</span></h2>
+    <ul class="files">
+{{files}}
+    </ul>
+  </section>
+
+  <section>
+    <h2>做出來會有什麼 <span lang="en">· What you get</span></h2>
+    <ul class="feats">
+{{features}}
+    </ul>
+  </section>
+
+  <footer>
+    <p>演出異動以主辦方現場公告為準。</p>
+    <p><a href="/">回首頁</a>・<a href="/privacy/">隱私說明</a></p>
+  </footer>
+</div>
+<script>
+  document.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
+    const pre = document.getElementById(b.dataset.copy);
+    try { await navigator.clipboard.writeText(pre.textContent); b.textContent = b.dataset.done; }
+    catch (e) { console.warn('copy failed, selecting the text instead', e); const r = document.createRange(); r.selectNodeContents(pre); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); }
+  }));
+</script>
+</body>
+</html>
