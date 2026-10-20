@@ -24,7 +24,10 @@
         return `https://embed.music.apple.com/tw/album/${enc(album)}?i=${enc(song)}&app=music&theme=${dark ? 'dark' : 'light'}`;
       }
       case 'streetvoice': return `https://streetvoice.com/music/embed/?id=${enc(id)}`;
-      case 'youtube': return `https://www.youtube-nocookie.com/embed/${enc(id)}`;
+      // youtube.com, not youtube-nocookie.com: a link from the player (the title, "watch on YouTube") then stays on
+      // YouTube's own domain, so on an iPhone home-screen app iOS opens YouTube without leaving a blank in-app browser
+      // behind (from the nocookie domain it hands the link to the YouTube app and the blank page stays until closed).
+      case 'youtube': return `https://www.youtube.com/embed/${enc(id)}`;
       default: return '';
     }
   }
