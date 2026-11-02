@@ -26,7 +26,7 @@
 | --- | --- |
 | 時間表 | 浪人祭官方 Threads 貼文 https://www.threads.com/@vagabondfest.tw/post/DelNJUUkugD （4 張圖：中文版與英文版各兩天，2026/10/17） |
 | 陣容介紹 | https://www.vagabondfest.com/blog/posts （第二～七波陣容、B2B、DJ 與指鼓節目，簡介的第一手來源） |
-| 場地圖 | https://www.vagabondfest.com/pages/map （10/17 仍是「敬請期待」） |
+| 場地圖 | https://www.vagabondfest.com/pages/map （2026/11/1 公布，中英合一的一張圖；舞台熱區與經緯度取自該頁互動地圖的舞台框與 GPS 對照點） |
 
 官網交通資訊上的日期是 10/17–19，是舊資料，不要引用。
 
@@ -67,6 +67,5 @@
 ## 待辦
 
 - 補簡介（活動前一週再查一次）：上方「沒有可靠簡介」的名單。
-- 場地地圖：官方公布 ACCESS/MAP 之後做（點舞台看接下來的團、一鍵導航；第二階段會有大港的地圖元件可用）。
 - 交通資訊：等官網更新。
 - 活動結束後（11/8 之後）：頁面保留成唯讀紀錄。

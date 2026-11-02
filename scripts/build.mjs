@@ -214,10 +214,11 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
     subtitle: ev.header ? `<span class="ts-l">${esc(ev.header.date)}</span><span class="ts-l">${esc(ev.header.place)}</span>` : esc(ev.subtitle || ''), dayTabs: dayTabs(ev),
   };
   // Venue images: on the website they're files next to the page (img/…); in the single file, data: URIs of the
-  // Chinese versions only (the English ones would double the size).
+  // Chinese versions only (the English ones would double the size). The page shows the map from its images entry
+  // ("map": true), so map.image/imageEn stay out: in the single file they'd carry the same picture a second time.
   const venueFor = (src, keepEn) => venue && {
     ...venue,
-    map: venue.map && { ...venue.map, image: src(venue.map.image), imageEn: keepEn && venue.map.imageEn ? src(venue.map.imageEn) : undefined },
+    map: venue.map && (({ image, imageEn, ...spots }) => spots)(venue.map),
     images: (venue.images || []).map((im) => ({ ...im, src: src(im.src), srcEn: keepEn && im.srcEn ? src(im.srcEn) : undefined })),
   };
   // The page needs the players, not the notes on why each song was picked (those are for review in the repo).

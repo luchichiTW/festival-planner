@@ -61,8 +61,8 @@ test('validate checks the two-line header and the Safari step pictures', () => {
   build('vagabond2026', { out, artifactOut: out + '-art' });
   for (let i = 1; i <= 5; i++) assert.ok(fs.existsSync(path.join(out, 'vagabond2026', 'a2hs', `step${i}.webp`)));
   assert.match(fs.readFileSync(path.join(out, 'vagabond2026', 'sw.js'), 'utf8'), /"a2hs\/step5\.webp"/);
-  // The official timetables behind the map button too, so they open offline.
-  for (const d of [1, 2]) assert.match(fs.readFileSync(path.join(out, 'vagabond2026', 'sw.js'), 'utf8'), new RegExp(`"img/vagabond_festival_2026_day_${d}\\.webp"`));
+  // The venue map and the official timetables behind the map button too, so they open offline.
+  for (const f of ['map', 'day_1', 'day_2']) assert.match(fs.readFileSync(path.join(out, 'vagabond2026', 'sw.js'), 'utf8'), new RegExp(`"img/vagabond_festival_2026_${f}\\.webp"`));
   assert.doesNotMatch(fs.readFileSync(path.join(out + '-art', 'vagabond2026', 'index.html'), 'utf8'), /a2hs\//);
 });
 
@@ -106,6 +106,9 @@ test('build writes the website, the service worker file list and the single-file
     assert.match(single, /window\.claude/);
     assert.doesNotMatch(single, /installHint|<script src=|googleapis/);
     assert.ok(Buffer.byteLength(single) < 2 * 1024 * 1024, 'artifact stays small');
+    // The page takes the map picture from its images entry, so the single file carries it once.
+    const mapData = fs.readFileSync(path.join(ROOT, 'events', 'vagabond2026', 'assets', 'img', 'vagabond_festival_2026_map.webp')).toString('base64').slice(0, 200);
+    assert.equal(single.split(mapData).length - 1, 1, 'the venue map goes into the single file once');
   } finally {
     delete process.env.FP_BUILD;
     fs.rmSync(out, { recursive: true, force: true });

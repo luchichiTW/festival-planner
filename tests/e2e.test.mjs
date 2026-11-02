@@ -362,9 +362,9 @@ test('P1-09 / AC-06 works offline after the first visit', { skip: SKIP }, async 
     build: FP_EVENT.build, picks: FP.snapshot().picks, fonts: document.fonts.check('900 20px "Chiron GoRound TC"'),
   }));
   assert.deepEqual(state, { build: 'e2e-offline', picks: ['d1-nell'], fonts: true });
-  // The official timetables behind the map button come from the cache too.
+  // The venue map behind the map button comes from the cache too.
   await page.tap('#mapBtn');
-  await page.until(() => { const i = document.getElementById('mvImg'); return i.complete && i.naturalWidth > 0; });
+  await page.until(() => { const i = document.getElementById('mvImg'); return /_map\.webp$/.test(i.getAttribute('src')) && i.complete && i.naturalWidth > 0; });
   await page.tap('.mv [data-mv-close]');
   // A fresh open (as from the home screen, with a query) also comes from the cache.
   await page.goto(`${base}/${SLUG}/?source=homescreen`);
@@ -616,37 +616,41 @@ test('from the home screen and in the Claude artifact: the two how-to cards, no 
   await closePage(page);
 });
 
-test('the map button: the official DAY 1 and DAY 2 timetables, open on the day the board shows; the venue map tab waits for the official one', { skip: SKIP }, async () => {
+test('the map button: the official venue map with a hotspot per stage (what is next, walking directions), then the official DAY 1 and DAY 2 timetables', { skip: SKIP }, async () => {
   const srv = await origin();
-  const page = await open(`${srv.base}/${SLUG}/`);
+  const page = await open(`${srv.base}/${SLUG}/`, { time: '2026-11-07T15:00:00+08:00' });
   const look = () => {
-    const ov = document.querySelector('.mv:not(.mv-wait)');
+    const ov = document.querySelector('.mv');
     const img = document.getElementById('mvImg');
     return {
       open: !ov.hidden,
       tabs: [...ov.querySelectorAll('[data-mv]')].map((b) => `${b.textContent}${b.getAttribute('aria-pressed') === 'true' ? '*' : ''}`),
-      img: document.getElementById('mvStage').hidden ? null : img.getAttribute('src'),
+      img: img.getAttribute('src'),
       loaded: img.complete && img.naturalWidth,
-      wait: document.getElementById('mvWait').hidden ? null : document.getElementById('mvWait').innerText.split('\n').filter(Boolean),
+      spots: [...document.querySelectorAll('[data-spot]')].map((b) => b.dataset.spot).sort(),
+      waiting: !!document.querySelector('.mv-wait, #mvWait'),
     };
   };
   await page.tap('#mapBtn');
-  await page.until(() => { const i = document.getElementById('mvImg'); return i.complete && i.naturalWidth > 0; });
-  assert.deepEqual(await page.eval(look), { open: true, tabs: ['場地圖', 'DAY 1*', 'DAY 2'], img: 'img/vagabond_festival_2026_day_1.webp', loaded: 1206, wait: null });
-  await page.tap('.mv [data-mv="0"]');
-  const w = await page.eval(look);
-  assert.equal(w.img, null, 'no image on the venue map tab');
-  assert.equal(await page.eval(() => document.querySelector('#mvWait h2').textContent), '場地圖');
-  assert.match(await page.eval(() => document.querySelector('#mvWait p').textContent), /還沒公布/);
-  assert.equal(await page.eval(() => document.querySelector('#mvWait a').getAttribute('href')), 'https://www.vagabondfest.com/pages/map');
+  await page.until(() => { const i = document.getElementById('mvImg'); return i.complete && i.naturalWidth > 0 && document.getElementById('mvPan').offsetWidth > 0; });
+  assert.deepEqual(await page.eval(look), {
+    open: true, tabs: ['場地圖*', 'DAY 1', 'DAY 2'], img: 'img/vagabond_festival_2026_map.webp', loaded: 2800,
+    spots: EV.stages.map((s) => s.id).sort(), waiting: false,
+  }, 'opens on the official map, every stage tappable, no waiting note');
+  // Festival day, 15:00: 鯤鯓 shows what is on and next there, and directions to the stage.
+  await page.tap('[data-spot="K"]');
+  await page.until(() => !document.getElementById('mvPop').hidden);
+  const pop = await page.eval(() => ({ text: document.getElementById('mvPop').innerText, go: document.querySelector('.mv-go')?.getAttribute('href') || '' }));
+  assert.match(pop.text, /鯤鯓/);
+  assert.match(pop.text, /接下來/);
+  assert.match(pop.text, /Been Stellar/, 'still playing at 15:00');
+  assert.match(pop.go, /22\.99494,120\.14588/);
+  // The timetables are plain images, no hotspots.
   await page.tap('.mv [data-mv="2"]');
   await page.until(() => document.getElementById('mvImg').getAttribute('src') === 'img/vagabond_festival_2026_day_2.webp');
+  assert.equal(await page.eval(`document.querySelectorAll('[data-spot]').length`), 0);
   await page.tap('.mv [data-mv-close]');
-  await page.until(() => document.querySelector('.mv:not(.mv-wait)').hidden);
-  // On DAY 2 the map button opens on DAY 2's timetable.
-  await page.tap('#day2');
-  await page.tap('#mapBtn');
-  await page.until(() => document.querySelector('.mv [data-mv="2"]').getAttribute('aria-pressed') === 'true');
+  await page.until(() => document.querySelector('.mv').hidden);
   await closePage(page);
 });
 
@@ -1138,7 +1142,7 @@ test('megaport: 12 stages, both days, and vagabond keeps no map or language butt
   assert.equal(await page.eval(`!!document.getElementById('mapBtn') && !!document.getElementById('langBtn')`), true);
   await closePage(page);
   const vb = await open(`${main.base}/${SLUG}/`);
-  assert.deepEqual(await vb.eval(`[!!document.getElementById('mapBtn'), !!document.getElementById('langBtn')]`), [true, true], 'vagabond: a map button (a placeholder until the official map), and EN／中 since its official English timetable is in');
+  assert.deepEqual(await vb.eval(`[!!document.getElementById('mapBtn'), !!document.getElementById('langBtn')]`), [true, true], 'vagabond: a map button (the official venue map), and EN／中 since its official English timetable is in');
   await closePage(vb);
   await main.close();
 });

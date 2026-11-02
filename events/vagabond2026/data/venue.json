@@ -1,7 +1,28 @@
 {
-  "pending": { "url": "https://www.vagabondfest.com/pages/map" },
+  "map": {
+    "image": "assets/img/vagabond_festival_2026_map.webp",
+    "regions": {
+      "K": { "x": 39.7, "y": 9.5, "w": 12.8, "h": 15.7 },
+      "J": { "x": 12.3, "y": 9.5, "w": 12.9, "h": 15.7 },
+      "H": { "x": 84.4, "y": 61, "w": 7.9, "h": 10.2 },
+      "X": { "x": 76.4, "y": 10.8, "w": 8.7, "h": 10.8 },
+      "F": { "x": 86.5, "y": 10.8, "w": 8.7, "h": 10.8 },
+      "R": { "x": 64.5, "y": 61, "w": 7.7, "h": 10 },
+      "L": { "x": 33.4, "y": 67.5, "w": 6.2, "h": 5.6 }
+    },
+    "locations": {
+      "K": { "lat": 22.99494, "lng": 120.14588 },
+      "J": { "lat": 22.99569, "lng": 120.14504 },
+      "H": { "lat": 22.99253, "lng": 120.14656 },
+      "X": { "lat": 22.9938, "lng": 120.14724 },
+      "F": { "lat": 22.99341, "lng": 120.14768 },
+      "R": { "lat": 22.9933, "lng": 120.14568 },
+      "L": { "lat": 22.99417, "lng": 120.14453 }
+    }
+  },
   "images": [
-    { "label": "DAY 1", "en": "DAY 1", "day": 1, "src": "assets/img/vagabond_festival_2026_day_1.webp" },
-    { "label": "DAY 2", "en": "DAY 2", "day": 2, "src": "assets/img/vagabond_festival_2026_day_2.webp" }
+    { "label": "場地圖", "en": "Venue map", "src": "assets/img/vagabond_festival_2026_map.webp", "map": true },
+    { "label": "DAY 1", "en": "DAY 1", "src": "assets/img/vagabond_festival_2026_day_1.webp" },
+    { "label": "DAY 2", "en": "DAY 2", "src": "assets/img/vagabond_festival_2026_day_2.webp" }
   ]
 }
