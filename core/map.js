@@ -80,16 +80,21 @@
   const infoRow = ov.querySelector('#mvInfo');
 
   /* ---------- zoom & pan ---------- */
-  const view = { s: 1, x: 0, y: 0, w: 0, h: 0, fitX: 0, fitY: 0 };
+  const view = { s: 1, x: 0, y: 0, w: 0, h: 0, fitX: 0, fitY: 0, top: 0, bottom: 0 };
+  // The stage is the whole screen, so a zoomed picture runs under the status bar and the tabs float on it. At rest, and
+  // at the ends of a drag, the picture keeps to the free space between them, so none of it stays hidden.
+  const FREE_GAP = 8;
   function fit() {
     const r = stage.getBoundingClientRect();
     const iw = img.naturalWidth || 1;
     const ih = img.naturalHeight || 1;
-    const k = Math.min(r.width / iw, r.height / ih);
+    view.top = (parseFloat(getComputedStyle(stage).paddingTop) || 0) + FREE_GAP; // the padding holds the status bar's height
+    view.bottom = (infoRow && !infoRow.hidden ? infoRow : ov.querySelector('.mv-bar')).getBoundingClientRect().top - r.top - FREE_GAP;
+    const k = Math.min(r.width / iw, (view.bottom - view.top) / ih);
     view.w = iw * k;
     view.h = ih * k;
     view.fitX = (r.width - view.w) / 2;
-    view.fitY = (r.height - view.h) / 2;
+    view.fitY = view.top + (view.bottom - view.top - view.h) / 2;
     pan.style.width = `${view.w}px`;
     pan.style.height = `${view.h}px`;
     reset();
@@ -98,9 +103,9 @@
     const r = stage.getBoundingClientRect();
     const sw = view.w * view.s;
     const sh = view.h * view.s;
-    const lim = (pos, size, room, fit0) => (size <= room ? (room - size) / 2 - fit0 : Math.min(-fit0, Math.max(room - size - fit0, pos)));
-    view.x = lim(view.x, sw, r.width, view.fitX);
-    view.y = lim(view.y, sh, r.height, view.fitY);
+    const lim = (pos, size, from, to, fit0) => (size <= to - from ? from + (to - from - size) / 2 - fit0 : Math.min(from - fit0, Math.max(to - size - fit0, pos)));
+    view.x = lim(view.x, sw, 0, r.width, view.fitX);
+    view.y = lim(view.y, sh, view.top, view.bottom, view.fitY);
   }
   function apply(animate) {
     clamp();
@@ -195,7 +200,6 @@
     const tab = images[i];
     const im = tab.info ? infos[infoAt] : tab;
     ov.querySelectorAll('[data-mv]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.mv) === i)));
-    ov.classList.toggle('on-info', !!tab.info);
     if (infoRow) {
       infoRow.hidden = !tab.info;
       infoRow.querySelectorAll('[data-info]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.info) === infoAt)));

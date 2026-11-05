@@ -1048,18 +1048,18 @@ a.about-link { display: inline-block; }
 
 /* ---------- venue map & official images (core/map.js) ---------- */
 .mv { position: fixed; inset: 0; z-index: 35; background: color-mix(in srgb, var(--bg) 92%, black); }
-.mv-stage { position: absolute; inset: 0 0 calc(var(--dock-gap) + 66px) 0; padding-top: env(safe-area-inset-top, 0px); overflow: hidden; touch-action: none; }
+.mv-stage { position: absolute; inset: 0; padding-top: env(safe-area-inset-top, 0px); overflow: hidden; touch-action: none; }
 .mv-pan { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
 .mv-pan img { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; pointer-events: none; }
 .mv-spots { position: absolute; inset: 0; }
 .mv-spots button { position: absolute; appearance: none; padding: 0; border: 0; background: transparent; cursor: pointer; }
 .mv-bar { position: absolute; left: 0; right: 0; bottom: var(--dock-gap); display: flex; gap: 8px; padding-inline: max(12px, env(safe-area-inset-left, 0px)) max(12px, env(safe-area-inset-right, 0px)); justify-content: center; }
 .mv-bar .tabbar { max-width: 380px; }
+/* The tabs float on the official pictures, some of them bright: the clear glass needs the page's colour behind its labels. */
+.mv .tabbar, .mv .dock-btn { background-color: color-mix(in srgb, var(--bg) 72%, transparent); }
 .mv-fill { flex: 1; }
 /* The info pictures' own row above the tab bar: every label in view, nothing to scroll. Two rows of four; one row of
-   eight on a phone held sideways. --mv-info-h is the row and the gap above it. */
-.mv { --mv-info-h: 92px; }
-.mv.on-info .mv-stage { bottom: calc(var(--dock-gap) + 56px + var(--mv-info-h)); }
+   eight on a phone held sideways. */
 .tabbar.mv-info {
   position: absolute; left: 0; right: 0; bottom: calc(var(--dock-gap) + 56px); margin-inline: auto;
   width: min(100% - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px), 460px);
@@ -1068,7 +1068,6 @@ a.about-link { display: inline-block; }
 .mv-info .tab { min-height: 36px; padding: 4px 1px; }
 .mv-info .tab[aria-pressed="true"] { background: var(--glass-lens); box-shadow: inset 0 1px 1px var(--glass-lens-rim), inset 0 -1px 1px var(--glass-rim-low); }
 @media (orientation: landscape) and (max-height: 500px) {
-  .mv { --mv-info-h: 52px; }
   .tabbar.mv-info { width: min(100% - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px), 760px); grid-template-columns: repeat(8, minmax(0, 1fr)); border-radius: 999px; }
 }
 .mv-done { width: auto; min-height: 48px; padding: 0 18px; font: 800 14px/1 var(--body); }

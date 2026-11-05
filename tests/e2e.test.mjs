@@ -683,11 +683,10 @@ test('the info tab: the official pictures on a second row, same viewer as the ma
   await page.until(ready('info_hours'));
   assert.deepEqual(await page.eval(look), { row: true, infos: INFO.map((l, i) => (i ? l : `${l}*`)), img: 'img/vagabond_festival_2026_info_hours.webp', loaded: 1800, spots: 0 });
   const clear = () => {
-    const stage = document.getElementById('mvStage').getBoundingClientRect();
     const row = document.getElementById('mvInfo').getBoundingClientRect();
     const bar = document.querySelector('.mv-bar').getBoundingClientRect();
     const pan = document.getElementById('mvPan').getBoundingClientRect();
-    return stage.bottom <= row.top + 0.5 && row.bottom <= bar.top + 0.5 && pan.bottom <= stage.bottom + 0.5 && pan.width > 100;
+    return pan.bottom <= row.top + 0.5 && row.bottom <= bar.top + 0.5 && pan.top >= 0 && pan.width > 100;
   };
   assert.equal(await page.eval(clear), true, 'picture, row and tab bar do not overlap');
   await page.tap('.mv [data-info="7"]');
@@ -723,6 +722,61 @@ test('the info tab: the official pictures on a second row, same viewer as the ma
     assert.equal(await p.eval(clear), true, `${width}×${height} ${lang}: picture, row and tab bar do not overlap`);
     await closePage(p);
   }
+});
+
+test('official pictures sit in the middle of the free space; zoomed in they fill the screen under floating tabs, and a drag stops with both edges in view', { skip: SKIP }, async () => {
+  const srv = await origin();
+  const page = await open(`${srv.base}/${SLUG}/`, { width: 402, height: 874 });
+  // A phone's status bar: headless Chrome has no safe area, so give the stage the padding an iPhone would.
+  const BAR = 62;
+  await page.eval((bar) => { const st = document.createElement('style'); st.textContent = `.mv-stage { padding-top: ${bar}px !important; }`; document.head.append(st); }, BAR);
+  const gaps = (bar) => page.eval((b) => {
+    const pan = document.getElementById('mvPan').getBoundingClientRect();
+    const row = document.getElementById('mvInfo');
+    const next = (row.hidden ? document.querySelector('.mv-bar') : row).getBoundingClientRect();
+    return { above: pan.top - b, below: next.top - pan.bottom };
+  }, bar);
+  const check = async (name) => {
+    const g = await gaps(BAR);
+    assert.ok(g.above > 20, `${name}: clear of the status bar (${g.above})`);
+    assert.ok(Math.abs(g.above - g.below) <= 1, `${name}: as much room above as below (${g.above} vs ${g.below})`);
+  };
+  const ready = (name) => `(() => { const i = document.getElementById('mvImg'); return i.getAttribute('src') === 'img/vagabond_festival_2026_${name}.webp' && i.complete && i.naturalWidth > 0; })()`;
+  await page.tap('#mapBtn');
+  await page.until(ready('map'));
+  await check('map');
+  await page.tap('.mv [data-mv="3"]');
+  await page.until(ready('info_hours'));
+  await check('info');
+  // Zoom in with a double tap: the picture runs under the status bar and past the bottom, the tabs float on it.
+  await page.tap('#mvStage');
+  await page.tap('#mvStage');
+  await page.until(() => document.getElementById('mvPan').getBoundingClientRect().width > 800);
+  await sleep(300);
+  const zoomed = await page.eval(() => {
+    const pan = document.getElementById('mvPan').getBoundingClientRect();
+    const bar = document.querySelector('.mv-bar .tabbar').getBoundingClientRect();
+    return { top: pan.top, bottom: pan.bottom, height: innerHeight, tab: !!document.elementFromPoint(bar.left + bar.width / 2, bar.top + bar.height / 2).closest('.mv-bar') };
+  });
+  assert.ok(zoomed.top < 0 && zoomed.bottom > zoomed.height, `zoomed picture fills the screen: ${zoomed.top}–${zoomed.bottom}`);
+  assert.equal(zoomed.tab, true, 'the tabs stay on top of the picture, tappable');
+  // Labels stay readable over a bright picture: every floating bar has the page's colour behind it.
+  const tints = await page.eval(() => [...document.querySelectorAll('#mvInfo, .mv-bar .tabbar, .mv-done')].map((e) => Number(/\/\s*([\d.]+)\)$/.exec(getComputedStyle(e).backgroundColor)?.[1] ?? 1)));
+  assert.ok(tints.length === 3 && tints.every((a) => a >= 0.6), `bar tints ${tints}`);
+  const drag = async (from, to) => {
+    await page.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: 200, y: from, button: 'left', buttons: 1, clickCount: 1 });
+    for (let i = 1; i <= 4; i++) await page.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 200, y: from + ((to - from) * i) / 4, button: 'left', buttons: 1 });
+    await page.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: 200, y: to, button: 'left', buttons: 0, clickCount: 1 });
+    await sleep(100);
+  };
+  // Dragged all the way down, the picture's top stops below the status bar; all the way up, its bottom stops above the tabs.
+  for (let i = 0; i < 4; i++) await drag(120, 620);
+  const atTop = await gaps(BAR);
+  assert.ok(atTop.above >= 0 && atTop.above <= 12, `top edge in view, below the status bar (${atTop.above})`);
+  for (let i = 0; i < 4; i++) await drag(620, 120);
+  const atEnd = await gaps(BAR);
+  assert.ok(atEnd.below >= 0 && atEnd.below <= 12, `bottom edge in view, above the tabs (${atEnd.below})`);
+  await closePage(page);
 });
 
 test('浪人祭 in English: official stage and act names and talk titles, and the bottom tabs fit at 390 and 320 px', { skip: SKIP }, async () => {
