@@ -34,7 +34,7 @@ export const FAQ = [
   {
     q: '團序存在哪裡？換手機還在嗎？', qEn: 'Where are my picks saved? Will they move to a new phone?',
     a: '存在這支手機的瀏覽器裡，換手機或清除瀏覽器資料就不會在了。換手機前，在「我的團序」按「複製備份連結」，到新手機打開這個連結就能還原。在 iPhone 上，Safari 和加到主畫面的版本是分開存的。',
-    aEn: 'In this phone\'s browser, so a new phone or clearing browser data starts empty. Before you switch, tap "Copy backup link" in My Schedule and open that link on the new phone to restore them. On iPhone, Safari and the home-screen app keep separate copies.',
+    aEn: 'In this phone\'s browser, so a new phone or clearing browser data starts empty. Before you switch, tap "Copy backup link" in My Picks and open that link on the new phone to restore them. On iPhone, Safari and the home-screen app keep separate copies.',
   },
 ];
 

@@ -1,6 +1,7 @@
 /* Venue map and official images (data/venue.json): opened from the dock's map button. Pinch or double-tap to zoom,
    drag to pan. On the map, tapping a stage shows what's on there and a walking-directions link (Apple Maps on
-   iPhone, Google Maps elsewhere). Hotspots are percentages of the image, so they follow any zoom. */
+   iPhone, Google Maps elsewhere). Hotspots are percentages of the image, so they follow any zoom.
+   The info pictures ("info") share one tab, 資訊, and pick from a row of their own above the tab bar. */
 (() => {
   const FP = window.FP;
   const V = window.FP_VENUE;
@@ -44,9 +45,12 @@
     ? `https://maps.apple.com/?daddr=${lat},${lng}&dirflg=w`
     : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=walking`;
 
+  const entry = (im) => ({ ...im, label: en && im.en ? im.en : im.label, file: en && im.srcEn ? im.srcEn : im.src });
+  const infos = (V.info || []).map(entry);
   const images = [
     ...(V.pending ? [{ pending: true, label: t('場地圖') }] : []),
-    ...V.images.map((im) => ({ ...im, label: en && im.en ? im.en : im.label, file: en && im.srcEn ? im.srcEn : im.src })),
+    ...V.images.map(entry),
+    ...(infos.length ? [{ info: true, label: t('資訊') }] : []),
   ];
   // Hotspots line up with the map they were measured on; an English map with a different layout gets none.
   const spotsFor = (im) => (im.map && (!en || !im.srcEn || im.srcEn === im.src || V.map?.regionsEn) ? (en && V.map?.regionsEn) || V.map?.regions || {} : {});
@@ -56,11 +60,12 @@
   ov.hidden = true;
   ov.setAttribute('role', 'dialog');
   ov.setAttribute('aria-modal', 'true');
-  ov.setAttribute('aria-label', t('場地圖與官方時間表'));
+  ov.setAttribute('aria-label', t(infos.length ? '場地圖、官方時間表與資訊' : '場地圖與官方時間表'));
   ov.innerHTML = `
     <div class="mv-stage" id="mvStage"><div class="mv-pan" id="mvPan"><img id="mvImg" alt="" draggable="false"><div class="mv-spots" id="mvSpots"></div></div></div>
     ${V.pending ? `<div class="mv-wait-in" id="mvWait" hidden>${note()}</div>` : ''}
     <div class="mv-pop glass" id="mvPop" hidden></div>
+    ${infos.length ? `<div class="tabbar mv-info" id="mvInfo" role="tablist" hidden>${infos.map((im, i) => `<button type="button" class="tab" role="tab" data-info="${i}" aria-pressed="${i === 0}"><b>${esc(im.label)}</b></button>`).join('')}</div>` : ''}
     <div class="mv-bar">
       ${images.length > 1 ? `<div class="tabbar" role="tablist">${images.map((im, i) => `<button type="button" class="tab" role="tab" data-mv="${i}" aria-pressed="${i === 0}"><b>${esc(im.label)}</b></button>`).join('')}</div>` : '<div class="mv-fill"></div>'}
       <button type="button" class="dock-btn mv-done" data-mv-close>${t('完成')}</button>
@@ -72,6 +77,7 @@
   const spots = ov.querySelector('#mvSpots');
   const pop = ov.querySelector('#mvPop');
   const wait = ov.querySelector('#mvWait');
+  const infoRow = ov.querySelector('#mvInfo');
 
   /* ---------- zoom & pan ---------- */
   const view = { s: 1, x: 0, y: 0, w: 0, h: 0, fitX: 0, fitY: 0 };
@@ -182,11 +188,18 @@
 
   /* ---------- open / switch / close ---------- */
   let current = 0;
+  let infoAt = 0; // the info picture you were reading, still there when you come back from the map
   function show(i) {
     current = i;
     pop.hidden = true;
-    const im = images[i];
+    const tab = images[i];
+    const im = tab.info ? infos[infoAt] : tab;
     ov.querySelectorAll('[data-mv]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.mv) === i)));
+    ov.classList.toggle('on-info', !!tab.info);
+    if (infoRow) {
+      infoRow.hidden = !tab.info;
+      infoRow.querySelectorAll('[data-info]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.info) === infoAt)));
+    }
     stage.hidden = !!im.pending;
     if (wait) wait.hidden = !im.pending;
     if (im.pending) return;
@@ -218,6 +231,8 @@
     if (e.target.closest('[data-mv-close]')) close();
     const tab = e.target.closest('[data-mv]');
     if (tab) show(Number(tab.dataset.mv));
+    const pic = e.target.closest('[data-info]');
+    if (pic) { infoAt = Number(pic.dataset.info); show(current); }
   });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !ov.hidden) { e.stopPropagation(); close(); } }, true);
   addEventListener('resize', () => { if (!ov.hidden) fit(); });

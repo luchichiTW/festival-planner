@@ -1,4 +1,4 @@
-/* Liquid Glass motion, one piece for every tab bar (the dock, the map page). Styles: styles.css, "Liquid Glass".
+/* Liquid Glass motion, one piece for every one-row tab bar (the dock, the map page). Styles: styles.css, "Liquid Glass".
    - A lens under the chosen tab: it follows whichever tab the app marks aria-pressed, slides and stretches on the way,
      swells under the finger, and follows a finger dragged across the bar (let go over a tab to choose it).
    - The dock shrinks while the timetable or 我的團序 scrolls down, and comes back on the way up or at the top.
@@ -74,7 +74,7 @@
   }
 
   const dock = document.getElementById('dock');
-  for (const bar of document.querySelectorAll('.tabbar')) {
+  for (const bar of document.querySelectorAll('.tabbar:not(.mv-info)')) {
     lens(bar, { onPress: dock && dock.contains(bar) ? () => dock.classList.remove('small') : null });
   }
 

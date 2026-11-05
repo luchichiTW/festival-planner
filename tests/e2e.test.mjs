@@ -362,9 +362,13 @@ test('P1-09 / AC-06 works offline after the first visit', { skip: SKIP }, async 
     build: FP_EVENT.build, picks: FP.snapshot().picks, fonts: document.fonts.check('900 20px "Chiron GoRound TC"'),
   }));
   assert.deepEqual(state, { build: 'e2e-offline', picks: ['d1-nell'], fonts: true });
-  // The venue map behind the map button comes from the cache too.
+  // The venue map and the info pictures behind the button come from the cache too.
   await page.tap('#mapBtn');
   await page.until(() => { const i = document.getElementById('mvImg'); return /_map\.webp$/.test(i.getAttribute('src')) && i.complete && i.naturalWidth > 0; });
+  await page.tap('.mv [data-mv="3"]');
+  await page.until(() => { const i = document.getElementById('mvImg'); return /_info_hours\.webp$/.test(i.getAttribute('src')) && i.complete && i.naturalWidth > 0; });
+  await page.tap('.mv [data-info="7"]');
+  await page.until(() => { const i = document.getElementById('mvImg'); return /_info_watch\.webp$/.test(i.getAttribute('src')) && i.complete && i.naturalWidth > 0; });
   await page.tap('.mv [data-mv-close]');
   // A fresh open (as from the home screen, with a query) also comes from the cache.
   await page.goto(`${base}/${SLUG}/?source=homescreen`);
@@ -634,7 +638,7 @@ test('the map button: the official venue map with a hotspot per stage (what is n
   await page.tap('#mapBtn');
   await page.until(() => { const i = document.getElementById('mvImg'); return i.complete && i.naturalWidth > 0 && document.getElementById('mvPan').offsetWidth > 0; });
   assert.deepEqual(await page.eval(look), {
-    open: true, tabs: ['場地圖*', 'DAY 1', 'DAY 2'], img: 'img/vagabond_festival_2026_map.webp', loaded: 2800,
+    open: true, tabs: ['場地圖*', 'DAY 1', 'DAY 2', '資訊'], img: 'img/vagabond_festival_2026_map.webp', loaded: 2800,
     spots: EV.stages.map((s) => s.id).sort(), waiting: false,
   }, 'opens on the official map, every stage tappable, no waiting note');
   // Festival day, 15:00: 鯤鯓 shows what is on and next there, and directions to the stage.
@@ -652,6 +656,73 @@ test('the map button: the official venue map with a hotspot per stage (what is n
   await page.tap('.mv [data-mv-close]');
   await page.until(() => document.querySelector('.mv').hidden);
   await closePage(page);
+});
+
+test('the info tab: the official pictures on a second row, same viewer as the map, and nothing clipped on small phones', { skip: SKIP }, async () => {
+  const INFO = ['營業時段', '入場規範', '活動手環', '違禁品', '加水站', '餐具租借', '行李寄放', '觀賞注意'];
+  const INFO_EN = ['Hours', 'Entry', 'Wristband', 'Prohibited', 'Water', 'Tableware', 'Luggage', 'Viewing'];
+  const look = () => {
+    const row = document.getElementById('mvInfo');
+    const img = document.getElementById('mvImg');
+    return {
+      row: !row.hidden,
+      infos: [...row.querySelectorAll('[data-info]')].map((b) => `${b.textContent}${b.getAttribute('aria-pressed') === 'true' ? '*' : ''}`),
+      img: img.getAttribute('src'),
+      loaded: img.complete && img.naturalWidth,
+      spots: document.querySelectorAll('[data-spot]').length,
+    };
+  };
+  const ready = (name) => `(() => { const i = document.getElementById('mvImg'); return i.getAttribute('src') === 'img/vagabond_festival_2026_${name}.webp' && i.complete && i.naturalWidth > 0; })()`;
+  const srv = await origin();
+  const page = await open(`${srv.base}/${SLUG}/`, { width: 402, height: 874 });
+  assert.deepEqual(await page.eval(() => { const b = document.getElementById('mapBtn'); return [b.getAttribute('aria-label'), !!b.querySelector('svg circle')]; }), ['場地圖、官方時間表與資訊', true], 'the button wears the info icon');
+  await page.tap('#mapBtn');
+  await page.until(ready('map'));
+  assert.equal((await page.eval(look)).row, false, 'the row stays away until 資訊 is chosen');
+  await page.tap('.mv [data-mv="3"]');
+  await page.until(ready('info_hours'));
+  assert.deepEqual(await page.eval(look), { row: true, infos: INFO.map((l, i) => (i ? l : `${l}*`)), img: 'img/vagabond_festival_2026_info_hours.webp', loaded: 1800, spots: 0 });
+  const clear = () => {
+    const stage = document.getElementById('mvStage').getBoundingClientRect();
+    const row = document.getElementById('mvInfo').getBoundingClientRect();
+    const bar = document.querySelector('.mv-bar').getBoundingClientRect();
+    const pan = document.getElementById('mvPan').getBoundingClientRect();
+    return stage.bottom <= row.top + 0.5 && row.bottom <= bar.top + 0.5 && pan.bottom <= stage.bottom + 0.5 && pan.width > 100;
+  };
+  assert.equal(await page.eval(clear), true, 'picture, row and tab bar do not overlap');
+  await page.tap('.mv [data-info="7"]');
+  await page.until(ready('info_watch'));
+  assert.equal((await page.eval(look)).infos[7], '觀賞注意*');
+  // Back on the map: its hotspots return, the row goes, the picture gets the room back.
+  await page.tap('.mv [data-mv="0"]');
+  await page.until(ready('map'));
+  const map = await page.eval(look);
+  assert.equal(map.row, false);
+  assert.ok(map.spots > 0);
+  // 資訊 again: the picture you were reading.
+  await page.tap('.mv [data-mv="3"]');
+  await page.until(ready('info_watch'));
+  await page.tap('.mv [data-mv-close]');
+  await page.until(() => document.querySelector('.mv').hidden);
+  await closePage(page);
+  for (const [width, height, lang, labels] of [[320, 568, 'zh', INFO], [320, 568, 'en', INFO_EN], [375, 667, 'en', INFO_EN], [874, 402, 'zh', INFO]]) {
+    const s2 = await origin();
+    const p = await open(`${s2.base}/${SLUG}/`, { width, height, seed: { [`fp:${SLUG}:lang`]: lang } });
+    await p.eval('document.fonts.ready');
+    await p.tap('#mapBtn');
+    await p.tap('.mv [data-mv="3"]');
+    await p.until(ready('info_hours'));
+    const r = await p.eval(() => ({
+      labels: [...document.querySelectorAll('[data-info]')].map((b) => b.textContent),
+      clipped: [...document.querySelectorAll('.mv [data-info] b, .mv [data-mv] b')].filter((b) => { const a = b.getBoundingClientRect(); const t = b.closest('.tab').getBoundingClientRect(); return a.left < t.left - 0.5 || a.right > t.right + 0.5 || b.scrollWidth > b.clientWidth + 1; }).map((b) => b.textContent),
+      offscreen: [...document.querySelectorAll('#mvInfo, .mv-bar .tabbar, .mv-done')].filter((e) => { const a = e.getBoundingClientRect(); return a.left < 0 || a.right > innerWidth; }).length,
+    }));
+    assert.deepEqual(r.labels, labels, `${width}×${height} ${lang}`);
+    assert.deepEqual(r.clipped, [], `${width}×${height} ${lang}: no label runs out of its tab`);
+    assert.equal(r.offscreen, 0, `${width}×${height} ${lang}`);
+    assert.equal(await p.eval(clear), true, `${width}×${height} ${lang}: picture, row and tab bar do not overlap`);
+    await closePage(p);
+  }
 });
 
 test('浪人祭 in English: official stage and act names and talk titles, and the bottom tabs fit at 390 and 320 px', { skip: SKIP }, async () => {
@@ -697,12 +768,26 @@ test('浪人祭 in English: official stage and act names and talk titles, and th
   }
 });
 
+test('the bottom bar stands no taller in English than in Chinese, on every phone width', { skip: SKIP }, async () => {
+  for (const width of [430, 402, 390, 375, 320]) {
+    const tall = {};
+    for (const lang of ['zh', 'en']) {
+      const srv = await origin();
+      const page = await open(`${srv.base}/${SLUG}/`, { width, seed: { [`fp:${SLUG}:lang`]: lang } });
+      await page.eval('document.fonts.ready');
+      tall[lang] = await page.eval(() => document.querySelector('.dock .tabbar').getBoundingClientRect().height);
+      await closePage(page);
+    }
+    assert.ok(tall.en <= tall.zh + 0.5, `${width}: English ${tall.en} vs Chinese ${tall.zh}`);
+  }
+});
+
 test('the walkthrough speaks English when the page does', { skip: SKIP }, async () => {
   const srv = await origin();
   const page = await open(`${srv.base}/${SLUG}/`, { onboard: true, ua: UA.iphone, seed: { [`fp:${SLUG}:lang`]: 'en' } });
   await onStep(page, 'Press and hold for artist info');
   assert.deepEqual((await page.eval(readOnboard)).buttons, ['Skip', 'Next']);
-  for (const title of ['Schedule, timetable and map', 'Add to Home Screen first!']) {
+  for (const title of ['Picks, timetable and map', 'Add to Home Screen first!']) {
     await page.tap('#sheet [data-act="ob-next"]');
     await onStep(page, title);
   }
@@ -922,11 +1007,11 @@ test('Liquid Glass: one lens per tab bar (dock and map page) follows the chosen 
   await page.tap('#mapBtn');
   await page.until(() => !document.querySelector('.mv:not(.mv-wait)').hidden);
   await settle();
-  assert.deepEqual(await lensOn('.mv .tabbar'), { glass: true, off: 0 });
-  assert.equal(await page.eval(() => getComputedStyle(document.querySelector('.mv .tabbar')).backdropFilter), await page.eval(() => getComputedStyle(document.querySelector('.dock .tabbar')).backdropFilter), 'same glass');
+  assert.deepEqual(await lensOn('.mv-bar .tabbar'), { glass: true, off: 0 });
+  assert.equal(await page.eval(() => getComputedStyle(document.querySelector('.mv-bar .tabbar')).backdropFilter), await page.eval(() => getComputedStyle(document.querySelector('.dock .tabbar')).backdropFilter), 'same glass');
   await page.tap('.mv [data-mv="2"]');
   await settle();
-  assert.deepEqual(await lensOn('.mv .tabbar'), { glass: true, off: 0 }, 'map lens slid to DAY 2');
+  assert.deepEqual(await lensOn('.mv-bar .tabbar'), { glass: true, off: 0 }, 'map lens slid to DAY 2');
   await closePage(page);
   await main.close();
 });
@@ -1208,7 +1293,7 @@ test('megaport in English: labels, stage and artist names switch, and it is reme
     sub: document.getElementById('topSub').textContent,
     btn: document.getElementById('langBtn').textContent,
   }));
-  assert.deepEqual(en, { tab: 'My Schedule', stage: 'SOUTHERN OVERLORD', block: 'The Chairs', word: 'Megaport', sub: 'Mar 21–22 · Kaohsiung Pier-2', btn: '中' });
+  assert.deepEqual(en, { tab: 'My Picks', stage: 'SOUTHERN OVERLORD', block: 'The Chairs', word: 'Megaport', sub: 'Mar 21–22 · Kaohsiung Pier-2', btn: '中' });
   await page.reload();
   await page.until(() => document.querySelectorAll('#grid .block').length > 0);
   assert.equal(await page.eval(`document.documentElement.lang`), 'en', 'language is remembered');

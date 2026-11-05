@@ -24,5 +24,15 @@
     { "label": "場地圖", "en": "Venue map", "src": "assets/img/vagabond_festival_2026_map.webp", "map": true },
     { "label": "DAY 1", "en": "DAY 1", "src": "assets/img/vagabond_festival_2026_day_1.webp" },
     { "label": "DAY 2", "en": "DAY 2", "src": "assets/img/vagabond_festival_2026_day_2.webp" }
+  ],
+  "info": [
+    { "label": "營業時段", "en": "Hours", "src": "assets/img/vagabond_festival_2026_info_hours.webp" },
+    { "label": "入場規範", "en": "Entry", "src": "assets/img/vagabond_festival_2026_info_entry.webp" },
+    { "label": "活動手環", "en": "Wristband", "src": "assets/img/vagabond_festival_2026_info_wristband.webp" },
+    { "label": "違禁品", "en": "Prohibited", "src": "assets/img/vagabond_festival_2026_info_rules.webp" },
+    { "label": "加水站", "en": "Water", "src": "assets/img/vagabond_festival_2026_info_water.webp" },
+    { "label": "餐具租借", "en": "Tableware", "src": "assets/img/vagabond_festival_2026_info_tableware.webp" },
+    { "label": "行李寄放", "en": "Luggage", "src": "assets/img/vagabond_festival_2026_info_luggage.webp" },
+    { "label": "觀賞注意", "en": "Viewing", "src": "assets/img/vagabond_festival_2026_info_watch.webp" }
   ]
 }

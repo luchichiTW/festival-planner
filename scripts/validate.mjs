@@ -241,8 +241,9 @@ export function validate({ slug, dir, event: ev, schedule, artists, venue }) {
 
   /* ---------- venue.json (map hotspots, coordinates, official images) ---------- */
   if (venue) {
-    const files = [venue.map?.image, venue.map?.imageEn, ...(venue.images || []).flatMap((i) => [i.src, i.srcEn])].filter(Boolean);
+    const files = [venue.map?.image, venue.map?.imageEn, ...[...(venue.images || []), ...(venue.info || [])].flatMap((i) => [i.src, i.srcEn])].filter(Boolean);
     for (const f of files) if (!fs.existsSync(path.join(dir, f))) err(`venue.json: 找不到圖片 ${f}`);
+    for (const im of venue.info || []) if (!im.label || !im.src) err('venue.json: info 每一張都要有 label 和 src');
     for (const im of venue.images || []) {
       if (!im.label || !im.src) err('venue.json: images 每一張都要有 label 和 src');
       if (im.day !== undefined && !(Number.isInteger(im.day) && im.day >= 1 && im.day <= (ev.days || []).length)) err(`venue.json: 圖片「${im.label}」的 day 要是 1 到 ${(ev.days || []).length}`);

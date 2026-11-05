@@ -38,7 +38,7 @@ node scripts/og.mjs site                # 畫首頁與 /privacy/ 的分享預覽
 | `events/<slug>/event.json` | 名稱、日期、時區、舞台與顏色、主題 tokens、字型、圖示、網址 |
 | `events/<slug>/data/schedule.json` | 一筆一場演出 |
 | `events/<slug>/data/artists.json` | 以演出者名稱為鍵：簡介、來源、平台連結、試聽 ID、多位演出者 |
-| `events/<slug>/data/venue.json` | 選用：地圖熱區（圖的百分比）、舞台座標、官方圖清單 |
+| `events/<slug>/data/venue.json` | 選用：地圖熱區（圖的百分比）、舞台座標、官方圖清單（`images`）、資訊圖清單（`info`：地圖頁第 4 個分頁「資訊」，按鈕換成 i 圖示；只進網站版，不進單一檔案） |
 | `events/<slug>/artifact/` | 單檔版本與發佈說明，跟著 git tag 走 |
 | `events/<slug>/CLAUDE.md` | 這個活動的來源、限制、資料規則、待辦 |
 | `site/index.html` | 首頁樣板：每個活動一張票券（配色、舞台色條、日期、舞台、還有幾天／今天／日期待公布），已結束的收成小票根；單一檔案、不載入其他網站的東西 |

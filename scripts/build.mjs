@@ -216,10 +216,12 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
   // Venue images: on the website they're files next to the page (img/…); in the single file, data: URIs of the
   // Chinese versions only (the English ones would double the size). The page shows the map from its images entry
   // ("map": true), so map.image/imageEn stay out: in the single file they'd carry the same picture a second time.
-  const venueFor = (src, keepEn) => venue && {
+  // The info pictures ("info") are website-only: they'd push the single file past its size.
+  const venueFor = (src, website) => venue && {
     ...venue,
     map: venue.map && (({ image, imageEn, ...spots }) => spots)(venue.map),
-    images: (venue.images || []).map((im) => ({ ...im, src: src(im.src), srcEn: keepEn && im.srcEn ? src(im.srcEn) : undefined })),
+    images: (venue.images || []).map((im) => ({ ...im, src: src(im.src), srcEn: website && im.srcEn ? src(im.srcEn) : undefined })),
+    info: website && venue.info ? venue.info.map((im) => ({ ...im, src: src(im.src) })) : undefined,
   };
   // The page needs the players, not the notes on why each song was picked (those are for review in the repo).
   const pageArtists = Object.fromEntries(Object.entries(artists).map(([n, { picks, ...a }]) => [n, a]));
@@ -230,8 +232,11 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
   const hasMap = !!(venue && ((venue.images && venue.images.length) || venue.pending));
   const langBtn = (ev.languages || []).includes('en') ? '    <button type="button" class="hdr-btn hdr-lang" id="langBtn">EN</button>' : '';
   common.langBtn = langBtn;
-  const mapBtn = hasMap ? '      <button type="button" class="dock-btn" id="mapBtn" aria-label="場地圖與官方時間表" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4z"/><path d="M9 4v14M15 6v14"/></svg></button>' : '';
-  common.mapBtn = mapBtn;
+  // With info pictures the button opens more than a map, so it wears the info icon.
+  const MAP_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4z"/><path d="M9 4v14M15 6v14"/></svg>';
+  const INFO_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.2"/><path d="M12 7.6v.2" stroke-width="2.4"/></svg>';
+  const mapBtn = (info) => (hasMap ? `      <button type="button" class="dock-btn" id="mapBtn" aria-label="${info ? '場地圖、官方時間表與資訊' : '場地圖與官方時間表'}" data-i18n-attr="aria-label">${info ? INFO_ICON : MAP_ICON}</button>` : '');
+  common.mapBtn = mapBtn(!!venue?.info?.length);
 
   /* ---------- website: dist/<slug>/ ---------- */
   const site = path.join(out, slug);
@@ -271,7 +276,7 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
   // Venue images ship with the site and go into the offline cache.
   const imgName = (rel) => `img/${path.basename(rel)}`;
   if (venue) {
-    const rels = new Set([venue.map?.image, venue.map?.imageEn, ...(venue.images || []).flatMap((im) => [im.src, im.srcEn])].filter(Boolean));
+    const rels = new Set([venue.map?.image, venue.map?.imageEn, ...[...(venue.images || []), ...(venue.info || [])].flatMap((im) => [im.src, im.srcEn])].filter(Boolean));
     for (const rel of rels) copy(rel, imgName(rel));
   }
   const scripts = ['data.js', ...CORE_JS].map((f) => `<script src="${f}"></script>`).join('\n');
@@ -315,7 +320,7 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
     if (!imgURIs.has(rel)) imgURIs.set(rel, `data:${MIME[path.extname(rel).toLowerCase()] || 'application/octet-stream'};base64,${fs.readFileSync(path.join(dir, rel)).toString('base64')}`);
     return imgURIs.get(rel);
   };
-  const body = /<!-- fp:body -->\n([\s\S]*?)<!-- \/fp:body -->/.exec(fill(template, { ...common, head: '', scripts: '', static: '' }))[1]
+  const body = /<!-- fp:body -->\n([\s\S]*?)<!-- \/fp:body -->/.exec(fill(template, { ...common, mapBtn: mapBtn(false), head: '', scripts: '', static: '' }))[1]
     .replace(/ *<!-- fp:web -->[\s\S]*?<!-- \/fp:web -->\n/g, '');
   const single = [
     `<title>${esc(ev.name)}</title>`,

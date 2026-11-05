@@ -61,8 +61,8 @@ test('validate checks the two-line header and the Safari step pictures', () => {
   build('vagabond2026', { out, artifactOut: out + '-art' });
   for (let i = 1; i <= 5; i++) assert.ok(fs.existsSync(path.join(out, 'vagabond2026', 'a2hs', `step${i}.webp`)));
   assert.match(fs.readFileSync(path.join(out, 'vagabond2026', 'sw.js'), 'utf8'), /"a2hs\/step5\.webp"/);
-  // The venue map and the official timetables behind the map button too, so they open offline.
-  for (const f of ['map', 'day_1', 'day_2']) assert.match(fs.readFileSync(path.join(out, 'vagabond2026', 'sw.js'), 'utf8'), new RegExp(`"img/vagabond_festival_2026_${f}\\.webp"`));
+  // The venue map, the official timetables and the info pictures behind the button too, so they open offline.
+  for (const f of ['map', 'day_1', 'day_2', 'info_hours', 'info_entry', 'info_wristband', 'info_rules', 'info_water', 'info_tableware', 'info_luggage', 'info_watch']) assert.match(fs.readFileSync(path.join(out, 'vagabond2026', 'sw.js'), 'utf8'), new RegExp(`"img/vagabond_festival_2026_${f}\\.webp"`));
   assert.doesNotMatch(fs.readFileSync(path.join(out + '-art', 'vagabond2026', 'index.html'), 'utf8'), /a2hs\//);
 });
 
@@ -106,6 +106,11 @@ test('build writes the website, the service worker file list and the single-file
     assert.match(single, /window\.claude/);
     assert.doesNotMatch(single, /installHint|<script src=|googleapis/);
     assert.ok(Buffer.byteLength(single) < 2 * 1024 * 1024, 'artifact stays small');
+    // The info pictures are for the website: the single file has neither them nor the tab, and keeps the map icon.
+    assert.equal((data.match(/_info_[a-z]+\.webp/g) || []).length, 8, 'the website lists the eight info pictures');
+    assert.doesNotMatch(single, /_info_[a-z]+\.webp|"info":\[/);
+    assert.match(html, /aria-label="場地圖、官方時間表與資訊"[^>]*><svg[^>]*><circle/, 'the website button wears the info icon');
+    assert.match(single, /aria-label="場地圖與官方時間表"[^>]*><svg[^>]*><path d="M9 4 3\.5 6/, 'the single file keeps the map icon');
     // The page takes the map picture from its images entry, so the single file carries it once.
     const mapData = fs.readFileSync(path.join(ROOT, 'events', 'vagabond2026', 'assets', 'img', 'vagabond_festival_2026_map.webp')).toString('base64').slice(0, 200);
     assert.equal(single.split(mapData).length - 1, 1, 'the venue map goes into the single file once');
@@ -138,6 +143,8 @@ test('validate catches bad streaming IDs, unknown members and broken venue data'
     ['hotspot on a missing stage', (ev) => { ev.venue.map.regions.ZZ = { x: 1, y: 1, w: 1, h: 1 }; }, /熱區 "ZZ" 不是/],
     ['hotspot outside the image', (ev) => { ev.venue.map.regions.SO.w = 140; }, /0–100 的百分比/],
     ['missing image', (ev) => { ev.venue.images[1].src = 'assets/img/none.webp'; }, /找不到圖片/],
+    ['missing info picture', (ev) => { ev.venue.info = [{ label: '營業時段', src: 'assets/img/none.webp' }]; }, /找不到圖片/],
+    ['info picture without a label', (ev) => { ev.venue.info = [{ src: ev.venue.images[1].src }]; }, /info 每一張都要有 label 和 src/],
     ['favourite not in the schedule', (ev) => { ev.event.lottery.favorite = '不存在的團'; }, /lottery\.favorite/],
   ];
   for (const [name, breakIt, expected] of cases) {

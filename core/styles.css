@@ -616,7 +616,7 @@ button { font: inherit; color: inherit; }
   cursor: pointer;
 }
 .tab b { font: 800 13px/1.15 var(--body); letter-spacing: .01em; }
-/* A label longer than its tab (English "My Schedule" on a 320 px phone) wraps onto a second line instead of running into the next tab. */
+/* A label longer than its tab (English "My Picks" on a 320 px phone) wraps onto a second line instead of running into the next tab. */
 .tab b { max-width: 100%; white-space: normal; text-align: center; text-wrap: balance; }
 .tab-sub { font: 500 10.5px/1.15 var(--body); font-variant-numeric: tabular-nums; }
 .tab-sub .clash { color: var(--alert); font-weight: 800; }
@@ -1056,6 +1056,21 @@ a.about-link { display: inline-block; }
 .mv-bar { position: absolute; left: 0; right: 0; bottom: var(--dock-gap); display: flex; gap: 8px; padding-inline: max(12px, env(safe-area-inset-left, 0px)) max(12px, env(safe-area-inset-right, 0px)); justify-content: center; }
 .mv-bar .tabbar { max-width: 380px; }
 .mv-fill { flex: 1; }
+/* The info pictures' own row above the tab bar: every label in view, nothing to scroll. Two rows of four; one row of
+   eight on a phone held sideways. --mv-info-h is the row and the gap above it. */
+.mv { --mv-info-h: 92px; }
+.mv.on-info .mv-stage { bottom: calc(var(--dock-gap) + 56px + var(--mv-info-h)); }
+.tabbar.mv-info {
+  position: absolute; left: 0; right: 0; bottom: calc(var(--dock-gap) + 56px); margin-inline: auto;
+  width: min(100% - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px), 460px);
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-radius: 24px;
+}
+.mv-info .tab { min-height: 36px; padding: 4px 1px; }
+.mv-info .tab[aria-pressed="true"] { background: var(--glass-lens); box-shadow: inset 0 1px 1px var(--glass-lens-rim), inset 0 -1px 1px var(--glass-rim-low); }
+@media (orientation: landscape) and (max-height: 500px) {
+  .mv { --mv-info-h: 52px; }
+  .tabbar.mv-info { width: min(100% - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px), 760px); grid-template-columns: repeat(8, minmax(0, 1fr)); border-radius: 999px; }
+}
 .mv-done { width: auto; min-height: 48px; padding: 0 18px; font: 800 14px/1 var(--body); }
 .mv-wait-in { position: absolute; inset: 0 0 calc(var(--dock-gap) + 66px) 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: calc(24px + env(safe-area-inset-top, 0px)) 32px 24px; text-align: center; }
 .mv-wait-in h2 { margin: 0; font: 800 22px/1.3 var(--body); color: var(--fg); }
