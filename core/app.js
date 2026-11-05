@@ -211,6 +211,8 @@
   // Chinese, Japanese or Korean in a name: keep its words whole (styles.css .cjk). Not for Thai, which WebKit then
   // can't break between words at all.
   const CJK = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\uac00-\ud7af]/;
+  // A Thai word in a timetable block stays whole and breaks from what follows it: ผ้าอ้อม / 99999.
+  const blockName = (label) => esc(label).replace(/[\u0e00-\u0e7f]+/g, (w) => `<span class="nb">${w}</span><wbr>`);
   function renderGrid() {
     const d = DAYS[state.day];
     grid.innerHTML = '';
@@ -252,7 +254,7 @@
         b.setAttribute('aria-label', t('{name}，{stage}，{start} 到 {end}', { name: s.label, stage: st.short, start: fmt(s.start), end: fmt(s.end) }));
         b.innerHTML =
           (s.note ? `<span class="nt${CJK.test(s.note) ? ' cjk' : ''}">${esc(s.note)}</span>` : '') +
-          `<span class="nm${s.label.length > 18 ? ' sm' : ''}${CJK.test(s.label) ? ' cjk' : ''}">${esc(s.label)}</span>` +
+          `<span class="nm${s.label.length > 18 ? ' sm' : ''}${CJK.test(s.label) ? ' cjk' : ''}">${blockName(s.label)}</span>` +
           `<span class="tm">${fmt(s.start)}–${fmt(s.end)}</span>`;
         col.append(b);
         blockEls.set(s.id, b);

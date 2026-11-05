@@ -248,6 +248,7 @@ button { font: inherit; color: inherit; }
    on a line. */
 .block .nm, .block .nt { text-wrap: balance; }
 .block .cjk { word-break: keep-all; }
+.block .nb { white-space: nowrap; }
 .block .nm { font: 700 13px/1.22 var(--body); }
 .block .nm.sm { font-size: 11.5px; }
 .block .nt { font: 500 9.5px/1.25 var(--body); opacity: .78; }

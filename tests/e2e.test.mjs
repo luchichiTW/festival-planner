@@ -822,6 +822,29 @@ test('浪人祭 in English: official stage and act names and talk titles, and th
   }
 });
 
+test('a Thai word stays whole on the timetable and breaks from the digits after it', { skip: SKIP }, async () => {
+  for (const width of [430, 402, 375, 320]) {
+    const srv = await origin();
+    const page = await open(`${srv.base}/${SLUG}/`, { width });
+    await page.eval('document.fonts.ready');
+    await page.tap('#day2');
+    await page.until(() => document.querySelector('.block[data-id="d2-pa-om-99999"]'));
+    const r = await page.eval(() => {
+      const nm = document.querySelector('.block[data-id="d2-pa-om-99999"] .nm');
+      const box = nm.closest('.block').getBoundingClientRect();
+      const lines = (from, to) => { const g = document.createRange(); const t = [...nm.childNodes].flatMap((n) => (n.nodeType === 3 ? [n] : [...n.childNodes])).find((n) => n.nodeType === 3 && n.textContent.includes(from)); g.setStart(t, t.textContent.indexOf(from)); g.setEnd(t, t.textContent.indexOf(from) + to); return g.getBoundingClientRect(); };
+      const thai = lines('ผ้าอ้อม', 'ผ้าอ้อม'.length);
+      const num = lines('99999', 5);
+      return { text: nm.textContent, thaiH: thai.height, numH: num.height, below: num.top >= thai.bottom - 2, inside: thai.left >= box.left - 0.5 && thai.right <= box.right + 0.5 };
+    });
+    assert.equal(r.text, 'ผ้าอ้อม99999', `${width}: the name reads the same`);
+    assert.ok(r.thaiH < r.numH * 1.8, `${width}: ผ้าอ้อม on one line (${r.thaiH} vs ${r.numH})`);
+    assert.equal(r.below, true, `${width}: 99999 on the next line`);
+    assert.equal(r.inside, true, `${width}: inside its block`);
+    await closePage(page);
+  }
+});
+
 test('the bottom bar stands no taller in English than in Chinese, on every phone width', { skip: SKIP }, async () => {
   for (const width of [430, 402, 390, 375, 320]) {
     const tall = {};
