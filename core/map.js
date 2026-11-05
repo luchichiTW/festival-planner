@@ -239,6 +239,8 @@
     if (pic) { infoAt = Number(pic.dataset.info); show(current); }
   });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !ov.hidden) { e.stopPropagation(); close(); } }, true);
-  addEventListener('resize', () => { if (!ov.hidden) fit(); });
+  // iOS fires resize halfway through a rotation, with the old height still in place: fit once the stage has its final size.
+  if (typeof ResizeObserver === 'function') new ResizeObserver(() => { if (!ov.hidden && stage.clientWidth) fit(); }).observe(stage);
+  else addEventListener('resize', () => { if (!ov.hidden) fit(); });
   window.FP_MAP = { open, close, show };
 })();

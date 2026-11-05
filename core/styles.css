@@ -172,6 +172,9 @@ button { font: inherit; color: inherit; }
 .grid {
   --tw: 48px;
   --cw: 104px;
+  --hour-lines:
+    repeating-linear-gradient(to bottom, var(--line-2) 0 1px, transparent 1px var(--hour)),
+    repeating-linear-gradient(to bottom, transparent 0 calc(var(--hour) / 2), var(--line) calc(var(--hour) / 2) calc(var(--hour) / 2 + 1px), transparent calc(var(--hour) / 2 + 1px) var(--hour));
   display: grid;
   grid-template-columns: var(--tw) repeat(var(--ns, 7), minmax(var(--cw), 1fr));
   grid-template-rows: auto var(--H);
@@ -209,9 +212,7 @@ button { font: inherit; color: inherit; }
   height: var(--H);
   border-left: 1px solid var(--col-sep);
   background-color: color-mix(in srgb, var(--c) 9%, transparent);
-  background-image:
-    repeating-linear-gradient(to bottom, var(--line-2) 0 1px, transparent 1px var(--hour)),
-    repeating-linear-gradient(to bottom, transparent 0 calc(var(--hour) / 2), var(--line) calc(var(--hour) / 2) calc(var(--hour) / 2 + 1px), transparent calc(var(--hour) / 2 + 1px) var(--hour));
+  background-image: var(--hour-lines);
 }
 
 .block {
@@ -329,20 +330,18 @@ button { font: inherit; color: inherit; }
 }
 
 @media (min-width: 701px) { .board { margin-top: 12px; } }
-/* A phone on its side: the timetable gets the whole height. The header (wordmark, date, EN, theme) comes back
-   when the phone is upright again; the dock stays. Touch screens only, so a short desktop window keeps it. */
-@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
-  .top { display: none; }
-  .board { margin-top: max(8px, env(safe-area-inset-top, 0px)); }
-}
-/* Phones: the board runs edge to edge, with a slimmer time rail and narrower stages. */
-@media (max-width: 700px) {
+/* Phones, upright or on their side: the board runs edge to edge. */
+@media (max-width: 700px), (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
   .board {
     margin-left: calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
     margin-right: calc(-1 * max(16px, env(safe-area-inset-right, 0px)));
     border-width: 0;
     border-radius: 0;
   }
+  .pick::after { right: calc(-1 * max(16px, env(safe-area-inset-right, 0px))); }
+}
+/* Upright phones: a slimmer time rail and narrower stages. */
+@media (max-width: 700px) {
   .grid { --tw: 40px; --cw: 88px; }
   .sh { min-height: 38px; padding: 6px 2px; }
   .sh b { font-size: 15px; }
@@ -352,7 +351,35 @@ button { font: inherit; color: inherit; }
   .block .nm.sm { font-size: 11px; }
   .block .tm { font-size: 10px; letter-spacing: -.03em; white-space: nowrap; }
   .hl { right: 6px; }
-  .pick::after { right: calc(-1 * max(16px, env(safe-area-inset-right, 0px))); }
+}
+/* A phone on its side: the timetable gets the whole height. The header (wordmark, date, EN, theme) comes back
+   when the phone is upright again; the dock stays. Touch screens only, so a short desktop window keeps it.
+   The picture reaches both screen edges while the content stays clear of the island: the time rail and its lines
+   run under the left inset with the hours beside it, the last stage's colour runs under the right inset. */
+@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+  .top { display: none; }
+  .board { margin-top: env(safe-area-inset-top, 0px); }
+  .grid {
+    --tw: calc(40px + env(safe-area-inset-left, 0px));
+    --cw: 88px;
+    min-width: calc(var(--tw) + var(--ns, 7) * var(--cw) + env(safe-area-inset-right, 0px));
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  .times {
+    background-image: var(--hour-lines);
+    background-size: env(safe-area-inset-left, 0px) 100%;
+    background-repeat: no-repeat;
+  }
+  .sh:has(+ .times)::after, .col:last-child::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 100%;
+    width: env(safe-area-inset-right, 0px);
+    background: inherit;
+  }
+  .sh:has(+ .times)::after { bottom: -1px; border-bottom: inherit; }
 }
 
 /* ---------- my schedule ---------- */

@@ -658,6 +658,21 @@ test('the map button: the official venue map with a hotspot per stage (what is n
   await closePage(page);
 });
 
+test('the map viewer fits its picture again when the phone turns', { skip: SKIP }, async () => {
+  const srv = await origin();
+  const page = await open(`${srv.base}/${SLUG}/`, { width: 402, height: 874 });
+  await page.eval(() => window.FP_MAP.open());
+  await page.until(() => { const i = document.getElementById('mvImg'); return i.complete && i.naturalWidth > 0; });
+  await page.send('Emulation.setDeviceMetricsOverride', { width: 874, height: 402, deviceScaleFactor: 3, mobile: true });
+  await page.until(() => {
+    const pic = document.getElementById('mvPan').getBoundingClientRect();
+    const bar = document.querySelector('.mv-bar').getBoundingClientRect();
+    return innerWidth === 874 && pic.top >= 0 && pic.bottom <= bar.top && Math.abs((pic.left + pic.right) / 2 - 437) < 1;
+  });
+  await closePage(page);
+  await srv.close();
+});
+
 test('the info tab: the official pictures on a second row, same viewer as the map, and nothing clipped on small phones', { skip: SKIP }, async () => {
   const INFO = ['營業時段', '入場規範', '活動手環', '違禁品', '加水站', '餐具租借', '行李寄放', '觀賞注意'];
   const INFO_EN = ['Hours', 'Entry', 'Wristband', 'Prohibited', 'Water', 'Tableware', 'Luggage', 'Viewing'];
@@ -1031,14 +1046,48 @@ test('a phone on its side: no header, the timetable from the top edge, the dock 
     return { header: getComputedStyle(document.getElementById('top')).display !== 'none', boardTop: Math.round(board.top), stagesShown: stage.top >= board.top && stage.bottom <= innerHeight, dockShown: dock.bottom <= innerHeight && dock.top > 0 };
   };
   const side = await open(`${main.base}/${SLUG}/`, { width: 874, height: 402 });
-  assert.deepEqual(await side.eval(look), { header: false, boardTop: 8, stagesShown: true, dockShown: true }, 'iPhone on its side');
+  assert.deepEqual(await side.eval(look), { header: false, boardTop: 0, stagesShown: true, dockShown: true }, 'iPhone on its side');
   assert.deepEqual(await side.eval(CLIPPED), [], 'nothing clipped on its side');
   await closePage(side);
+  // Both sides report the island's inset, whichever way the phone is turned.
+  const edge = await open(`${main.base}/${SLUG}/`, { width: 874, height: 402, safeArea: { top: 0, bottom: 21, left: 62, right: 62 } });
+  await edge.eval('document.fonts.ready');
+  const edges = await edge.eval(() => {
+    const boardEl = document.querySelector('.board');
+    const board = boardEl.getBoundingClientRect();
+    const px = (el, prop, pseudo) => parseFloat(getComputedStyle(el, pseudo)[prop]);
+    const cols = [...document.querySelectorAll('.col')];
+    const last = cols.at(-1);
+    const lastHead = [...document.querySelectorAll('.sh')].at(-1);
+    return {
+      board: [board.left, board.right],
+      frame: [px(boardEl, 'borderLeftWidth'), px(boardEl, 'borderTopLeftRadius')],
+      rail: [document.querySelector('.times').getBoundingClientRect().left, document.querySelector('.corner').getBoundingClientRect().left],
+      hoursClear: Math.min(...[...document.querySelectorAll('.hl')].map((h) => h.getBoundingClientRect().left)) >= 62,
+      allStagesFit: boardEl.scrollWidth <= boardEl.clientWidth,
+      lastColRight: last.getBoundingClientRect().right,
+      colourToEdge: [px(last, 'width', '::after'), px(lastHead, 'width', '::after')],
+      blocksClear: Math.max(...[...last.querySelectorAll('.block')].map((b) => b.getBoundingClientRect().right)) <= 874 - 62,
+    };
+  });
+  assert.deepEqual(edges, {
+    board: [0, 874],
+    frame: [0, 0],
+    rail: [0, 0],
+    hoursClear: true,
+    allStagesFit: true,
+    lastColRight: 874 - 62,
+    colourToEdge: [62, 62],
+    blocksClear: true,
+  }, 'on its side the board reaches both screen edges and its content stays clear of the island');
+  assert.deepEqual(await edge.eval(CLIPPED), [], 'nothing clipped between the insets');
+  await closePage(edge);
   const upright = await open(`${main.base}/${SLUG}/`, { width: 402, height: 874 });
   assert.equal((await upright.eval(look)).header, true, 'upright');
   await closePage(upright);
   const laptop = await open(`${main.base}/${SLUG}/`, { width: 900, height: 450, mobile: false });
   assert.equal((await laptop.eval(look)).header, true, 'a short computer window keeps it');
+  assert.equal(await laptop.eval(`parseFloat(getComputedStyle(document.querySelector('.board')).borderTopLeftRadius)`), 14, 'and keeps its framed board');
   await closePage(laptop);
   await main.close();
 });
