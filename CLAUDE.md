@@ -14,6 +14,7 @@ node scripts/serve.mjs                  # 本機預覽 http://localhost:8787/<sl
 npm test                                # 資料／建置檢查＋手機寬度的瀏覽器測試（需要本機的 Chrome；FP_E2E=0 跳過瀏覽器測試）
 node scripts/fonts.mjs <slug>           # 重抓字型子集（藝人名單改了要跑）
 node scripts/icons.mjs <slug>           # 從 assets/icon.html 重畫主畫面圖示
+node scripts/icons.mjs site            # 從 site/favicon.svg 畫首頁的 favicon.ico（16–144）和 apple-touch-icon.png（180）
 node scripts/check-embeds.mjs <slug>    # 連網核對每個試聽：存在、可嵌入、是這位藝人的（改了 embeds 要跑）
 node scripts/og.mjs <slug>              # 畫分享預覽圖（1200×630）→ assets/og.png
 node scripts/og.mjs site                # 畫首頁與 /privacy/ 的分享預覽圖 → site/og.png（新增活動或換圖示時要跑）
@@ -48,6 +49,7 @@ node scripts/lineup.mjs <slug> [--write] # "status": "lineup" 的活動：跟官
 | `site/index.html` | 首頁樣板：每個活動一張票券（配色、舞台色條、日期、舞台、還有幾天／今天／日期待公布），已結束的收成小票根；單一檔案、不載入其他網站的東西 |
 | `site/claude.html`、`site/site.json` | `/claude/`：替任何音樂祭用 Claude 做排團工具的說明（提示、單檔、資料格式），範例活動是 `site.json` 的 `claudeExample`（換成別的活動時改這裡，README 的提示跟著改）；`site.json` 另有首頁的 `description` |
 | `site/robots.txt`、`site/llms.txt` | 網站層級的 robots.txt（Content Signals、封鎖的爬蟲、各 sitemap）與 llms.txt 樣板，活動清單由 build 從 `event.json` 填入 |
+| `site/favicon.svg`、`favicon.ico`、`apple-touch-icon.png` | 首頁、`/claude/`、`/privacy/` 的網站圖示，固定網址放在根目錄（搜尋結果的小圖示從首頁讀這些檔案）。改圖只改 `favicon.svg`，再跑 `node scripts/icons.mjs site` |
 | `site/wrangler.jsonc`、`site/worker.js` | 首頁的 Worker（`fp-home`）：首頁由 `dist-site/` 的檔案回應，其他路徑原封不動交給原站 |
 | `core/page.css` | 藝人頁與 Claude 頁的樣式（`features.pages`），配色和字型沿用活動的 tokens |
 | `scripts/lib/pages.mjs` | 不用 JavaScript 也讀得到的頁面：文字版時間表、藝人頁、Claude 頁、各頁的 metadata、JSON-LD、Markdown 版、sitemap |

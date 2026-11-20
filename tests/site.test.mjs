@@ -21,7 +21,7 @@ const graphOf = (html) => [...html.matchAll(/<script type="application\/ld\+json
 const ticketOf = (html, slug) => new RegExp(`<a class="ticket"[^>]* href="${slug}/"[\\s\\S]*?</a>`).exec(html)?.[0] || '';
 
 test('the homepage ships its own files, icons included, and loads nothing from other sites', () => {
-  assert.deepEqual(fs.readdirSync(out).sort(), ['_headers', 'claude', 'icons', 'index.html', 'llms.txt', 'og.png', 'privacy', 'robots.txt', 'sitemap.xml']);
+  assert.deepEqual(fs.readdirSync(out).sort(), ['_headers', 'apple-touch-icon.png', 'claude', 'favicon.ico', 'favicon.svg', 'icons', 'index.html', 'llms.txt', 'og.png', 'privacy', 'robots.txt', 'sitemap.xml']);
   // Every path the homepage serves is reserved, so no event slug (route <slug>*) can take it over (scripts/validate.mjs).
   assert.deepEqual(fs.readdirSync(out).filter((f) => f !== '_headers').sort(), [...HOME_PATHS].sort());
   // Icons are the homepage's own copies: an event's path may redirect elsewhere once the event moves (urls.archive).
@@ -34,6 +34,35 @@ test('the homepage ships its own files, icons included, and loads nothing from o
   assert.doesNotMatch(html, /<script[^>]+src=|<link[^>]+rel="(stylesheet|preload|modulepreload|icon|apple-touch-icon|manifest)"[^>]+href="(https?:)?\/\/|<img[^>]+src="(https?:)?\/\/|fonts\.googleapis/, 'no scripts, styles, fonts or images from other sites');
   assert.doesNotMatch(html, /claude:viewport-fit-sides/);
   assert.match(html, /<title>chiparashi — 音樂祭排團工具<\/title>/);
+});
+
+test('the site icon is a file at a fixed address (search results show it from the homepage), and every homepage page points at it', () => {
+  const svg = read('favicon.svg');
+  assert.match(svg, /^<svg [^>]*viewBox="0 0 32 32"/);
+  for (const c of ['#1A1617', '#D9474A', '#F1BE48', '#17A7B4']) assert.ok(svg.includes(c), c);
+  // favicon.ico: PNG pictures inside, 48×48 among them (search engines want a multiple of 48), 16 and 32 for tabs.
+  const ico = fs.readFileSync(path.join(out, 'favicon.ico'));
+  assert.deepEqual([ico.readUInt16LE(0), ico.readUInt16LE(2)], [0, 1], 'an icon file');
+  const n = ico.readUInt16LE(4);
+  const sizes = Array.from({ length: n }, (_, i) => ico[6 + i * 16] || 256);
+  assert.deepEqual(sizes, [16, 32, 48, 96, 144]);
+  sizes.forEach((size, i) => {
+    const at = ico.readUInt32LE(6 + i * 16 + 12);
+    assert.equal(ico.toString('latin1', at + 1, at + 4), 'PNG', `${size}: a PNG`);
+    assert.deepEqual([ico.readUInt32BE(at + 16), ico.readUInt32BE(at + 20)], [size, size]);
+    assert.equal(ico.readUInt32LE(6 + i * 16 + 8) + at <= ico.length, true);
+  });
+  const touch = fs.readFileSync(path.join(out, 'apple-touch-icon.png'));
+  assert.equal(touch.toString('latin1', 1, 4), 'PNG');
+  assert.deepEqual([touch.readUInt32BE(16), touch.readUInt32BE(20)], [180, 180]);
+  // The same three files in the head of the homepage, /claude/ and /privacy/; none written into the page.
+  for (const page of ['index.html', 'claude/index.html', 'privacy/index.html']) {
+    const head = /<head>[\s\S]*?<\/head>/.exec(read(page))[0];
+    assert.match(head, /<link rel="icon" href="\/favicon\.ico" sizes="48x48">/, page);
+    assert.match(head, /<link rel="icon" href="\/favicon\.svg" type="image\/svg\+xml">/, page);
+    assert.match(head, /<link rel="apple-touch-icon" href="\/apple-touch-icon\.png">/, page);
+    assert.doesNotMatch(head, /href="data:/, `${page}: the icon is not written into the page`);
+  }
 });
 
 test('one ticket per event, painted from its event.json: wordmark, place, days, stage strip and chips', () => {

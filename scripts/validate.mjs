@@ -77,7 +77,7 @@ const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } 
 
 // What the homepage (fp-home, dist-site/) serves at the top of chiparashi.tw. tests/site.test.mjs checks the list
 // against the build.
-export const HOME_PATHS = ['claude', 'privacy', 'icons', 'index.html', 'llms.txt', 'og.png', 'robots.txt', 'sitemap.xml'];
+export const HOME_PATHS = ['claude', 'privacy', 'icons', 'index.html', 'llms.txt', 'og.png', 'robots.txt', 'sitemap.xml', 'favicon.svg', 'favicon.ico', 'apple-touch-icon.png'];
 
 // Intros, sources, platform links and players in artists.json; shared by the timetable and the lineup-only page.
 // performers: the names that may have an entry; unknown: the warning for any other name; officialSite(name): the act's

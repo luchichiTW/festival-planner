@@ -113,6 +113,7 @@ function dayTabs(ev) {
   }).join('\n');
 }
 
+const SITE_ICONS = ['favicon.svg', 'favicon.ico', 'apple-touch-icon.png'];
 // The homepage's own _headers rules; every other rule belongs to the events.
 const SITE_HEADER_PATHS = ['/claude/'];
 // One _headers may hold events and the homepage (a local build of both into one folder): each writer replaces its
@@ -581,6 +582,9 @@ export function buildSite({ out = path.join(ROOT, 'dist-site'), config = readSit
   fs.writeFileSync(path.join(out, 'privacy', 'index.html'), fill(read(path.join(ROOT, 'site', 'privacy.html')), { updated: PRIVACY_UPDATED.replace(/-/g, '/') }));
   // The link-preview picture for the homepage, /privacy/ and /claude/ (made by node scripts/og.mjs site).
   fs.copyFileSync(path.join(ROOT, 'site', 'og.png'), path.join(out, 'og.png'));
+  // The site icon as files at fixed addresses, which search results read from the homepage (site/favicon.svg; the
+  // .ico and the home-screen PNG are made from it by node scripts/icons.mjs site).
+  for (const f of SITE_ICONS) fs.copyFileSync(path.join(ROOT, 'site', f), path.join(out, f));
 
   /* ---------- /claude/: make a planner for any festival with Claude, one event as the example ---------- */
   {
