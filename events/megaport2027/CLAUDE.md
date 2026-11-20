@@ -33,5 +33,5 @@
 ## 時間表公布後
 
 1. 照 `events/megaport2026/` 的做法轉時間表（資料規則見 [megaport2026 的 CLAUDE.md](../megaport2026/CLAUDE.md)），放進 `data/schedule.json`；簡介沿用這裡的規則，不改回照貼官方原文。
-2. `event.json` 補 `days`、`stages`、`subtitle` 等，拿掉 `status`、`urls.lineup`。
+2. `event.json` 補 `days`、`stages`、`subtitle` 等，拿掉 `status`、`demo`、`urls.lineup`。`data/lineup.json` 留著：大家在陣容頁標的「想看」要靠它換成團序，`node scripts/validate.mjs megaport2027` 會列出對不上場次的組，在那一場加 `"lineup": "<id>"`。
 3. 照根目錄 CLAUDE.md「新增一個活動」的檢查與測試做完再部署；再部署一次 `site`，首頁的票券才會換成日期與倒數。

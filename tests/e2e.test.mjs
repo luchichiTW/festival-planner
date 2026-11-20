@@ -6,9 +6,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { ROOT, loadEvent } from '../scripts/validate.mjs';
+import { ROOT, loadEvent, lineupId } from '../scripts/validate.mjs';
 import { build, buildEvent, buildSite } from '../scripts/build.mjs';
-import { tbaEvent } from './helpers.mjs';
+import { tbaEvent, plannerWithLineup } from './helpers.mjs';
 import { serve } from '../scripts/serve.mjs';
 import { launch, sleep } from '../scripts/lib/chrome.mjs';
 
@@ -111,6 +111,7 @@ before(async () => {
     build('megaport2027', { out: mainRoot, artifactOut: path.join(tmp, 'main-mp-art') });
     buildEvent(tbaEvent('tbaexample'), { out: mainRoot, artifactOut: path.join(tmp, 'main-mp-art') });
     buildEvent(longLineup('lineuplong'), { out: mainRoot, artifactOut: path.join(tmp, 'main-mp-art') });
+    buildEvent(plannerWithLineup('wantexample').e, { out: mainRoot, artifactOut: path.join(tmp, 'main-mp-art') });
   } finally { delete process.env.FP_BUILD; }
   buildSite({ out: mainRoot });
   main = await origin();
@@ -455,6 +456,24 @@ const readOnboard = () => {
 const onStep = (page, title) => page.until((t) => document.querySelector('#sheet:not([hidden]) .ob h2')?.textContent === t, { args: [title] });
 const IOS_INSTALL = '先加主畫面再排團！';
 const PHONE_INSTALL = '加到主畫面，沒網路也能開';
+
+test('?try (a lineup page’s 用〇〇試玩): a past festival to try — nothing faded, no add-to-home-screen card; without it, ended as before', { skip: SKIP }, async () => {
+  const srv = await origin();
+  const AFTER = '2026-11-20T12:00:00+08:00';
+  const plain = await open(`${srv.base}/${SLUG}/`, { time: AFTER });
+  const total = await plain.eval(`document.querySelectorAll('#grid .block').length`);
+  assert.ok(total > 0);
+  assert.equal(await plain.eval(`document.querySelectorAll('#grid .block.ended').length`), total, 'after the festival every set has ended');
+  await closePage(plain);
+  // A first visit (another origin: the plain visit above left this one's walkthrough done).
+  const fresh = await origin();
+  const page = await open(`${fresh.base}/${SLUG}/?try`, { time: AFTER, onboard: true, ua: UA.iphone });
+  await onStep(page, '長按看表演者資訊');
+  assert.equal((await page.eval(readOnboard)).dots, 2, 'the walkthrough, without the add-to-home-screen card');
+  assert.equal(await page.eval(`document.querySelectorAll('#grid .block.ended, #grid .block.playing, .nowline').length`), 0, 'nothing has ended yet');
+  assert.equal(await page.eval('location.search'), '?try', 'kept for a reload');
+  await closePage(page);
+});
 
 test('first visit on an iPhone: the 大港撞團 cards — long-press, 我的團序 and map, add to the home screen — then that last card alone', { skip: SKIP }, async () => {
   const srv = await origin();
@@ -1722,7 +1741,7 @@ test('lineup page: the acts in the festival’s order; a tap or a long press ope
     // A tap: one card with the act's intro, and the links the festival lists as a row of round buttons, in its order.
     const i = lineup.findIndex((a) => Object.keys(a.links).length >= 4 && artists[a.name]?.bio);
     const a = lineup[i];
-    await page.tap(`.lu-tile[data-i="${i}"]`);
+    await page.tap(`.lu-tile[data-i="${i}"] b`);
     await page.until(cardOpen);
     const card = await page.eval(() => ({
       head: document.querySelector('#lpCard .lu-tba').textContent,
@@ -1748,10 +1767,10 @@ test('lineup page: the acts in the festival’s order; a tap or a long press ope
     await page.eval(() => document.getElementById('lpBackdrop').click());
     await page.until(() => document.getElementById('lpCard').hidden);
     // Back on the act it came from, without a focus ring after a tap.
-    assert.deepEqual(await page.eval((n) => { const t = document.querySelector(`.lu-tile[data-i="${n}"]`); return [document.activeElement === t, getComputedStyle(t).outlineStyle]; }, i), [true, 'none']);
+    assert.deepEqual(await page.eval((n) => { const t = document.querySelector(`.lu-tile[data-i="${n}"]`); return [document.activeElement === t.querySelector('.lu-open'), getComputedStyle(t).outlineStyle]; }, i), [true, 'none']);
     // A long press opens it too; an act without an intro says so.
     const j = lineup.findIndex((x) => !artists[x.name]?.bio);
-    await page.longPress(`.lu-tile[data-i="${j}"]`);
+    await page.longPress(`.lu-tile[data-i="${j}"] b`);
     await page.until(cardOpen);
     assert.equal(await page.eval(`document.getElementById('lpName').textContent`), lineup[j].name);
     assert.match(await page.eval(`document.getElementById('lpCard').textContent`), /目前沒有找到可靠的介紹資料/);
@@ -1765,7 +1784,7 @@ test('lineup page: the acts in the festival’s order; a tap or a long press ope
   assert.equal(await en.eval(`document.getElementById('luTitle').textContent`), 'Lineup so far');
   assert.match(await en.eval(`document.getElementById('luSub').textContent`), /^\d+ acts · updated \d{4}-\d{2}-\d{2}$/);
   assert.equal(await en.eval(`document.documentElement.lang`), 'en');
-  await en.tap('.lu-tile[data-i="0"]');
+  await en.tap('.lu-tile[data-i="0"] b');
   await en.until(cardOpen);
   assert.equal(await en.eval(`document.querySelector('#lpCard .lu-tba').textContent`), 'Stage and time TBA');
   assert.equal(await en.eval(`document.querySelector('#lpCard .lu-links').getAttribute('aria-label')`), 'Official links');
@@ -1773,7 +1792,7 @@ test('lineup page: the acts in the festival’s order; a tap or a long press ope
   for (const type of ['keyDown', 'keyUp']) await en.send('Input.dispatchKeyEvent', { type, key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
   await en.until(() => document.getElementById('lpCard').hidden);
   // Closed from the keyboard: the act it came from shows where focus is.
-  assert.notEqual(await en.eval(() => getComputedStyle(document.activeElement).outlineStyle), 'none');
+  assert.notEqual(await en.eval(() => getComputedStyle(document.activeElement.closest('.lu-tile')).outlineStyle), 'none');
   const bg = () => getComputedStyle(document.body).backgroundColor;
   const before = await en.eval(bg);
   await en.tap('#themeBtn');
@@ -1786,7 +1805,7 @@ test('lineup page: the acts in the festival’s order; a tap or a long press ope
 test('a long lineup gets search at the bottom: Chinese or English names, a line when nothing matches, the last act clear of the field', { skip: SKIP }, async () => {
   const main = await origin();
   const page = await open(`${main.base}/lineuplong/`, { ready: LU_READY });
-  const shown = () => [...document.querySelectorAll('.lu-tile')].filter((b) => !b.parentElement.hidden).map((b) => b.querySelector('b').textContent);
+  const shown = () => [...document.querySelectorAll('.lu-tile')].filter((li) => !li.hidden).map((li) => li.querySelector('b').textContent);
   const query = (q) => page.eval((v) => { const s = document.getElementById('luSearch'); s.value = v; s.dispatchEvent(new Event('input')); }, q);
   assert.equal((await page.eval(shown)).length, 24);
   await query('oral');
@@ -1802,9 +1821,121 @@ test('a long lineup gets search at the bottom: Chinese or English names, a line 
   assert.equal((await page.eval(shown)).length, 24);
   assert.equal(await page.eval(`document.getElementById('luEmpty').hidden`), true);
   // Scrolled to the end, the last act sits above the field.
-  const clear = await page.eval(() => { const lu = document.getElementById('lineup'); lu.scrollTop = lu.scrollHeight; const last = [...document.querySelectorAll('.lu-tile')].at(-1).getBoundingClientRect(); const bar = document.querySelector('.lu-search').getBoundingClientRect(); return last.bottom <= bar.top; });
-  assert.ok(clear, 'last act not under the search field');
+  const clear = () => { const lu = document.getElementById('lineup'); lu.scrollTop = lu.scrollHeight; const last = [...document.querySelectorAll('.lu-tile')].at(-1).getBoundingClientRect(); const dock = document.getElementById('luDock').getBoundingClientRect(); return last.bottom <= dock.top; };
+  assert.ok(await page.eval(clear), 'last act not under the search field');
   assert.deepEqual(await page.eval(NOJS_CLIPPED), []);
+  // A 想看 mark adds its count above the field: both in the thumb's reach, neither over the other, the acts clear of both.
+  await page.tap('.lu-tile[data-i="0"] .lu-want');
+  await page.until(() => !document.getElementById('luBar').hidden);
+  const stack = await page.eval(() => { const b = document.getElementById('luBar').getBoundingClientRect(); const f = document.querySelector('.lu-search').getBoundingClientRect(); return [b.bottom <= f.top, f.bottom <= innerHeight, b.height > 0]; });
+  assert.deepEqual(stack, [true, true, true]);
+  await page.until(clear);
+  assert.deepEqual(await page.eval(NOJS_CLIPPED), []);
+  // Typing: the field alone above the keyboard.
+  await page.eval(() => document.getElementById('luSearch').focus());
+  assert.equal(await page.eval(() => getComputedStyle(document.getElementById('luBar')).display), 'none');
+  await closePage(page);
+  await main.close();
+});
+
+test('想看: a button on each act marks it, the count sits at the bottom, kept on this device; a mark is not a tap on the act', { skip: SKIP }, async () => {
+  const main = await origin();
+  const { lineup, event: ev } = loadEvent('megaport2027');
+  const demoEv = loadEvent(ev.demo).event;
+  const last = lineup.length - 1;
+  const page = await open(`${main.base}/megaport2027/`, { ready: LU_READY, width: 320, theme: 'light' });
+  const state = () => ({
+    pressed: [...document.querySelectorAll('.lu-want')].map((b) => b.getAttribute('aria-pressed') === 'true'),
+    shown: [...document.querySelectorAll('.lu-want')].every((b) => !b.hidden && b.offsetHeight >= 32),
+    bar: document.getElementById('luBar').hidden ? '' : document.getElementById('luBar').textContent,
+    intro: document.getElementById('luIntro').hidden ? '' : document.getElementById('luIntro').textContent,
+    ids: JSON.parse(localStorage.getItem('fp:megaport2027:want') || '{"ids":[]}').ids,
+    card: !document.getElementById('lpCard').hidden,
+  });
+  assert.deepEqual(await page.eval(state), { pressed: lineup.map(() => false), shown: true, bar: '', intro: '先標想看的團，時間表公布後會自動排進團序。', ids: [], card: false });
+  await page.tap('.lu-tile[data-i="1"] .lu-want');
+  await page.until(() => !document.getElementById('luBar').hidden);
+  await page.tap(`.lu-tile[data-i="${last}"] .lu-want`);
+  await page.until(() => /2/.test(document.getElementById('luBar').textContent));
+  let s = await page.eval(state);
+  assert.equal(s.card, false, 'marking does not open the card');
+  assert.deepEqual(s.pressed, lineup.map((_, i) => i === 1 || i === last));
+  assert.equal(s.bar, '已標 2 組想看時間表公布後自動排進團序');
+  assert.deepEqual(s.ids, [lineupId(lineup[1].page), lineupId(lineup[last].page)], 'kept by the act’s id, in the order marked');
+  // The pill is smaller than 44 pt; its touch area is not.
+  const hit = await page.eval(() => {
+    const b = document.querySelector('.lu-tile[data-i="0"] .lu-want');
+    b.scrollIntoView({ block: 'center' });
+    const r = b.getBoundingClientRect();
+    const at = (y) => document.elementFromPoint(r.left + r.width / 2, y)?.closest('.lu-want') === b;
+    return [at(r.top - 3), at(r.bottom + 3)];
+  });
+  assert.deepEqual(hit, [true, true]);
+  // Scrolled to the end, the last act sits above the count; nothing cut off at 320 px.
+  assert.ok(await page.eval(() => { const lu = document.getElementById('lineup'); lu.scrollTop = lu.scrollHeight; return [...document.querySelectorAll('.lu-tile')].at(-1).getBoundingClientRect().bottom <= document.getElementById('luBar').getBoundingClientRect().top; }));
+  assert.deepEqual(await page.eval(NOJS_CLIPPED), []);
+  // Kept on this device: a reload shows the same marks; a second tap takes one off; none left, no count.
+  await page.reload();
+  await page.until(LU_READY);
+  s = await page.eval(state);
+  assert.deepEqual(s.pressed, lineup.map((_, i) => i === 1 || i === last));
+  await page.tap('.lu-tile[data-i="1"] .lu-want');
+  await page.until(() => /1/.test(document.getElementById('luBar').textContent));
+  assert.deepEqual((await page.eval(state)).ids, [lineupId(lineup[last].page)]);
+  await page.tap(`.lu-tile[data-i="${last}"] .lu-want`);
+  await page.until(() => document.getElementById('luBar').hidden);
+  // The card on top: the demo event's link, a 44 pt button, and the picture for the theme on screen.
+  const shot = () => [...document.querySelectorAll('.lu-demo img')].filter((i) => getComputedStyle(i).display !== 'none').map((i) => [i.className, i.complete && i.naturalWidth > 0]);
+  await page.eval(() => document.getElementById('lineup').scrollTo(0, 0));
+  await page.until(() => [...document.querySelectorAll('.lu-demo img')].some((i) => getComputedStyle(i).display !== 'none' && i.complete && i.naturalWidth > 0));
+  assert.deepEqual(await page.eval(shot), [['lu-shot-light', true]]);
+  const btn = await page.eval(() => { const a = document.getElementById('luDemoBtn'); return [a.getAttribute('href'), a.textContent, a.offsetHeight >= 44]; });
+  assert.deepEqual(btn, [`/${ev.demo}/?try`, `用${demoEv.name}${/[A-Za-z0-9]$/.test(demoEv.name) ? " " : ""}試玩`, true]);
+  await page.tap('#themeBtn');
+  await page.until(() => [...document.querySelectorAll('.lu-demo img')].some((i) => i.className === 'lu-shot-dark' && getComputedStyle(i).display !== 'none' && i.complete && i.naturalWidth > 0));
+  assert.deepEqual(await page.eval(shot), [['lu-shot-dark', true]]);
+  await closePage(page);
+  // English: the card, the line, the buttons and the count.
+  const en = await open(`${main.base}/megaport2027/`, { seed: { 'fp:megaport2027:lang': 'en' }, ready: LU_READY, width: 320 });
+  const words = await en.eval(() => ({
+    title: document.getElementById('luDemoTitle').textContent,
+    btn: document.getElementById('luDemoBtn').textContent,
+    intro: document.getElementById('luIntro').textContent,
+    want: document.querySelector('.lu-tile[data-i="0"] .lu-want').textContent,
+    label: document.querySelector('.lu-tile[data-i="0"] .lu-want').getAttribute('aria-label'),
+    alt: document.querySelector('.lu-demo img').alt,
+  }));
+  assert.deepEqual(words, {
+    title: 'What it does once the timetable is out', btn: `Try it with ${demoEv.nameEn}`,
+    intro: 'Mark the acts you want to see. They go into your picks when the timetable is out.',
+    want: 'Want', label: `Want to see ${lineup[0].en || lineup[0].name}`, alt: `The ${demoEv.nameEn} planner’s timetable`,
+  });
+  await en.tap('.lu-tile[data-i="0"] .lu-want');
+  await en.until(() => !document.getElementById('luBar').hidden);
+  assert.equal(await en.eval(`document.getElementById('luBar').textContent`), '1 markedThey go into your picks when the timetable is out');
+  assert.deepEqual(await en.eval(NOJS_CLIPPED), []);
+  await closePage(en);
+  await main.close();
+});
+
+test('想看 marks join the picks once the timetable is out: once, with a line saying how many', { skip: SKIP }, async () => {
+  const main = await origin();
+  const { ids } = plannerWithLineup('wantexample');
+  const want = JSON.stringify({ v: 1, ids: ['fire-ex', 'linked', 'gone'] });
+  const page = await open(`${main.base}/wantexample/`, { seed: { 'fp:wantexample:onboard': '1', 'fp:wantexample:install-hint': FULL, 'fp:wantexample:want': want } });
+  await page.until(() => document.getElementById('toast').classList.contains('show'));
+  assert.equal(await page.eval(`document.getElementById('toast').textContent`), '已把 2 組想看排進團序');
+  const picks = () => JSON.parse(localStorage.getItem('fp:wantexample:picks') || '{"picks":[]}').picks.sort();
+  assert.deepEqual(await page.eval(picks), [ids.fire, ids.linked].sort());
+  assert.equal(await page.eval(`localStorage.getItem('fp:wantexample:want-moved')`), '1');
+  assert.ok(await page.eval((id) => document.querySelector(`#grid .block[data-id="${id}"]`).classList.contains('sel'), ids.fire), 'marked on the board');
+  // Once: a pick taken off stays off after a reload, and no line again.
+  await page.eval((id) => localStorage.setItem('fp:wantexample:picks', JSON.stringify({ v: 1, picks: [id], prefs: [], t: Date.now() })), ids.fire);
+  await page.reload();
+  await page.until(() => document.querySelectorAll('#grid .block').length > 0);
+  await sleep(300);
+  assert.equal(await page.eval(`document.getElementById('toast').classList.contains('show')`), false);
+  assert.deepEqual(await page.eval(picks), [ids.fire]);
   await closePage(page);
   await main.close();
 });

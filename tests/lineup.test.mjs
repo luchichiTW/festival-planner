@@ -7,8 +7,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import vm from 'node:vm';
-import { ROOT, loadEvent, validate } from '../scripts/validate.mjs';
-import { build, buildSite } from '../scripts/build.mjs';
+import { ROOT, loadEvent, validate, lineupId, lineupSets } from '../scripts/validate.mjs';
+import { build, buildEvent, buildSite } from '../scripts/build.mjs';
+import { plannerWithLineup } from './helpers.mjs';
 
 const SLUG = 'megaport2027';
 const HOST = 'https://chiparashi.tw';
@@ -29,6 +30,11 @@ test('a lineup event validates with its acts and no timetable', () => {
   assert.ok(errs((c) => { c.lineup[1].links.official = 'http://example.com/'; }).some((e) => /https/.test(e)), 'links are https');
   assert.ok(errs((c) => { c.lineup[1].links.spotify = 'https://open.spotify.com/artist/x'; }).some((e) => /spotify/.test(e)), 'only the kinds of link the festival lists');
   assert.ok(errs((c) => { c.lineup[1].page = 'https://example.com/the-hu/'; }).some((e) => /page/.test(e)), 'page is the act on the festival site');
+  assert.ok(errs((c) => { c.lineup[2].page = c.lineup[1].page; }).some((e) => /page/.test(e) && /重複/.test(e)), 'one page per act (its id for 想看)');
+  // The card on top: a past event's real timetable to try, with that event's pictures of its board.
+  assert.ok(errs((c) => { c.event.demo = 'nope'; }).some((e) => /demo/.test(e)), 'demo is an event in events/');
+  assert.ok(errs((c) => { c.event.demo = 'megaport2027'; }).some((e) => /demo/.test(e)), 'demo is a planner, not another lineup page');
+  assert.ok(errs((c) => { c.event.demo = 'megaport2026'; }).some((e) => /board-light\.webp|board-dark\.webp/.test(e)), 'demo needs the board pictures');
   assert.ok(errs((c) => { c.schedule = loadEvent('megaport2026').schedule.slice(0, 1); }).some((e) => /lineup/.test(e)), 'a timetable means it is not lineup any more');
   assert.ok(errs((c) => { delete c.event.dataDate; }).some((e) => /dataDate/.test(e)), 'as of when');
   // Intros: own words, from the act's own website only (the official link the festival lists).
@@ -52,9 +58,33 @@ test('a lineup event builds one page: every act in the HTML in the festival’s 
   const html = fs.readFileSync(path.join(site, 'index.html'), 'utf8');
   const { event: ev, lineup, artists } = loadEvent(SLUG);
   // Readable without JavaScript: the names are in the page itself, in order, with the English name where there is one.
-  const tiles = [...html.matchAll(/<button type="button" class="lu-tile" data-i="(\d+)"[^>]*><b>([^<]*)<\/b>(?:<i>([^<]*)<\/i>)?<\/button>/g)];
+  const tiles = [...html.matchAll(/<li class="lu-tile" data-i="(\d+)"><button type="button" class="lu-open"[^>]*><b>([^<]*)<\/b>(?:<i>([^<]*)<\/i>)?<\/button>(<button type="button" class="lu-want"[^>]*>[\s\S]*?<\/button>)<\/li>/g)];
   assert.deepEqual(tiles.map((m) => unesc(m[2])), lineup.map((a) => a.name));
   assert.deepEqual(tiles.map((m) => (m[3] ? unesc(m[3]) : '')), lineup.map((a) => a.en || ''));
+  // 想看: one button per act, shown by the script (without JavaScript there is nothing to mark), off to start with.
+  for (const m of tiles) {
+    assert.match(m[4], /aria-pressed="false"/);
+    assert.match(m[4], / hidden[ >]/);
+    assert.match(m[4], new RegExp(`aria-label="想看：${m[2].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`));
+  }
+  // The card on top says what the page becomes, in the page itself (readable without JavaScript), and links the
+  // demo event's real timetable. The 想看 line sits right above the acts.
+  const demo = /<section class="lu-demo"[\s\S]*?<\/section>/.exec(html)?.[0] || '';
+  for (const line of ['時間表公布後可以這樣用', '看各舞台的時間表', '排自己的團序，撞團時抽籤', '加到主畫面，沒網路也能看', '已結束的活動，時間表是真的']) assert.ok(demo.includes(line), line);
+  const demoEv = loadEvent(ev.demo).event;
+  assert.match(demo, new RegExp(`<a class="lu-demo-btn" id="luDemoBtn" href="/${ev.demo}/\\?try">用${demoEv.name}${/[A-Za-z0-9]$/.test(demoEv.name) ? " " : ""}試玩</a>`));
+  for (const theme of ['light', 'dark']) {
+    const img = new RegExp(`<img class="lu-shot-${theme}" src="demo-${theme}\\.webp" width="(\\d+)" height="(\\d+)" alt="${demoEv.name} 排團工具的時間表畫面"`).exec(demo);
+    assert.ok(img, `${theme} picture`);
+    const file = fs.readFileSync(path.join(site, `demo-${theme}.webp`));
+    assert.equal(file.toString('latin1', 0, 4) + file.toString('latin1', 8, 12), 'RIFFWEBP', `${theme} picture is WebP`);
+    assert.ok(file.length < 60 * 1024, `${theme} picture is small (${file.length} bytes)`);
+    assert.ok(Number(img[2]) > Number(img[1]), 'a phone-shaped picture');
+  }
+  assert.ok(html.indexOf('class="lu-demo"') < html.indexOf('id="luGrid"'), 'the card comes before the acts');
+  assert.match(html, /<p class="lu-intro" id="luIntro" hidden>先標想看的團，時間表公布後會自動排進團序。<\/p>\s*<ul class="lu-grid"/);
+  assert.doesNotMatch(html, /這裡會變成排團工具。<\/p>/, 'the card replaces the old line');
+  assert.match(html, /<div class="lu-dock" id="luDock"><p class="lu-bar" id="luBar" role="status" hidden><\/p><\/div>/, 'the 想看 count sits at the bottom (no search: a short lineup)');
   // Title and description: the lineup, how many acts, as of when.
   const title = unesc(/<title>([^<]*)<\/title>/.exec(html)[1]);
   assert.ok(title.includes(ev.name) && title.includes('陣容'), title);
@@ -76,6 +106,8 @@ test('a lineup event builds one page: every act in the HTML in the festival’s 
   const data = JSON.parse(/window\.FP_LINEUP = (.*);\n/.exec(html)[1]);
   assert.deepEqual(data.acts.map((a) => a.name), lineup.map((a) => a.name));
   assert.deepEqual(data.acts.map((a) => a.links), lineup.map((a) => a.links));
+  assert.deepEqual(data.acts.map((a) => a.id), lineup.map((a) => lineupId(a.page)), 'each act carries its id for 想看');
+  assert.deepEqual(data.demo, { slug: ev.demo, name: demoEv.name, nameEn: demoEv.nameEn });
   for (const a of data.acts) assert.equal(a.bio || '', artists[a.name]?.bio || '', `${a.name} intro`);
   assert.match(fs.readFileSync(path.join(out, '_redirects'), 'utf8'), new RegExp(`^/${SLUG} /${SLUG}/ 301$`, 'm'));
   assert.equal(fs.existsSync(path.join(out + '-art', SLUG)), false, 'no single-file artifact without a timetable');
@@ -106,4 +138,38 @@ test('every line of the lineup page has its English version in core/i18n.js', ()
   const keys = [...src.matchAll(/\bt\('([^']+)'/g)].map((m) => m[1]);
   assert.ok(keys.length > 5);
   assert.deepEqual(keys.filter((k) => !en[k]), []);
+});
+
+test('an act’s id is the last part of its page address on the festival site: it stays when the name is written differently', () => {
+  assert.equal(lineupId('https://megaportfest.com/portfolio-item/the-hu/'), 'the-hu');
+  assert.equal(lineupId('https://megaportfest.com/portfolio-item/%e6%b4%aa%e6%a6%ae%e5%ae%8f/'), '洪榮宏');
+  assert.equal(lineupId('https://megaportfest.com/portfolio-item/SiM'), 'sim');
+  const ids = loadEvent(SLUG).lineup.map((a) => lineupId(a.page));
+  assert.equal(new Set(ids).size, ids.length);
+  assert.ok(ids.every(Boolean));
+});
+
+test('after the timetable: each act on the lineup finds its sets, by name, English name or a "lineup" id on the set', () => {
+  const { e, ids } = plannerWithLineup();
+  assert.deepEqual(validate(e).errors, []);
+  const map = lineupSets(e.lineup, e.schedule);
+  assert.deepEqual(map['fire-ex'], [ids.fire]);
+  assert.deepEqual(map.tagged, [ids.tagged], '"[JP]" and the like don’t count');
+  assert.deepEqual(map.linked, [ids.linked]);
+  const lost = clone(e);
+  lost.lineup.push({ name: '沒有出現的團', page: 'https://megaportfest.com/portfolio-item/gone/', links: {} });
+  assert.ok(validate(lost).errors.some((m) => /沒有出現的團/.test(m) && /lineup/.test(m)), 'an act with no set is an error (its 想看 would be lost)');
+  const stray = clone(e);
+  stray.schedule[0] = { ...stray.schedule[0], lineup: 'nobody' };
+  assert.ok(validate(stray).errors.some((m) => /nobody/.test(m)), 'a set’s lineup id is an act on the lineup');
+  // The planner gets the map (website only: the single file never had the lineup page's marks).
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'fp-want-'));
+  process.env.FP_BUILD = 'want-test';
+  try { buildEvent(e, { out, artifactOut: out + '-art' }); } finally { delete process.env.FP_BUILD; }
+  const evt = (file) => { const ctx = { window: {} }; vm.runInNewContext(/window\.FP_EVENT = .*;\n/.exec(fs.readFileSync(file, 'utf8'))[0], ctx); return ctx.window.FP_EVENT; };
+  const site = fs.readdirSync(path.join(out, e.slug)).find((f) => /^data.*\.js$/.test(f));
+  assert.deepEqual(JSON.parse(JSON.stringify(evt(path.join(out, e.slug, site)).wants)), map);
+  assert.equal(evt(path.join(out + '-art', e.slug, 'index.html')).wants, undefined);
+  fs.rmSync(out, { recursive: true, force: true });
+  fs.rmSync(out + '-art', { recursive: true, force: true });
 });

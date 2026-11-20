@@ -1,49 +1,140 @@
 /* "status": "lineup" page (core/lineup.js): the acts announced so far, in the festival's own order. It sits on
-   styles.css — the header, the theme tokens and the long-press card come from there — and adds the list, the row of
-   links in the card and, once the lineup is long, the search field at the bottom. Sizes follow Apple's
-   type scale (17 body, 15 secondary, 13 footnote); the 44 pt header buttons come from styles.css. */
+   styles.css — the header, the theme tokens and the long-press card come from there — and adds the card on top (what
+   the page becomes, a past event to try), the list with a 想看 button on each act, the row of links in the card, and
+   at the bottom the 想看 count and, once the lineup is long, the search field. Sizes follow Apple's type scale
+   (17 body, 15 secondary, 13 footnote); every touch target is at least 44 pt. */
 .lu { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 .lu-in {
   max-width: 920px;
   margin: 0 auto;
-  padding-block: 6px calc(28px + env(safe-area-inset-bottom, 0px));
+  /* Clear of the bottom (core/lineup.js keeps --dock at its height: the 想看 count, the search field). */
+  padding-block: 6px calc(28px + var(--dock, 0px) + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
-.lu-app.has-search .lu-in { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+.lu-app.has-search { --dock: 62px; }
 .lu-head { display: flex; flex-direction: column; gap: 4px; }
 .lu-title { margin: 0; font: 800 22px/1.3 var(--body); color: var(--fg); text-wrap: balance; }
 .lu-sub, .lu-intro { margin: 0; max-width: 36em; font-size: 15px; line-height: 1.45; color: var(--muted); }
-.lu-intro { margin-top: 2px; }
+.lu-intro { margin-bottom: -4px; }
+
+/* The card on top: a picture of a past event's timetable beside what the page does once the timetable is out, and
+   under both the button to try that event (one line in either language). */
+.lu-demo {
+  --shot: clamp(84px, 25vw, 128px);
+  display: grid;
+  grid-template-columns: var(--shot) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px 16px;
+  padding: 16px;
+  border: 1px solid var(--line-2);
+  border-radius: 18px;
+  background: var(--surface);
+}
+.lu-shot { align-self: start; }
+.lu-shot img { display: block; width: 100%; height: auto; border: 1px solid var(--line-2); border-radius: 12px; }
+.lu-shot-light { display: none !important; }
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .lu-shot-light { display: block !important; }
+  :root:not([data-theme="dark"]) .lu-shot-dark { display: none !important; }
+}
+:root[data-theme="light"] .lu-shot-light { display: block !important; }
+:root[data-theme="light"] .lu-shot-dark { display: none !important; }
+.lu-demo-in { display: flex; flex-direction: column; gap: 6px; }
+.lu-demo-title { margin: 0; font: 700 17px/1.35 var(--body); color: var(--fg); text-wrap: balance; }
+.lu-feats { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 15px; line-height: 1.4; color: var(--muted); }
+/* Chinese breaks after its punctuation, not inside a word (公／布); a phrase too long for the line still wraps. */
+.lu-feats li, .lu-intro, .lu-demo-note, .lu-bar span { word-break: keep-all; overflow-wrap: anywhere; text-wrap: balance; }
+.lu-demo-go { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.lu-demo-btn {
+  width: 100%;
+  max-width: 400px;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 22px;
+  background: var(--gold);
+  color: var(--ink);
+  font: 700 15px/1.25 var(--body);
+  text-align: center;
+  text-decoration: none;
+}
+.lu-demo-btn:active { opacity: .8; }
+.lu-demo-note { margin: 0; font-size: 13px; line-height: 1.4; color: var(--muted); text-align: center; }
 .lu-grid { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 @media (min-width: 620px) { .lu-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (min-width: 900px) { .lu-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .lu-tile {
-  width: 100%;
+  position: relative;
   height: 100%;
   min-height: 96px;
-  appearance: none;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  gap: 2px;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
   padding: 14px;
   border: 1px solid var(--line-2);
   border-radius: 16px;
   background: var(--surface);
   color: var(--fg);
-  text-align: left;
-  cursor: pointer;
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
   transition: transform .15s ease;
 }
-.lu-tile:active, .lu-tile.pressing { transform: scale(.97); }
-.lu-tile.no-ring:focus-visible { outline: none; }
+/* The name opens the card, and so does the rest of the tile (the button stretches over it), except 想看. */
+.lu-open {
+  appearance: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+  -webkit-touch-callout: none;
+}
+.lu-open::after { content: ""; position: absolute; inset: 0; border-radius: 16px; }
+.lu-open:focus-visible { outline: none; }
+.lu-tile:has(.lu-open:focus-visible) { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+.lu-tile:has(.lu-open.no-ring) { outline: none; }
+.lu-tile:has(.lu-open:active), .lu-tile.pressing { transform: scale(.97); }
 .lu-tile b { font: 700 17px/1.3 var(--body); overflow-wrap: anywhere; text-wrap: balance; }
 .lu-tile i { font: 400 13px/1.3 var(--body); color: var(--muted); overflow-wrap: anywhere; }
+/* 想看: a small pill whose touch area is 44 pt tall; filled once marked. */
+.lu-want {
+  position: relative;
+  z-index: 1;
+  height: 34px;
+  padding: 0 14px 0 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--line-2);
+  border-radius: 17px;
+  background: transparent;
+  color: var(--fg);
+  font: 600 15px/1 var(--body);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.lu-want::before { content: ""; position: absolute; inset: -5px -4px; }
+.lu-want svg { width: 14px; height: 14px; flex: none; }
+.lu-want .lu-check, .lu-want[aria-pressed="true"] .lu-plus { display: none; }
+.lu-want[aria-pressed="true"] .lu-check { display: inline; }
+.lu-want[aria-pressed="true"] { border-color: transparent; background: var(--gold); color: var(--ink); }
+.lu-want:active { opacity: .8; }
 .lu-empty { margin: 0; padding: 14px 16px; border: 1px dashed var(--line-2); border-radius: 12px; font-size: 15px; color: var(--muted); }
 .lu-foot { display: flex; flex-direction: column; gap: 4px; font-size: 13px; line-height: 1.5; color: var(--muted); }
 .lu-foot p { margin: 0; }
@@ -69,26 +160,50 @@
 .lu-links a:active .lu-ico { background: color-mix(in srgb, var(--fg) 18%, var(--surface)); }
 @media (hover: hover) { .lu-links a:hover .lu-ico { background: color-mix(in srgb, var(--fg) 18%, var(--surface)); } }
 
-/* Search, in the thumb's reach, once the lineup is long (scripts/build.mjs decides). Above the keyboard while typing. */
-.lu-search {
+/* At the bottom, in the thumb's reach: the 想看 count, and under it the search field once the lineup is long
+   (scripts/build.mjs decides). While typing, the field alone, above the keyboard. */
+.lu-dock {
   position: fixed;
   left: max(16px, env(safe-area-inset-left, 0px));
   right: max(16px, env(safe-area-inset-right, 0px));
   bottom: calc(max(var(--kb, 0px), env(safe-area-inset-bottom, 0px)) + 12px);
   z-index: 20;
   max-width: 640px;
-  height: 50px;
   margin: 0 auto;
-  padding: 0 18px;
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.lu-dock > * { pointer-events: auto; }
+.lu-dock:focus-within .lu-bar { display: none; }
+.lu-bar, .lu-search {
   border: 1px solid var(--glass-border);
-  border-radius: 25px;
   background: var(--glass);
   backdrop-filter: blur(20px) saturate(1.6);
   -webkit-backdrop-filter: blur(20px) saturate(1.6);
   box-shadow: var(--glass-shadow);
+}
+.lu-bar {
+  margin: 0;
+  padding: 10px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-radius: 20px;
+  color: var(--fg);
+  font-size: 15px;
+  line-height: 1.35;
+}
+.lu-bar b { font-weight: 700; }
+.lu-bar span { font-size: 13px; color: var(--muted); }
+.lu-search {
+  height: 50px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 25px;
 }
 .lu-search svg { flex: none; width: 18px; height: 18px; color: var(--muted); }
 .lu-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font: 400 17px var(--body); }

@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { ROOT, loadEvent, listEvents, validate } from './validate.mjs';
+import { ROOT, loadEvent, listEvents, validate, lineupId, lineupSets } from './validate.mjs';
 import { makePages, claudePrompt, claudePromptEn, claudeFiles, CLAUDE_FEATURES } from './lib/pages.mjs';
 import { aboutForPage, webAppJsonLd, PRIVACY_PATH, PRIVACY_UPDATED } from './lib/copy.mjs';
 
@@ -210,6 +210,19 @@ const slashDate = (iso) => iso.split('-').map(Number).join('/');
 
 // "status": "lineup": the acts announced so far, in the festival's order, before the timetable is out. The names are
 // in the HTML (readable without JavaScript); core/lineup.js adds English, the theme switch and the artist card.
+// A WebP picture's size, from its header (lossy VP8, lossless VP8L or extended VP8X).
+function webpSize(buf) {
+  const kind = buf.toString('latin1', 12, 16);
+  if (kind === 'VP8X') return [1 + buf.readUIntLE(24, 3), 1 + buf.readUIntLE(27, 3)];
+  if (kind === 'VP8L') { const b = buf.readUInt32LE(21); return [(b & 0x3fff) + 1, ((b >>> 14) & 0x3fff) + 1]; }
+  if (kind === 'VP8 ') return [buf.readUInt16LE(26) & 0x3fff, buf.readUInt16LE(28) & 0x3fff];
+  throw new Error('不是 WebP 圖檔');
+}
+// Chinese beside Latin letters or digits gets a space: 用浪人祭 2026 試玩.
+const spaced = (s) => (/[A-Za-z0-9]$/.test(s) ? `${s} ` : s);
+// 想看 (core/lineup.js): a plus that becomes a check.
+const WANT_ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="lu-plus" d="M8 3.5v9M3.5 8h9"/><path class="lu-check" d="M3.5 8.5l3 3 6-7"/></svg>';
+
 function buildLineup(loaded, out) {
   const { event: ev, lineup, artists } = loaded;
   const n = lineup.length;
@@ -219,12 +232,43 @@ function buildLineup(loaded, out) {
   // The planner's own header (core/index.html), so the two pages look the same and share one definition.
   const header = /<header class="top"[\s\S]*?<\/header>/.exec(read(path.join(CORE, 'index.html')))[0];
   const langBtn = (ev.languages || []).includes('en') ? '    <button type="button" class="hdr-btn hdr-lang" id="langBtn">EN</button>' : '';
-  const acts = lineup.map((a) => ({ name: a.name, en: a.en, links: a.links || {}, bio: artists[a.name]?.bio || '', sources: artists[a.name]?.bio ? artists[a.name].sources : [] }));
+  const acts = lineup.map((a) => ({ id: lineupId(a.page), name: a.name, en: a.en, links: a.links || {}, bio: artists[a.name]?.bio || '', sources: artists[a.name]?.bio ? artists[a.name].sources : [] }));
+  // The card on top (event.json "demo"): what this page becomes once the timetable is out, and a past event's real
+  // timetable to try it on. In the HTML, so it reads without JavaScript; core/lineup.js puts it in English.
+  const demoEv = ev.demo ? loadEvent(ev.demo).event : null;
   const data = {
     slug: ev.slug, languages: ev.languages || ['zh'], wordmark: ev.wordmark, subtitleEn: ev.subtitleEn, dataDate: ev.dataDate,
     sourceNote: ev.sourceNote, sourceNoteEn: ev.sourceNoteEn, acts,
+    demo: demoEv ? { slug: ev.demo, name: demoEv.name, nameEn: demoEv.nameEn } : undefined,
   };
-  const tiles = acts.map((a, i) => `        <li><button type="button" class="lu-tile" data-i="${i}" aria-haspopup="dialog"><b>${esc(a.name)}</b>${a.en ? `<i>${esc(a.en)}</i>` : ''}</button></li>`).join('\n');
+  // Each act: its name opens the card; 想看 (shown by the script: without JavaScript there is nothing to mark) keeps it
+  // on this phone for the planner, by the act's id.
+  const tiles = acts.map((a, i) => `        <li class="lu-tile" data-i="${i}"><button type="button" class="lu-open" aria-haspopup="dialog"><b>${esc(a.name)}</b>${a.en ? `<i>${esc(a.en)}</i>` : ''}</button><button type="button" class="lu-want" aria-pressed="false" aria-label="想看：${esc(a.name)}" hidden>${WANT_ICON}<span>想看</span></button></li>`).join('\n');
+  let demoCard = '';
+  if (demoEv) {
+    const shots = ['light', 'dark'].map((theme) => {
+      const src = path.join(ROOT, 'events', ev.demo, 'assets', `board-${theme}.webp`);
+      fs.copyFileSync(src, path.join(site, `demo-${theme}.webp`));
+      const [w, h] = webpSize(fs.readFileSync(src));
+      return `<img class="lu-shot-${theme}" src="demo-${theme}.webp" width="${w}" height="${h}" alt="${esc(demoEv.name)} 排團工具的時間表畫面" loading="lazy" decoding="async">`;
+    }).join('');
+    demoCard = `
+      <section class="lu-demo" aria-labelledby="luDemoTitle">
+        <div class="lu-shot">${shots}</div>
+        <div class="lu-demo-in">
+          <h2 class="lu-demo-title" id="luDemoTitle" data-i18n>時間表公布後可以這樣用</h2>
+          <ul class="lu-feats">
+            <li data-i18n>看各舞台的時間表</li>
+            <li data-i18n>排自己的團序，撞團時抽籤</li>
+            <li data-i18n>加到主畫面，沒網路也能看</li>
+          </ul>
+        </div>
+        <div class="lu-demo-go">
+          <a class="lu-demo-btn" id="luDemoBtn" href="/${esc(ev.demo)}/?try">用${esc(spaced(demoEv.name))}試玩</a>
+          <p class="lu-demo-note" data-i18n>已結束的活動，時間表是真的</p>
+        </div>
+      </section>`;
+  }
   const html = `<!doctype html>
 <html lang="${esc(ev.lang)}">
 <head>
@@ -243,8 +287,8 @@ ${read(path.join(CORE, 'lineup.css'))}
       <div class="lu-head">
         <h2 class="lu-title" id="luTitle">已公布陣容</h2>
         <p class="lu-sub" id="luSub">${n} 組・${slashDate(ev.dataDate)} 更新</p>
-        <p class="lu-intro" id="luIntro">時間表公布後，這裡會變成排團工具。</p>
-      </div>
+      </div>${demoCard}
+      <p class="lu-intro" id="luIntro" hidden>先標想看的團，時間表公布後會自動排進團序。</p>
       <ul class="lu-grid" id="luGrid">
 ${tiles}
       </ul>
@@ -256,11 +300,11 @@ ${tiles}
     </div>
   </main>
 </div>
-${n >= LINEUP_SEARCH_MIN ? `<label class="lu-search">
+<div class="lu-dock" id="luDock"><p class="lu-bar" id="luBar" role="status" hidden></p>${n >= LINEUP_SEARCH_MIN ? `<label class="lu-search">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none"/><path d="M20 20l-4.2-4.2"/></svg>
   <input id="luSearch" type="search" placeholder="搜尋藝人" aria-label="搜尋藝人" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
-</label>
-` : ''}<div class="lp-backdrop" id="lpBackdrop" hidden></div>
+</label>` : ''}</div>
+<div class="lp-backdrop" id="lpBackdrop" hidden></div>
 <div class="lp-card" id="lpCard" role="dialog" aria-modal="true" aria-labelledby="lpName" hidden></div>
 <script>window.FP_LINEUP = ${inlineJSON(data)};
 </script>
@@ -293,7 +337,10 @@ export function buildEvent(loaded, { releaseArtifact = false, out = path.join(RO
   }
   if (loaded.event.status === 'tba') return buildTba(loaded, out);
   if (loaded.event.status === 'lineup') return buildLineup(loaded, out);
-  const { event: ev, schedule, artists, venue, dir } = loaded;
+  const { event: ev, schedule, artists, venue, dir, lineup = [] } = loaded;
+  // Acts marked 想看 on the lineup page, before the timetable was out, join the picks once (website only: the single
+  // file never had the lineup page). Act id → its sets.
+  const wants = lineup.length ? lineupSets(lineup, schedule) : undefined;
   const build = buildId();
   const template = read(path.join(CORE, 'index.html'));
   const styles = read(path.join(CORE, 'styles.css'));
@@ -316,7 +363,7 @@ export function buildEvent(loaded, { releaseArtifact = false, out = path.join(RO
   };
   // The page needs the players, not the notes on why each song was picked (those are for review in the repo).
   const pageArtists = Object.fromEntries(Object.entries(artists).map(([n, { picks, ...a }]) => [n, a]));
-  const dataJS = (mode, venueSrc) => `window.FP_EVENT = ${inlineJSON(clientConfig(ev, build, mode))};\nwindow.FP_DATA = ${inlineJSON({ schedule, artists: pageArtists })};\n`
+  const dataJS = (mode, venueSrc) => `window.FP_EVENT = ${inlineJSON({ ...clientConfig(ev, build, mode), wants: mode === 'artifact' ? undefined : wants })};\nwindow.FP_DATA = ${inlineJSON({ schedule, artists: pageArtists })};\n`
     + (venue ? `window.FP_VENUE = ${inlineJSON(venueFor(venueSrc, mode !== 'artifact'))};\n` : '');
   const eventCSS = ev.css ? '\n/* ---------- event.css ---------- */\n' + read(path.join(dir, ev.css)) : '';
   // A map button once there is a map, or a placeholder (venue.json "pending") while the official map isn't out yet.

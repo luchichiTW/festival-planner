@@ -110,7 +110,8 @@
   const due = () => (phone ? shownToday() < PER_DAY : !store.get(KEY_INSTALL));
 
   // On a phone the step stays registered even when today's three are used up: the page may stay open past midnight.
-  if (!standalone && (phone || due())) {
+  // Not while trying out a past event (?try): that visit is to see how it works, not to install it.
+  if (!standalone && !FP.trying && (phone || due())) {
     // Keep Chrome's own banner away while our step is still to come; the step offers the same prompt.
     // (iPhone and in-app browsers never offer one; their steps say what to tap instead.)
     if (!isIOS && !inApp && due()) addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); offer = e; FP.onboardRefresh('install'); });
@@ -126,7 +127,7 @@
     });
   }
   // Back on the page after half an hour away (Safari keeps the page open between visits): again, if still due.
-  if (!standalone && phone) {
+  if (!standalone && !FP.trying && phone) {
     let hiddenAt = 0;
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) { hiddenAt = Date.now(); return; }

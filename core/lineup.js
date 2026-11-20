@@ -1,7 +1,8 @@
 /* festival-planner: the "status": "lineup" page — the acts announced so far, before the timetable is out.
    The names are in the HTML (scripts/build.mjs writes them, so readers without JavaScript see the lineup); this script
-   adds English, the theme switch and the artist card (a tap or a long press on an act), in the same shape as the
-   planner's card in core/app.js. Data: window.FP_LINEUP (event.json, data/lineup.json, data/artists.json). */
+   adds English, the theme switch, the artist card (a tap or a long press on an act, in the same shape as the
+   planner's card in core/app.js) and 想看: acts marked on this phone, which the planner adds to the picks once the
+   timetable is out. Data: window.FP_LINEUP (event.json, data/lineup.json, data/artists.json). */
 (() => {
   const L = window.FP_LINEUP;
   const $ = (id) => document.getElementById(id);
@@ -31,11 +32,18 @@
     if (L.subtitleEn) $('topSub').textContent = L.subtitleEn;
     $('luTitle').textContent = t('已公布陣容');
     $('luSub').textContent = t('{n} 組・{date} 更新', { n: L.acts.length, date: dateText });
-    $('luIntro').textContent = t('時間表公布後，這裡會變成排團工具。');
-    document.querySelectorAll('.lu-tile').forEach((b) => {
-      const a = L.acts[Number(b.dataset.i)];
-      b.innerHTML = `<b>${esc(nameOf(a))}</b>${altOf(a) ? `<i>${esc(altOf(a))}</i>` : ''}`;
+    $('luIntro').textContent = t('先標想看的團，時間表公布後會自動排進團序。');
+    document.querySelectorAll('.lu-tile').forEach((li) => {
+      const a = L.acts[Number(li.dataset.i)];
+      li.querySelector('.lu-open').innerHTML = `<b>${esc(nameOf(a))}</b>${altOf(a) ? `<i>${esc(altOf(a))}</i>` : ''}`;
+      li.querySelector('.lu-want span').textContent = t('想看');
+      li.querySelector('.lu-want').setAttribute('aria-label', t('想看：{name}', { name: nameOf(a) }));
     });
+    const demoBtn = $('luDemoBtn');
+    if (demoBtn && L.demo) {
+      demoBtn.textContent = t('用{name}試玩', { name: L.demo.nameEn || L.demo.name });
+      document.querySelectorAll('.lu-demo img').forEach((img) => { img.alt = t('{name} 排團工具的時間表畫面', { name: L.demo.nameEn || L.demo.name }); });
+    }
     $('luSource').textContent = L.sourceNoteEn || L.sourceNote;
     document.querySelectorAll('[data-i18n]').forEach((n) => { n.textContent = t(n.textContent); });
     const search = $('luSearch');
@@ -67,6 +75,45 @@
   });
   try { matchMedia('(prefers-color-scheme: light)').addEventListener('change', syncThemeBtn); } catch (e) { /* old Safari: the button still works */ }
   syncThemeBtn();
+
+  /* ---------- 想看: acts marked on this phone, by their id; the planner adds their sets to the picks later ---------- */
+  const KEY_WANT = key('want');
+  const want = (() => {
+    try {
+      const raw = JSON.parse(store.get(KEY_WANT) || 'null');
+      return Array.isArray(raw?.ids) ? raw.ids.filter((id) => typeof id === 'string') : [];
+    } catch (e) { return []; }
+  })();
+  const app = document.querySelector('.lu-app');
+  const dock = $('luDock');
+  const bar = $('luBar');
+  // The acts scroll clear of whatever sits at the bottom (the count, the search field): its height, kept current.
+  const fitDock = () => app.style.setProperty('--dock', `${dock.offsetHeight}px`);
+  if (window.ResizeObserver) new ResizeObserver(fitDock).observe(dock);
+  function renderWant() {
+    const on = new Set(want);
+    document.querySelectorAll('.lu-tile').forEach((li) => {
+      li.querySelector('.lu-want').setAttribute('aria-pressed', String(on.has(L.acts[Number(li.dataset.i)].id)));
+    });
+    // Only the acts still on this lineup count (an act the festival took off keeps its mark, unseen).
+    const n = L.acts.filter((a) => on.has(a.id)).length;
+    bar.hidden = !n;
+    if (n) bar.innerHTML = `<b>${esc(t('已標 {n} 組想看', { n }))}</b><span>${esc(t('時間表公布後自動排進團序'))}</span>`;
+    fitDock();
+  }
+  document.querySelectorAll('.lu-want').forEach((b) => { b.hidden = false; });
+  $('luIntro').hidden = false;
+  $('luGrid').addEventListener('click', (e) => {
+    const b = e.target.closest('.lu-want');
+    if (!b) return;
+    const id = L.acts[Number(b.closest('.lu-tile').dataset.i)].id;
+    const at = want.indexOf(id);
+    if (at >= 0) want.splice(at, 1);
+    else want.push(id);
+    store.set(KEY_WANT, JSON.stringify({ v: 1, ids: want, t: Date.now() }));
+    renderWant();
+  });
+  renderWant();
 
   /* ---------- artist card ---------- */
   const LP_MS = 450;
@@ -172,7 +219,7 @@
   grid.addEventListener('pointerdown', (e) => {
     press.type = e.pointerType;
     const tile = e.target.closest('.lu-tile');
-    if (!tile || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    if (!tile || e.target.closest('.lu-want') || (e.pointerType === 'mouse' && e.button !== 0)) return;
     cancelPress();
     press.fired = 0;
     press.el = tile;
@@ -184,24 +231,24 @@
       press.fired = Date.now();
       tile.classList.remove('pressing');
       try { if (navigator.vibrate) navigator.vibrate(12); } catch (err) { /* no haptics on this device */ }
-      openArtist(Number(tile.dataset.i), tile, true);
+      openArtist(Number(tile.dataset.i), tile.querySelector('.lu-open'), true);
     }, LP_MS);
   });
   grid.addEventListener('pointermove', (e) => { if (press.timer && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 8) cancelPress(); });
   for (const type of ['pointerup', 'pointercancel', 'pointerleave']) grid.addEventListener(type, cancelPress);
   grid.addEventListener('contextmenu', (e) => {
     const tile = e.target.closest('.lu-tile');
-    if (!tile) return;
+    if (!tile || e.target.closest('.lu-want')) return;
     e.preventDefault();
     // Desktop: right-click opens the card. Touch long presses are handled by the timer.
-    if (press.type === 'mouse') openArtist(Number(tile.dataset.i), tile, false);
+    if (press.type === 'mouse') openArtist(Number(tile.dataset.i), tile.querySelector('.lu-open'), false);
   });
   grid.addEventListener('click', (e) => {
-    const tile = e.target.closest('.lu-tile');
-    if (!tile) return;
+    const open = e.target.closest('.lu-open');
+    if (!open) return;
     // The release that ends a long press is not a tap.
     if (press.fired && Date.now() - press.fired < 1000) { press.fired = 0; return; }
-    openArtist(Number(tile.dataset.i), tile, false);
+    openArtist(Number(open.closest('.lu-tile').dataset.i), open, false);
   });
 
   /* ---------- search (only once the lineup is long: the build adds the field) ---------- */
@@ -212,10 +259,10 @@
     search.addEventListener('input', () => {
       const q = fold(search.value);
       let shown = 0;
-      document.querySelectorAll('.lu-tile').forEach((b) => {
-        const a = L.acts[Number(b.dataset.i)];
+      document.querySelectorAll('.lu-tile').forEach((li) => {
+        const a = L.acts[Number(li.dataset.i)];
         const hit = !q || fold(a.name).includes(q) || fold(a.en).includes(q);
-        b.parentElement.hidden = !hit;
+        li.hidden = !hit;
         if (hit) shown += 1;
       });
       empty.hidden = shown > 0;

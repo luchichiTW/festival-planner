@@ -17,6 +17,7 @@ node scripts/icons.mjs <slug>           # 從 assets/icon.html 重畫主畫面�
 node scripts/check-embeds.mjs <slug>    # 連網核對每個試聽：存在、可嵌入、是這位藝人的（改了 embeds 要跑）
 node scripts/og.mjs <slug>              # 畫分享預覽圖（1200×630）→ assets/og.png
 node scripts/og.mjs site                # 畫首頁與 /privacy/ 的分享預覽圖 → site/og.png（新增活動或換圖示時要跑）
+node scripts/board.mjs <slug>           # 畫手機上的時間表（淺色、深色）→ assets/board-light.webp、board-dark.webp（陣容頁上方卡片用）
 node scripts/lineup.mjs <slug> [--write] # "status": "lineup" 的活動：跟官方陣容頁比對，--write 才寫入 data/lineup.json
 ```
 
@@ -29,7 +30,7 @@ node scripts/lineup.mjs <slug> [--write] # "status": "lineup" 的活動：跟官
 | `core/index.html` | 頁面骨架，`{{…}}` 由 build 填入 |
 | `core/app.js` | 時間表、我的團序、撞團與備選、抽籤、長按卡片、搜尋、下一團、備份連結、第一次打開的導覽（怎麼排團、我的團序） |
 | `core/styles.css` | 版面。顏色與字型不寫在這裡，由 build 從 `event.json` 產生 CSS 變數 |
-| `core/lineup.js`、`core/lineup.css` | `"status": "lineup"` 的陣容頁：英文、深淺色、點一下或長按打開的卡片（最下面一排官方連結）、陣容長了才出現的底部搜尋（頁首與卡片沿用 styles.css） |
+| `core/lineup.js`、`core/lineup.css` | `"status": "lineup"` 的陣容頁：上方說明卡、英文、深淺色、點一下或長按打開的卡片（最下面一排官方連結）、每組的「想看」與底部的想看數、陣容長了才出現的底部搜尋（頁首與卡片沿用 styles.css） |
 | `core/i18n.js` | 英文介面字串：鍵是 `core/` 裡寫的中文（含 `{變數}`），`t()` 在英文模式回傳英文 |
 | `core/embed.js` | 卡片內試聽（Spotify、Apple Music、YouTube、Podcast、街聲），打開卡片才載入、離線不顯示 |
 | `core/map.js` | 場地圖與官方圖：縮放、拖曳、舞台熱區（接下來的演出、步行導航） |
@@ -40,7 +41,7 @@ node scripts/lineup.mjs <slug> [--write] # "status": "lineup" 的活動：跟官
 | `events/<slug>/event.json` | 名稱、日期、時區、舞台與顏色、主題 tokens、字型、圖示、網址 |
 | `events/<slug>/data/schedule.json` | 一筆一場演出 |
 | `events/<slug>/data/artists.json` | 以演出者名稱為鍵：簡介、來源、平台連結、試聽 ID、多位演出者 |
-| `events/<slug>/data/lineup.json` | 只在 `"status": "lineup"`：官方陣容頁上的順序，每組的官方英文名、官網上的頁面（`page`）、官方頁列出的連結（`links`：facebook、instagram、youtube、x、official） |
+| `events/<slug>/data/lineup.json` | `"status": "lineup"` 時的陣容：官方陣容頁上的順序，每組的官方英文名、官網上的頁面（`page`，網址最後一段是這組的 id）、官方頁列出的連結（`links`：facebook、instagram、youtube、x、official）。時間表公布後留著，排團工具用它把「想看」換成團序 |
 | `events/<slug>/data/venue.json` | 選用：地圖熱區（圖的百分比）、舞台座標、官方圖清單（`images`）、資訊圖清單（`info`：地圖頁第 4 個分頁「資訊」，按鈕換成 i 圖示；只進網站版，不進單一檔案） |
 | `events/<slug>/artifact/` | 單檔版本與發佈說明，跟著 git tag 走 |
 | `events/<slug>/CLAUDE.md` | 這個活動的來源、限制、資料規則、待辦 |
@@ -50,7 +51,7 @@ node scripts/lineup.mjs <slug> [--write] # "status": "lineup" 的活動：跟官
 | `site/wrangler.jsonc`、`site/worker.js` | 首頁的 Worker（`fp-home`）：首頁由 `dist-site/` 的檔案回應，其他路徑原封不動交給原站 |
 | `core/page.css` | 藝人頁與 Claude 頁的樣式（`features.pages`），配色和字型沿用活動的 tokens |
 | `scripts/lib/pages.mjs` | 不用 JavaScript 也讀得到的頁面：文字版時間表、藝人頁、Claude 頁、各頁的 metadata、JSON-LD、Markdown 版、sitemap |
-| `scripts/` | validate、build、serve、fonts、icons、og、check-embeds；`lib/chrome.mjs` 是不用套件的無頭 Chrome 驅動 |
+| `scripts/` | validate、build、serve、fonts、icons、og、board、lineup、check-embeds；`lib/chrome.mjs` 是不用套件的無頭 Chrome 驅動 |
 | `tests/` | `node:test`；`e2e.test.mjs` 用無頭 Chrome 跑；`helpers.mjs` 是共用的測試資料（例如從 megaport2027 改出來的 tba 活動） |
 
 `core/` 裡不能出現任何特定活動的名稱、日期或顏色。活動專屬的東西放 `event.json`；真的需要活動專屬邏輯時，先想能不能變成 `event.json` 的設定。
@@ -106,8 +107,11 @@ node scripts/lineup.mjs <slug> [--write] # "status": "lineup" 的活動：跟官
 只有陣容時，`event.json` 寫 `"status": "lineup"`，資料放 `data/lineup.json`（官方陣容頁上的順序）和 `data/artists.json`（簡介）。build 產生一頁：
 
 - 陣容依官方順序排成格子，團名直接寫在 HTML 裡（不執行 JavaScript 也讀得到）；標題、描述寫已公布幾組和資料日期，根網域 sitemap 的 `lastmod` 是 `dataDate`。
+- 上方一張說明卡（`event.json` 的 `demo`：一個已結束、有時間表的活動代號）：左邊是那個活動的時間表截圖（`node scripts/board.mjs <demo>` 產生，淺色深色各一張 WebP），右邊寫時間表公布後能做什麼，下面一顆「用〇〇試玩」連到那個活動的 `?try`。文字寫在 HTML 裡。
+- `?try`（`core/app.js` 的 `TRYING`，只在網站版）：排團工具當成活動還沒開始，時間表不會變灰、沒有現在線和下一團，也不跳「加到主畫面」那一步（`core/pwa.js`）；其他照常。直接打開網址的人照舊：活動結束就變灰。改到這段時，要重新部署 `demo` 指的那個活動，線上的試玩才會跟著變。
 - 點一下或長按一組：打開一張卡片（「舞台和時間待公布」、名稱、簡介和來源），最下面一排圓形按鈕是官方頁列出的連結（Facebook、Instagram、YouTube、X、官方網站，各用自己的字樣圖示）。
-- 陣容到 20 組（`LINEUP_SEARCH_MIN`）才在底部加搜尋。
+- 每組一顆「想看」：存在這台裝置（`fp:<slug>:want`），用這組的 id（`page` 網址最後一段，官方改團名寫法也對得上）記。底部浮動條寫已標幾組。時間表公布後，排團工具第一次打開時把想看的組的場次加進團序（只做一次，`fp:<slug>:want-moved`），並跳一行「已把 N 組想看排進團序」。
+- 陣容到 20 組（`LINEUP_SEARCH_MIN`）才在底部加搜尋；想看數在搜尋框上面，打字時只留搜尋框。
 - 首頁票券寫「已公布 N 組陣容・每年更新」，llms.txt 寫已公布幾組、時間表待公布。
 - 沒有 service worker、沒有單一檔案、沒有結構化資料（日期還沒有官方文字）。
 
@@ -115,7 +119,7 @@ node scripts/lineup.mjs <slug> [--write] # "status": "lineup" 的活動：跟官
 
 更新陣容：`node scripts/lineup.mjs <slug>` 會抓官方陣容頁和每組的頁面，列出新增、消失、連結改了的組；加 `--write` 才寫入 `data/lineup.json` 並把 `dataDate` 改成今天。新的組要寫簡介時，照活動 `CLAUDE.md` 的規則從官網寫。
 
-時間表公布後：拿掉 `status`，照「新增一個活動」補齊，`lineup.json` 可以留著當官方連結的來源。
+時間表公布後：拿掉 `status` 和 `demo`，照「新增一個活動」補齊。`lineup.json` 要留著：validate 會檢查每一組都對得到時間表上的場次（名稱或英文名，忽略大小寫、空白、標點和「[JP]」這類標記）；對不上的，在 schedule.json 那一場加 `"lineup": "<id>"`（幾組同台就寫成陣列），不然那組的想看會不見。
 
 ## 不用 JavaScript 也讀得到的頁面（`features.pages`）
 

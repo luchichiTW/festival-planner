@@ -79,7 +79,11 @@
   };
 
   // The festival's wall clock (EVT.timezone), whatever the phone's own time zone is.
+  // ?try (a lineup page's 用〇〇試玩 links a past event this way): the page as before the festival, so nothing on the
+  // board has ended and the whole timetable can be tried out. Website only; without it a past event looks ended.
+  const TRYING = EVT.mode !== 'artifact' && new URLSearchParams(location.search).has('try');
   function festNow() {
+    if (TRYING) return { iso: '', min: 0 };
     try {
       const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
         timeZone: EVT.timezone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
@@ -130,6 +134,22 @@
     if (raw && typeof raw.t === 'number') stamp = raw.t;
   } catch (e) { /* unreadable copy: start empty */ }
   const savePicks = () => store.set(KEY_PICKS, JSON.stringify({ v: 1, picks: [...picks], prefs: [...prefs], t: stamp }));
+  // Acts marked 想看 on the lineup page (core/lineup.js) before the timetable was out: their sets join the picks, once.
+  // EVT.wants (website only, from data/lineup.json): an act's id → its sets.
+  let wantMoved = 0;
+  if (EVT.wants && !store.get(key('want-moved'))) {
+    let ids = [];
+    try { const raw = JSON.parse(store.get(key('want')) || 'null'); if (Array.isArray(raw?.ids)) ids = raw.ids; } catch (e) { /* unreadable: nothing to add */ }
+    if (ids.length) {
+      for (const id of ids) {
+        const add = (EVT.wants[id] || []).filter((sid) => BYID.has(sid) && !picks.has(sid));
+        add.forEach(addPick);
+        if (add.length) wantMoved += 1;
+      }
+      if (wantMoved) { stamp = Date.now(); savePicks(); }
+      store.set(key('want-moved'), '1');
+    }
+  }
 
   const state = { view: 'pick', day: DAY_NUMS[0] };
   try {
@@ -1492,6 +1512,7 @@
     shows: () => SHOWS,
     stages: () => STAGES,
     festNow,
+    trying: TRYING,
     locateShow: (id) => locateShow(id),
     onCommit: (fn) => { commitHooks.push(fn); },
     onboardStep: (step) => { obAddOns.push(step); },
@@ -1522,6 +1543,7 @@
   updateCounts();
   renderNext();
   requestAnimationFrame(scrollBoard);
+  if (wantMoved) toast(t('已把 {n} 組想看排進團序', { n: wantMoved }), 3200);
 
   // #show-<id> (from an artist page's 在時間表上看): open on that show, then drop it from the address.
   const showLink = /^#show-(.+)$/.exec(location.hash || '');

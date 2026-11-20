@@ -14,6 +14,28 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const HEX = /^#[0-9A-Fa-f]{6}$/;
 // The links an act's page on the festival site lists (lineup.json): what the artist card shows while only the lineup is out.
 const LINEUP_LINKS = ['facebook', 'instagram', 'youtube', 'x', 'official'];
+// An act's id: the last part of its page's address on the festival site (…/portfolio-item/the-hu/ → the-hu). It stays
+// when the festival changes how the name is written, so the acts marked 想看 on the lineup page (core/lineup.js, kept
+// on the visitor's phone by this id) still find their act, and later its sets.
+export function lineupId(page) {
+  try { return decodeURIComponent(new URL(page).pathname.split('/').filter(Boolean).pop() || '').toLowerCase(); } catch { return ''; }
+}
+// Names compared without case, spaces, punctuation or a tag like "[JP]".
+const foldName = (s) => String(s || '').toLowerCase().replace(/\[[^\]]*\]|（[^）]*）|\([^)]*\)/g, '').replace(/[\s\p{P}\p{S}]/gu, '');
+// Once the timetable is out, each act on the lineup → the ids of its sets: a set whose name or English name is the
+// act's, or a set that names it with "lineup" (an id, or a list of ids for a set shared by several acts).
+export function lineupSets(lineup, schedule) {
+  const map = {};
+  for (const a of lineup || []) {
+    const id = lineupId(a.page);
+    const names = new Set([foldName(a.name), foldName(a.en)].filter(Boolean));
+    map[id] = (schedule || []).filter((s) => {
+      if (s.lineup !== undefined) return [].concat(s.lineup).includes(id);
+      return names.has(foldName(s.name)) || (!!s.en && names.has(foldName(s.en)));
+    }).map((s) => s.id);
+  }
+  return map;
+}
 const LINK_PATTERNS = {
   spotify: /^https:\/\/open\.spotify\.com\/artist\/[A-Za-z0-9]{22}$/,
   apple: /^https:\/\/music\.apple\.com\/[a-z]{2}\/artist\/([^/?#]+\/)?\d+$/,
@@ -156,6 +178,7 @@ export function validate({ slug, dir, event: ev, schedule, artists, venue, lineu
     if (!Array.isArray(lineup) || !lineup.length) err('lineup.json: 陣容至少要有一組（lineup 是官方陣容頁上的順序）');
     const lineupHost = host(ev.urls?.lineup || '');
     const seen = new Set();
+    const pages = new Set();
     (Array.isArray(lineup) ? lineup : []).forEach((a, i) => {
       const at = `lineup.json [${i}]${a?.name ? ` "${a.name}"` : ''}`;
       if (!a?.name || typeof a.name !== 'string') { err(`${at}: 缺少 name`); return; }
@@ -163,11 +186,22 @@ export function validate({ slug, dir, event: ev, schedule, artists, venue, lineu
       seen.add(a.name);
       if (a.en !== undefined && (typeof a.en !== 'string' || !a.en.trim())) err(`${at}: en（官方英文名）要是文字，沒有就不寫`);
       if (!/^https:\/\//.test(a.page || '') || host(a.page) !== lineupHost) err(`${at}: page 要是這組在官網（${lineupHost}）上的頁面`);
+      else if (!lineupId(a.page)) err(`${at}: page 的網址最後要有這組的代號（想看用它記）`);
+      else if (pages.has(lineupId(a.page))) err(`${at}: page 跟前面的組重複（想看用 page 網址最後一段記，每組要不一樣）`);
+      pages.add(lineupId(a.page));
       for (const [k, u] of Object.entries(a.links || {})) {
         if (!LINEUP_LINKS.includes(k)) err(`${at}: 連結 "${k}" 不是官方頁會列的種類（只收 ${LINEUP_LINKS.join('、')}）`);
         else if (!/^https:\/\/[^\s]+$/.test(u)) err(`${at}: ${k} 連結 ${u} 要是 https 網址`);
       }
     });
+    // The card on top: try a past event's real timetable (event.json "demo": its slug), with pictures of its board.
+    if (ev.demo !== undefined) {
+      const demoFile = path.join(ROOT, 'events', String(ev.demo), 'event.json');
+      const demo = fs.existsSync(demoFile) ? JSON.parse(fs.readFileSync(demoFile, 'utf8')) : null;
+      if (!demo) err(`event.json: demo "${ev.demo}" 要是 events/ 底下的活動`);
+      else if (demo.status) err(`event.json: demo "${ev.demo}" 要是有時間表的活動（排團工具），不是 ${demo.status} 頁`);
+      else for (const f of ['board-light.webp', 'board-dark.webp']) if (!fs.existsSync(path.join(ROOT, 'events', ev.demo, 'assets', f))) err(`event.json: demo 需要 events/${ev.demo}/assets/${f}（node scripts/board.mjs ${ev.demo}）`);
+    }
     const official = new Map((Array.isArray(lineup) ? lineup : []).map((a) => [a?.name, a?.links?.official]));
     checkArtists({ ev, artists, performers: seen, unknown: '不在陣容裡，可能是名字拼法不一致', officialSite: (n) => official.get(n), err, warn });
     const withBio = [...seen].filter((n) => artists?.[n]?.bio).length;
@@ -240,6 +274,10 @@ export function validate({ slug, dir, event: ev, schedule, artists, venue, lineu
     if (!stageIds.has(s.stage)) err(`${at}: 舞台 "${s.stage}" 不在 event.json 的 stages 裡`);
     if (!s.name || typeof s.name !== 'string') err(`${at}: 缺少 name`);
     for (const k of ['en', 'note']) if (typeof s[k] !== 'string') err(`${at}: ${k} 要是字串（沒有就寫 ""）`);
+    if (s.lineup !== undefined) {
+      const known = new Set((lineup || []).map((a) => lineupId(a.page)));
+      for (const id of [].concat(s.lineup)) if (typeof id !== 'string' || !known.has(id)) err(`${at}: lineup "${id}" 不在 lineup.json 裡（用那一組 page 網址的最後一段）`);
+    }
     if ('noteEn' in s && (typeof s.noteEn !== 'string' || !s.note)) err(`${at}: noteEn 要是字串，而且只在有 note 時才寫（官方英文版的講座標題）`);
     if (!HHMM.test(s.start || '') || !HHMM.test(s.end || '')) { err(`${at}: start／end 要是 HH:MM`); return; }
     const a = toMin(s.start);
@@ -258,6 +296,12 @@ export function validate({ slug, dir, event: ev, schedule, artists, venue, lineu
   }
   const maxSeq = Math.max(-1, ...seqs);
   if (seqs.size && maxSeq >= 512) warn('schedule.json: seq 超過 512，備份連結會變得很長');
+
+  // The lineup page's acts (kept after the timetable is out): each needs a set, or its 想看 marks would be lost.
+  if (Array.isArray(lineup) && lineup.length) {
+    const sets = lineupSets(lineup, schedule);
+    for (const a of lineup) if (!sets[lineupId(a.page)]?.length) err(`lineup.json "${a.name}"：時間表裡找不到這組（名稱或英文名對不上），在 schedule.json 那一場加 "lineup": "${lineupId(a.page)}"`);
+  }
 
   /* ---------- artists.json ---------- */
   const performers = new Set();
