@@ -15,6 +15,9 @@ body.lu-body { height: auto; min-height: 100%; overflow: visible; }
 html:has(> body.lu-body) { height: auto; min-height: 100%; }
 body.lu-body { background-repeat: no-repeat; background-size: 100% 100%; }
 .lu-app { height: auto; }
+/* The header lets the event's glow (event.css, on the page background) run on up behind it to the top of the screen,
+   under the clock, instead of the glow stopping in a straight line at the header's bottom edge. */
+.lu-app > .top { background: transparent; }
 .lu { flex: none; }
 .lu-in {
   max-width: 920px;

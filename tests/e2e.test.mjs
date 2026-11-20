@@ -1957,6 +1957,9 @@ test('lineup page: the acts in the festival’s order; a tap or a long press ope
     });
     assert.deepEqual(edges, { page: true, box: false, bar: 'none', inside: true }, `scrolling at ${width}px`);
     assert.match(await page.eval(() => getComputedStyle(document.body).backgroundRepeat), /^no-repeat(, no-repeat)*$/, 'the glow behind the page spreads once over it, not once a screen');
+    // No straight edge under the header: it lets the glow through, and the glow fades in from the page colour at the top.
+    assert.equal(await page.eval(() => getComputedStyle(document.querySelector('.lu-app > .top')).backgroundColor), 'rgba(0, 0, 0, 0)', 'the header is see-through');
+    assert.match(await page.eval(() => getComputedStyle(document.body).backgroundImage), /^linear-gradient\(/, 'the glow fades in from the top');
     assert.equal(await page.eval(`document.getElementById('luDisclaimer').textContent`), '這是非官方的排團工具。');
     // A long press or a drag never picks up text: nothing on the page can be selected or copied.
     assert.deepEqual(await page.eval(() => ['.lu-title', '.lu-sub', '.lu-demo-title', '.lu-feats li', '.lu-demo-btn', '.lu-intro', '.lu-tile b', '#luDisclaimer', '#luSource'].map((q) => getComputedStyle(document.querySelector(q)).userSelect)), Array(9).fill('none'));
