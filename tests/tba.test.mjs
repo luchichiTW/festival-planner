@@ -5,15 +5,15 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { loadEvent, listEvents, validate } from '../scripts/validate.mjs';
-import { build, buildSite } from '../scripts/build.mjs';
+import { loadEvent, validate } from '../scripts/validate.mjs';
+import { buildEvent, ticket } from '../scripts/build.mjs';
+import { tbaEvent } from './helpers.mjs';
 
 const SLUG = 'megaport2027';
 const clone = (o) => JSON.parse(JSON.stringify(o));
 
 test('a tba event validates without dates, stages or a timetable, but needs its notice', () => {
-  assert.ok(listEvents().includes(SLUG));
-  const ev = loadEvent(SLUG);
+  const ev = tbaEvent();
   assert.equal(ev.event.status, 'tba');
   assert.deepEqual(ev.schedule, []);
   assert.deepEqual(validate(ev).errors, []);
@@ -28,10 +28,11 @@ test('a tba event validates without dates, stages or a timetable, but needs its 
 test('a tba event builds one page with the notice, no planner, no service worker, and still redirects /<slug>', () => {
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'fp-tba-'));
   process.env.FP_BUILD = 'tba-test';
-  try { build(SLUG, { out, artifactOut: out + '-art' }); } finally { delete process.env.FP_BUILD; }
+  const tba = tbaEvent();
+  try { buildEvent(tba, { out, artifactOut: out + '-art' }); } finally { delete process.env.FP_BUILD; }
   const site = path.join(out, SLUG);
   const html = fs.readFileSync(path.join(site, 'index.html'), 'utf8');
-  const { event: ev } = loadEvent(SLUG);
+  const { event: ev } = tba;
   assert.ok(html.includes(ev.notice), 'shows the notice');
   assert.ok(html.includes(ev.name), 'names the event');
   assert.match(html, /<html lang="zh-Hant-TW"/);
@@ -54,12 +55,10 @@ test('a tba event builds one page with the notice, no planner, no service worker
   fs.rmSync(out + '-art', { recursive: true, force: true });
 });
 
-test('the homepage lists a tba event without dates', () => {
-  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'fp-tba-site-'));
-  buildSite({ out });
-  const html = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
-  const t = new RegExp(`<a class="ticket"[^>]* href="${SLUG}/"[\\s\\S]*?</a>`).exec(html)?.[0] || '';
+test('the homepage ticket of a tba event has no dates and says the details are on the way', () => {
+  const { event: ev } = tbaEvent();
+  const t = ticket(ev);
   assert.ok(t.includes("data-days='[]'"), 'a ticket without dates');
-  assert.ok(t.includes(loadEvent(SLUG).event.notice), 'saying the details are on the way');
-  fs.rmSync(out, { recursive: true, force: true });
+  assert.ok(t.includes(`<p class="t-where">${ev.ticketNote}</p>`), 'saying the details are on the way');
+  assert.doesNotMatch(t, /class="t-days"|class="t-stages"/);
 });

@@ -707,27 +707,29 @@
     const live = list.filter((s) => now.min >= s.start && now.min < s.end);
     const next = list.find((s) => s.start > now.min);
     if (!live.length && !next) { nextBar.hidden = true; nextBar.innerHTML = ''; return; }
-    const rows = [];
+    // One capsule, two lines: what's on now, and the next show you're going to. A tap takes you to the next one
+    // (you're already at the one playing); with nothing next, to the one playing.
+    const lines = [];
+    let tight = false;
     if (live.length) {
       const s = live[0];
-      const pct = ((now.min - s.start) / (s.end - s.start)) * 100;
-      rows.push(`<button type="button" class="nx live" data-go="${s.id}" style="--c:${s.stage.c}">
-        <span class="nx-lb">${t('演出中')}</span><span class="pill">${esc(s.stage.short)}</span><span class="nx-name">${esc(s.label)}</span>
-        ${live.length > 1 ? `<span class="nx-more">${t('+{n} 撞', { n: live.length - 1 })}</span>` : ''}
-        <span class="nx-left">${t('剩 {n} 分', { n: s.end - now.min })}</span>
-        <span class="nx-prog" aria-hidden="true"><i style="width:${pct.toFixed(1)}%"></i></span></button>`);
+      lines.push(`<span class="nx-line"><span class="nx-lb">${t('演出中')}</span><span class="pill">${esc(s.stage.short)}</span><span class="nx-name">${esc(s.label)}</span>
+        <span class="nx-left">${t('剩 {n} 分', { n: s.end - now.min })}${live.length > 1 ? ` · ${t('+{n} 撞', { n: live.length - 1 })}` : ''}</span></span>`);
     }
     if (next) {
       const left = next.start - now.min;
       const liveEnd = live.length ? Math.max(...live.map((s) => s.end)) : null;
-      const tight = left <= 10 || (liveEnd !== null && next.start - liveEnd <= 10);
+      tight = left <= 10 || (liveEnd !== null && next.start - liveEnd <= 10);
       const nextClash = list.filter((o) => o !== next && o.start > now.min && overlap(o, next)).length;
-      rows.push(`<button type="button" class="nx${tight ? ' tight' : ''}" data-go="${next.id}" style="--c:${next.stage.c}">
-        <span class="nx-lb">${t('下一團')}</span><span class="pill">${esc(next.stage.short)}</span>
-        <span class="nx-stack"><span class="nx-name">${esc(next.label)}</span>
-        <span class="nx-sub"><span class="nx-t">${t('{time} · 還有 {d}', { time: fmt(next.start), d: dur(left) })}</span>${nextClash ? `<span class="nx-warn">${t('撞 {n} 團還沒決定', { n: nextClash })}</span>` : ''}</span></span></button>`);
+      lines.push(`<span class="nx-line nx-next"><span class="nx-lb">${t('下一團')}</span><span class="pill" style="--c:${next.stage.c}">${esc(next.stage.short)}</span><span class="nx-name">${esc(next.label)}</span>
+        <span class="nx-t">${t('{time} · 還有 {d}', { time: fmt(next.start), d: dur(left) })}</span>${nextClash ? `<span class="nx-warn">${t('撞 {n} 團還沒決定', { n: nextClash })}</span>` : ''}</span>`);
     }
-    nextBar.innerHTML = rows.join('');
+    const go = next || live[0];
+    const s0 = live[0];
+    const pct = s0 ? ((now.min - s0.start) / (s0.end - s0.start)) * 100 : 0;
+    nextBar.innerHTML = `<button type="button" class="nx${live.length ? ' live' : ''}${tight ? ' tight' : ''}${lines.length > 1 ? ' two' : ''}" data-go="${go.id}" style="--c:${(s0 || go).stage.c}">
+      <span class="nx-stack">${lines.join('')}</span>
+      ${s0 ? `<span class="nx-prog" aria-hidden="true"><i style="width:${pct.toFixed(1)}%"></i></span>` : ''}</button>`;
     nextBar.hidden = false;
   }
   nextBar.addEventListener('click', (e) => {

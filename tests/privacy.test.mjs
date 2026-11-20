@@ -92,7 +92,7 @@ test('every page links to the privacy page, and the site sitemap lists it', () =
   const { artists } = loadEvent(slug);
   const a = Object.values(artists).find((x) => x.slug && (x.bio || Object.keys(x.links || {}).length));
   for (const p of [`artists/${a.slug}/index.html`, 'claude/index.html']) assert.ok(read(out, slug, p).includes('href="/privacy/"'), p);
-  assert.ok(read(out, 'megaport2027', 'index.html').includes('href="/privacy/"'), 'tba page');
+  assert.ok(read(out, 'megaport2027', 'index.html').includes('href="/privacy/"'), 'lineup page');
   assert.ok(read(site, 'sitemap.xml').includes('<loc>https://chiparashi.tw/privacy/</loc>'));
 });
 

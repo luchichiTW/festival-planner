@@ -45,7 +45,7 @@ test('one ticket per event, painted from its event.json: wordmark, place, days, 
     assert.ok(t.includes(`--tl:${d.bg}`), `${ev.slug}: ticket on the light page uses the event's dark background`);
     assert.ok(t.includes(`--t-accent:${d['accent-text'] || d.gold}`) && t.includes(`--t-fg:${d.fg}`), `${ev.slug}: text and accent colours`);
     assert.ok(t.includes(`${ev.wordmark?.text || ev.shortName}<small>${ev.wordmark?.sub || ''}</small>`), `${ev.slug}: wordmark`);
-    if (ev.status === 'tba') {
+    if (ev.status) {
       assert.ok(t.includes("data-days='[]'"), `${ev.slug}: no dates yet`);
       assert.doesNotMatch(t, /class="t-days"|class="t-stages"/, `${ev.slug}: no days or stages`);
       continue;
@@ -150,10 +150,13 @@ test('llms.txt: the festivals from event.json, moved ones linking to where they 
     assert.ok(list.includes(`](${url})`), `${ev.slug} → ${url}`);
     if (archived(ev)) assert.ok(list.includes(`[${ev.name}（舊版）]`) && /已結束/.test(list.split('\n').find((l) => l.includes(url))), `${ev.slug}: old version, over`);
     if (ev.status === 'tba') assert.match(list.split('\n').find((l) => l.includes(url)), /日期和陣容待官方公布/);
+    if (ev.status === 'lineup') assert.match(list.split('\n').find((l) => l.includes(url)), /已公布 \d+ 組陣容.*時間表待公布/);
   }
   const vb = list.split('\n').find((l) => l.includes(`${HOST}/vagabond2026/`));
   assert.match(vb, /2026 年 11 月 7–8 日/);
-  assert.match(vb, /7 個舞台/);
+  // Coming up: how many stages; once it is over, just that it is over (the line is built with today's date).
+  const over = loadEvent('vagabond2026').event.days.at(-1).date < new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei' }).format(new Date());
+  assert.match(vb, over ? /已結束$/ : /7 個舞台$/);
   const ai = /## 給 AI 助理\n\n([\s\S]*?)\n\n## /.exec(txt)?.[1] || '';
   assert.ok(ai.includes(`[用 Claude 做你自己的排團工具](${SITE_GUIDE})`), 'make your own: the site-wide /claude/');
   for (const ev of events.filter((e) => e.features?.pages && !archived(e))) {
@@ -201,8 +204,8 @@ test('homepage: the description from site/site.json, a link to make your own in 
   assert.deepEqual([...order].sort((a, b) => a - b), order, 'tickets, then make your own, then the rest');
   const make = /<section class="make"[\s\S]*?<\/section>/.exec(html)[0];
   assert.ok(make.includes('href="claude/"') && make.includes('href="https://github.com/luchichiTW/festival-planner"'));
-  // 大港開唱 2027, waiting for its dates, says it is updated every year.
-  assert.match(ticketOf(html, 'megaport2027'), /<p class="t-where">待官方資訊公布・每年更新<\/p>/);
+  // 大港開唱 2027, lineup out and waiting for its timetable, says how many acts and that it is updated every year.
+  assert.match(ticketOf(html, 'megaport2027'), /<p class="t-where">已公布 \d+ 組陣容・每年更新<\/p>/);
 });
 
 test('sitemap.xml: the homepage and every event still served here, not the ones that moved', () => {

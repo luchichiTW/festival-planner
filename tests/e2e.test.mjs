@@ -7,7 +7,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { ROOT, loadEvent } from '../scripts/validate.mjs';
-import { build, buildSite } from '../scripts/build.mjs';
+import { build, buildEvent, buildSite } from '../scripts/build.mjs';
+import { tbaEvent } from './helpers.mjs';
 import { serve } from '../scripts/serve.mjs';
 import { launch, sleep } from '../scripts/lib/chrome.mjs';
 
@@ -108,6 +109,8 @@ before(async () => {
   try {
     build('megaport2026', { out: mainRoot, artifactOut: path.join(tmp, 'main-mp-art') });
     build('megaport2027', { out: mainRoot, artifactOut: path.join(tmp, 'main-mp-art') });
+    buildEvent(tbaEvent('tbaexample'), { out: mainRoot, artifactOut: path.join(tmp, 'main-mp-art') });
+    buildEvent(longLineup('lineuplong'), { out: mainRoot, artifactOut: path.join(tmp, 'main-mp-art') });
   } finally { delete process.env.FP_BUILD; }
   buildSite({ out: mainRoot });
   main = await origin();
@@ -158,6 +161,10 @@ test('AC-02 festival day: opens on today (festival time zone), now line, playing
   const bar = await page.eval(`document.getElementById('nextBar').innerText`);
   assert.match(bar, /演出中/);
   assert.match(bar, /下一團/);
+  // One capsule, two lines; a tap goes to the next show (you're already at the one playing).
+  assert.deepEqual(await page.eval(() => [...document.querySelectorAll('#nextBar .nx')].map((b) => [b.dataset.go, b.querySelectorAll('.nx-line').length])), [[later, 2]]);
+  await page.tap('#nextBar .nx');
+  await page.until((id) => document.querySelector(`.block[data-id="${id}"]`).classList.contains('located'), { args: [later] });
   await closePage(page);
 
   // Day 1 opens on day 1 even after day 2 was viewed; before the festival there is no now line or next-up bar.
@@ -1586,7 +1593,8 @@ test('vagabond card: one recommended song per platform, each tab its own song', 
 const NOJS_CLIPPED = () => {
   const out = [];
   for (const el of document.querySelectorAll('body *')) {
-    if (el.offsetParent === null || /^(SCRIPT|STYLE)$/.test(el.tagName)) continue;
+    // .sr-only: screen-reader text, a 1px box on purpose.
+    if (el.offsetParent === null || /^(SCRIPT|STYLE)$/.test(el.tagName) || el.classList.contains('sr-only')) continue;
     const r = el.getBoundingClientRect();
     if (r.right > innerWidth + 1) out.push(`wider than the screen: ${el.tagName}.${el.className}`);
     const cs = getComputedStyle(el);
@@ -1673,14 +1681,131 @@ test('an event waiting for its announcement: one page saying so, readable at 390
     const urls = [];
     chrome.conn.listeners.add((m) => { if (m.sessionId === page.sessionId && m.method === 'Network.requestWillBeSent') urls.push(m.params.request.url); });
     await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: theme }] });
-    await page.goto(`${main.base}/megaport2027`);
-    assert.equal(await page.eval('location.pathname'), '/megaport2027/');
+    await page.goto(`${main.base}/tbaexample`);
+    assert.equal(await page.eval('location.pathname'), '/tbaexample/');
     assert.match(await page.eval('document.body.innerText'), /待官方資訊公布/);
     assert.deepEqual(await page.eval(NOJS_CLIPPED), [], `clipped at ${width}px`);
     assert.equal(await page.eval('navigator.serviceWorker.controller'), null);
     assert.deepEqual(foreignOf(urls, main.base), []);
     await closePage(page);
   }
+  await main.close();
+});
+
+// The lineup is out, the timetable is not (megaport2027, "status": "lineup").
+const LU_READY = () => document.querySelectorAll('.lu-tile').length > 0;
+// megaport2027 with made-up acts added after the real ones, long enough for the search field.
+function longLineup(slug) {
+  const e = loadEvent('megaport2027');
+  e.slug = slug;
+  e.event = { ...e.event, slug, urls: { ...e.event.urls, site: `https://chiparashi.tw/${slug}/` } };
+  e.lineup = [...e.lineup, ...Array.from({ length: 18 }, (_, i) => ({ name: `Test Act ${i + 1}`, page: `https://megaportfest.com/portfolio-item/test-act-${i + 1}/`, links: {} }))];
+  return e;
+}
+test('lineup page: the acts in the festival’s order; a tap or a long press opens the card with the festival’s links; readable at 390 and 320 px', { skip: SKIP }, async () => {
+  const main = await origin();
+  const { lineup, artists } = loadEvent('megaport2027');
+  const cardOpen = () => !document.getElementById('lpCard').hidden;
+  for (const [width, theme] of [[390, 'dark'], [320, 'light']]) {
+    const page = await chrome.newPage({ width, height: 844, touch: true });
+    const urls = [];
+    chrome.conn.listeners.add((m) => { if (m.sessionId === page.sessionId && m.method === 'Network.requestWillBeSent') urls.push(m.params.request.url); });
+    await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: theme }] });
+    await page.goto(`${main.base}/megaport2027`);
+    await page.until(LU_READY);
+    assert.equal(await page.eval('location.pathname'), '/megaport2027/');
+    assert.deepEqual(await page.eval(() => [...document.querySelectorAll('.lu-tile b')].map((b) => b.textContent)), lineup.map((a) => a.name));
+    assert.deepEqual(await page.eval(NOJS_CLIPPED), [], `clipped at ${width}px`);
+    assert.equal(await page.eval(`document.getElementById('luSearch')`), null, 'a short lineup needs no search');
+    // Header buttons: 44 pt touch targets.
+    assert.deepEqual(await page.eval(() => [...document.querySelectorAll('.top .hdr-btn')].map((b) => [b.offsetWidth, b.offsetHeight])), [[44, 44], [44, 44]]);
+    // A tap: one card with the act's intro, and the links the festival lists as a row of round buttons, in its order.
+    const i = lineup.findIndex((a) => Object.keys(a.links).length >= 4 && artists[a.name]?.bio);
+    const a = lineup[i];
+    await page.tap(`.lu-tile[data-i="${i}"]`);
+    await page.until(cardOpen);
+    const card = await page.eval(() => ({
+      head: document.querySelector('#lpCard .lu-tba').textContent,
+      name: document.getElementById('lpName').textContent,
+      links: [...document.querySelectorAll('#lpCard .lu-links a')].map((x) => x.getAttribute('href')),
+      rows: [...document.querySelectorAll('#lpCard .lu-links a')].map((x) => x.offsetHeight >= 44),
+      bio: document.querySelector('#lpCard .lu-bio').textContent,
+      src: document.querySelector('#lpCard .lp-src a').getAttribute('href'),
+    }));
+    assert.deepEqual(card, { head: '舞台和時間待公布', name: a.name, links: Object.values(a.links), rows: Object.values(a.links).map(() => true), bio: artists[a.name].bio, src: artists[a.name].sources[0] });
+    // The card, links included, fits on the screen.
+    const fit = await page.eval(() => { const r = document.getElementById('lpCard').getBoundingClientRect(); const l = document.querySelector('#lpCard .lu-links').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth && l.bottom <= r.bottom; });
+    assert.ok(fit, `card on screen at ${width}px`);
+    // The links spread evenly across the card: every button in a row is as wide as the others in that row.
+    const rows = await page.eval(() => {
+      const byTop = {};
+      for (const x of document.querySelectorAll('#lpCard .lu-links a')) (byTop[x.offsetTop] ||= []).push(x.offsetWidth);
+      return Object.values(byTop);
+    });
+    for (const r of rows) assert.ok(Math.max(...r) - Math.min(...r) <= 1, `even links in a row: ${r}`);
+    assert.ok(rows[0].length >= Math.min(3, Object.keys(a.links).length), `at least 3 links on the first row at ${width}px`);
+    assert.deepEqual(await page.eval(NOJS_CLIPPED), [], `card clipped at ${width}px`);
+    await page.eval(() => document.getElementById('lpBackdrop').click());
+    await page.until(() => document.getElementById('lpCard').hidden);
+    // Back on the act it came from, without a focus ring after a tap.
+    assert.deepEqual(await page.eval((n) => { const t = document.querySelector(`.lu-tile[data-i="${n}"]`); return [document.activeElement === t, getComputedStyle(t).outlineStyle]; }, i), [true, 'none']);
+    // A long press opens it too; an act without an intro says so.
+    const j = lineup.findIndex((x) => !artists[x.name]?.bio);
+    await page.longPress(`.lu-tile[data-i="${j}"]`);
+    await page.until(cardOpen);
+    assert.equal(await page.eval(`document.getElementById('lpName').textContent`), lineup[j].name);
+    assert.match(await page.eval(`document.getElementById('lpCard').textContent`), /目前沒有找到可靠的介紹資料/);
+    assert.equal(await page.eval('navigator.serviceWorker.controller'), null);
+    assert.deepEqual(foreignOf(urls, main.base), []);
+    await closePage(page);
+  }
+  // English, with the planner's own key: official English names, the card in English. The theme button flips and keeps it.
+  const en = await open(`${main.base}/megaport2027/`, { seed: { 'fp:megaport2027:lang': 'en' }, ready: LU_READY });
+  assert.equal(await en.eval(`document.querySelector('.lu-tile b').textContent`), lineup[0].en || lineup[0].name);
+  assert.equal(await en.eval(`document.getElementById('luTitle').textContent`), 'Lineup so far');
+  assert.match(await en.eval(`document.getElementById('luSub').textContent`), /^\d+ acts · updated \d{4}-\d{2}-\d{2}$/);
+  assert.equal(await en.eval(`document.documentElement.lang`), 'en');
+  await en.tap('.lu-tile[data-i="0"]');
+  await en.until(cardOpen);
+  assert.equal(await en.eval(`document.querySelector('#lpCard .lu-tba').textContent`), 'Stage and time TBA');
+  assert.equal(await en.eval(`document.querySelector('#lpCard .lu-links').getAttribute('aria-label')`), 'Official links');
+  // A real Esc key (a script-made key event doesn't count as using the keyboard).
+  for (const type of ['keyDown', 'keyUp']) await en.send('Input.dispatchKeyEvent', { type, key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+  await en.until(() => document.getElementById('lpCard').hidden);
+  // Closed from the keyboard: the act it came from shows where focus is.
+  assert.notEqual(await en.eval(() => getComputedStyle(document.activeElement).outlineStyle), 'none');
+  const bg = () => getComputedStyle(document.body).backgroundColor;
+  const before = await en.eval(bg);
+  await en.tap('#themeBtn');
+  assert.notEqual(await en.eval(bg), before);
+  assert.ok(['light', 'dark', 'system'].includes(await en.eval(`localStorage.getItem('fp:megaport2027:theme')`)));
+  await closePage(en);
+  await main.close();
+});
+
+test('a long lineup gets search at the bottom: Chinese or English names, a line when nothing matches, the last act clear of the field', { skip: SKIP }, async () => {
+  const main = await origin();
+  const page = await open(`${main.base}/lineuplong/`, { ready: LU_READY });
+  const shown = () => [...document.querySelectorAll('.lu-tile')].filter((b) => !b.parentElement.hidden).map((b) => b.querySelector('b').textContent);
+  const query = (q) => page.eval((v) => { const s = document.getElementById('luSearch'); s.value = v; s.dispatchEvent(new Event('input')); }, q);
+  assert.equal((await page.eval(shown)).length, 24);
+  await query('oral');
+  assert.deepEqual(await page.eval(shown), ['THE ORAL CIGARETTES']);
+  await query('Chris');
+  assert.deepEqual(await page.eval(shown), ['洪榮宏'], 'by the English name');
+  await query('洪');
+  assert.deepEqual(await page.eval(shown), ['洪榮宏']);
+  await query('zzz');
+  assert.deepEqual(await page.eval(shown), []);
+  assert.match(await page.eval(`document.getElementById('luEmpty').hidden ? '' : document.getElementById('luEmpty').textContent`), /找不到「zzz」/);
+  await query('');
+  assert.equal((await page.eval(shown)).length, 24);
+  assert.equal(await page.eval(`document.getElementById('luEmpty').hidden`), true);
+  // Scrolled to the end, the last act sits above the field.
+  const clear = await page.eval(() => { const lu = document.getElementById('lineup'); lu.scrollTop = lu.scrollHeight; const last = [...document.querySelectorAll('.lu-tile')].at(-1).getBoundingClientRect(); const bar = document.querySelector('.lu-search').getBoundingClientRect(); return last.bottom <= bar.top; });
+  assert.ok(clear, 'last act not under the search field');
+  assert.deepEqual(await page.eval(NOJS_CLIPPED), []);
+  await closePage(page);
   await main.close();
 });
 

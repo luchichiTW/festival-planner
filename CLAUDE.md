@@ -17,6 +17,7 @@ node scripts/icons.mjs <slug>           # 從 assets/icon.html 重畫主畫面�
 node scripts/check-embeds.mjs <slug>    # 連網核對每個試聽：存在、可嵌入、是這位藝人的（改了 embeds 要跑）
 node scripts/og.mjs <slug>              # 畫分享預覽圖（1200×630）→ assets/og.png
 node scripts/og.mjs site                # 畫首頁與 /privacy/ 的分享預覽圖 → site/og.png（新增活動或換圖示時要跑）
+node scripts/lineup.mjs <slug> [--write] # "status": "lineup" 的活動：跟官方陣容頁比對，--write 才寫入 data/lineup.json
 ```
 
 建置與測試都只用 Node 內建功能，不需要 `npm install`。
@@ -28,6 +29,7 @@ node scripts/og.mjs site                # 畫首頁與 /privacy/ 的分享預覽
 | `core/index.html` | 頁面骨架，`{{…}}` 由 build 填入 |
 | `core/app.js` | 時間表、我的團序、撞團與備選、抽籤、長按卡片、搜尋、下一團、備份連結、第一次打開的導覽（怎麼排團、我的團序） |
 | `core/styles.css` | 版面。顏色與字型不寫在這裡，由 build 從 `event.json` 產生 CSS 變數 |
+| `core/lineup.js`、`core/lineup.css` | `"status": "lineup"` 的陣容頁：英文、深淺色、點一下或長按打開的卡片（最下面一排官方連結）、陣容長了才出現的底部搜尋（頁首與卡片沿用 styles.css） |
 | `core/i18n.js` | 英文介面字串：鍵是 `core/` 裡寫的中文（含 `{變數}`），`t()` 在英文模式回傳英文 |
 | `core/embed.js` | 卡片內試聽（Spotify、Apple Music、YouTube、Podcast、街聲），打開卡片才載入、離線不顯示 |
 | `core/map.js` | 場地圖與官方圖：縮放、拖曳、舞台熱區（接下來的演出、步行導航） |
@@ -38,6 +40,7 @@ node scripts/og.mjs site                # 畫首頁與 /privacy/ 的分享預覽
 | `events/<slug>/event.json` | 名稱、日期、時區、舞台與顏色、主題 tokens、字型、圖示、網址 |
 | `events/<slug>/data/schedule.json` | 一筆一場演出 |
 | `events/<slug>/data/artists.json` | 以演出者名稱為鍵：簡介、來源、平台連結、試聽 ID、多位演出者 |
+| `events/<slug>/data/lineup.json` | 只在 `"status": "lineup"`：官方陣容頁上的順序，每組的官方英文名、官網上的頁面（`page`）、官方頁列出的連結（`links`：facebook、instagram、youtube、x、official） |
 | `events/<slug>/data/venue.json` | 選用：地圖熱區（圖的百分比）、舞台座標、官方圖清單（`images`）、資訊圖清單（`info`：地圖頁第 4 個分頁「資訊」，按鈕換成 i 圖示；只進網站版，不進單一檔案） |
 | `events/<slug>/artifact/` | 單檔版本與發佈說明，跟著 git tag 走 |
 | `events/<slug>/CLAUDE.md` | 這個活動的來源、限制、資料規則、待辦 |
@@ -48,7 +51,7 @@ node scripts/og.mjs site                # 畫首頁與 /privacy/ 的分享預覽
 | `core/page.css` | 藝人頁與 Claude 頁的樣式（`features.pages`），配色和字型沿用活動的 tokens |
 | `scripts/lib/pages.mjs` | 不用 JavaScript 也讀得到的頁面：文字版時間表、藝人頁、Claude 頁、各頁的 metadata、JSON-LD、Markdown 版、sitemap |
 | `scripts/` | validate、build、serve、fonts、icons、og、check-embeds；`lib/chrome.mjs` 是不用套件的無頭 Chrome 驅動 |
-| `tests/` | `node:test`；`e2e.test.mjs` 用無頭 Chrome 跑 |
+| `tests/` | `node:test`；`e2e.test.mjs` 用無頭 Chrome 跑；`helpers.mjs` 是共用的測試資料（例如從 megaport2027 改出來的 tba 活動） |
 
 `core/` 裡不能出現任何特定活動的名稱、日期或顏色。活動專屬的東西放 `event.json`；真的需要活動專屬邏輯時，先想能不能變成 `event.json` 的設定。
 
@@ -96,7 +99,23 @@ node scripts/og.mjs site                # 畫首頁與 /privacy/ 的分享預覽
 
 只知道活動名稱、日期和陣容都還沒公布時，`event.json` 寫 `"status": "tba"` 和 `notice`（例如「待官方資訊公布」），不需要 `days`、`stages` 和 `data/`。build 只產生一頁：活動名稱、`notice`、`urls` 裡的官方連結（`official`、`instagram`、上一屆 `previous`），用活動自己的配色與圖示。這一頁沒有 service worker，換成完整的排團工具時不會留下舊的離線快取。首頁的票券顯示「日期待公布」。
 
-官方公布後：補 `days`、`stages`、`data/schedule.json`、`data/artists.json` 與其他設定，拿掉 `status` 和 `notice`，照「新增一個活動」的步驟做完再部署。
+陣容先公布、時間表還沒：改成 `"status": "lineup"`（下一節）。時間表也公布後：補 `days`、`stages`、`data/schedule.json`、`data/artists.json` 與其他設定，拿掉 `status` 和 `notice`，照「新增一個活動」的步驟做完再部署。
+
+## 陣容公布、時間表還沒（`"status": "lineup"`）
+
+只有陣容時，`event.json` 寫 `"status": "lineup"`，資料放 `data/lineup.json`（官方陣容頁上的順序）和 `data/artists.json`（簡介）。build 產生一頁：
+
+- 陣容依官方順序排成格子，團名直接寫在 HTML 裡（不執行 JavaScript 也讀得到）；標題、描述寫已公布幾組和資料日期，根網域 sitemap 的 `lastmod` 是 `dataDate`。
+- 點一下或長按一組：打開一張卡片（「舞台和時間待公布」、名稱、簡介和來源），最下面一排圓形按鈕是官方頁列出的連結（Facebook、Instagram、YouTube、X、官方網站，各用自己的字樣圖示）。
+- 陣容到 20 組（`LINEUP_SEARCH_MIN`）才在底部加搜尋。
+- 首頁票券寫「已公布 N 組陣容・每年更新」，llms.txt 寫已公布幾組、時間表待公布。
+- 沒有 service worker、沒有單一檔案、沒有結構化資料（日期還沒有官方文字）。
+
+`event.json` 要有 `dataDate`、`sourceNote`、`urls.lineup`（官方陣容頁）。`rules.bioSource: "official"` 時，簡介的來源只能是那一組在官方頁上的官方網站，沒有官網就不寫簡介。
+
+更新陣容：`node scripts/lineup.mjs <slug>` 會抓官方陣容頁和每組的頁面，列出新增、消失、連結改了的組；加 `--write` 才寫入 `data/lineup.json` 並把 `dataDate` 改成今天。新的組要寫簡介時，照活動 `CLAUDE.md` 的規則從官網寫。
+
+時間表公布後：拿掉 `status`，照「新增一個活動」補齊，`lineup.json` 可以留著當官方連結的來源。
 
 ## 不用 JavaScript 也讀得到的頁面（`features.pages`）
 
@@ -141,6 +160,8 @@ service worker 只把工具頁本身當 App；其他頁面直接走網路，不�
 - iPhone 主畫面版的頁面畫到狀態列底下（`black-translucent`），不要在狀態列下方墊單色條：頁首從螢幕最上緣開始、用頁面底色（iOS 依頁面底色畫狀態列底下那一區，兩者才接得起來），自己加 `safe-area-inset-top`；頁首不要用 sticky／fixed（iOS 26 會在上面疊一層模糊，字標會糊掉）；不要在整頁外圍加內距。
 - iOS 27 主畫面版在 `black-translucent` 下，系統會在畫面上方疊一層霧（圖片放大時最明顯）。實測只有 `default` 狀態列加不透明的固定頂條去得掉，但內容就畫不到狀態列底下，已安裝的人也要刪掉重加才生效，所以維持現狀。
 - 手機橫放時，時間表貼齊螢幕左右兩邊：左邊安全區給時間軸和格線，右邊安全區給最後一個舞台的底色，文字和演出卡都避開動態島。
+- 頁首按鈕 44pt（Apple 的最小觸控尺寸）。看得懂才有用的次要文字（空檔、來源、說明）至少 13px、用 `--muted`；`--faint` 只給刻意淡化的東西（例如已結束的演出）。
+- 節日當天的「演出中」和「下一團」是同一條膠囊：上一行演出中、下一行下一團，點一下帶到下一團（沒有下一團才帶到演出中）。
 - 常用操作都放在底部的 dock（拇指範圍）：各天的分頁、我的團序、搜尋；頁首只放品牌、日期地點與深淺色切換。dock 懸浮在 Home 橫條上方，內容延伸到螢幕底；可捲動的內容底部要留 `--dock-space`（app.js 會依 dock 實際高度更新）。
 - 文字不能被切掉或變成「…」：列表改換行；時間表格子由 `fitBlocks()` 逐步縮小字級。`tests/e2e.test.mjs` 會在 390／375／320px 檢查。
 - 不用浮動角標（容易被切掉），數量直接寫進文字。

@@ -3,6 +3,13 @@
    event.json "languages" includes "en". Missing keys simply stay Chinese. */
 window.FP_I18N = {
   en: {
+    // lineup page ("status": "lineup", core/lineup.js)
+    '已公布陣容': 'Lineup so far',
+    '{n} 組・{date} 更新': '{n} acts · updated {date}',
+    '時間表公布後，這裡會變成排團工具。': 'Once the timetable is out, this becomes the planner.',
+    '舞台和時間待公布': 'Stage and time TBA',
+    '官方網站': 'Website',
+    '官方連結': 'Official links',
     // header, dock, template
     '切換成淺色模式': 'Switch to light mode',
     '切換成深色模式': 'Switch to dark mode',

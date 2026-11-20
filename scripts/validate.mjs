@@ -12,6 +12,8 @@ export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const HEX = /^#[0-9A-Fa-f]{6}$/;
+// The links an act's page on the festival site lists (lineup.json): what the artist card shows while only the lineup is out.
+const LINEUP_LINKS = ['facebook', 'instagram', 'youtube', 'x', 'official'];
 const LINK_PATTERNS = {
   spotify: /^https:\/\/open\.spotify\.com\/artist\/[A-Za-z0-9]{22}$/,
   apple: /^https:\/\/music\.apple\.com\/[a-z]{2}\/artist\/([^/?#]+\/)?\d+$/,
@@ -38,8 +40,9 @@ export function loadEvent(slug) {
   const dir = path.join(ROOT, 'events', slug);
   const read = (f) => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
   const opt = (f, empty) => (fs.existsSync(path.join(dir, f)) ? read(f) : empty);
-  // An event announced by name only ("status": "tba") has no timetable files yet.
-  return { slug, dir, event: read('event.json'), schedule: opt('data/schedule.json', []), artists: opt('data/artists.json', {}), venue: opt('data/venue.json', null) };
+  // An event announced by name only ("status": "tba") has no timetable files yet; one with its lineup out
+  // ("status": "lineup") has data/lineup.json.
+  return { slug, dir, event: read('event.json'), schedule: opt('data/schedule.json', []), artists: opt('data/artists.json', {}), venue: opt('data/venue.json', null), lineup: opt('data/lineup.json', []) };
 }
 
 export function listEvents() {
@@ -54,7 +57,67 @@ const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } 
 // against the build.
 export const HOME_PATHS = ['claude', 'privacy', 'icons', 'index.html', 'llms.txt', 'og.png', 'robots.txt', 'sitemap.xml'];
 
-export function validate({ slug, dir, event: ev, schedule, artists, venue }) {
+// Intros, sources, platform links and players in artists.json; shared by the timetable and the lineup-only page.
+// performers: the names that may have an entry; unknown: the warning for any other name; officialSite(name): the act's
+// own website, for rules.bioSource "official".
+function checkArtists({ ev, artists, performers, unknown, officialSite = () => '', err, warn }) {
+  const minSources = ev.rules?.minBioSources ?? 2;
+  for (const [name, a] of Object.entries(artists || {})) {
+    const at = `artists.json "${name}"`;
+    if (typeof a.bio !== 'string') err(`${at}: bio 要是字串（沒有就寫 ""）`);
+    if (!Array.isArray(a.sources)) err(`${at}: sources 要是陣列`);
+    const sources = a.sources || [];
+    for (const u of sources) if (!/^https:\/\//.test(u)) err(`${at}: 來源 ${u} 要是 https 網址`);
+    const counted = new Set(sources.map(host).filter((h) => h && !NOT_A_SOURCE.test(h)));
+    if (sources.some((u) => NOT_A_SOURCE.test(host(u)))) warn(`${at}: Last.fm 不算來源，只當參考`);
+    if (a.bio) {
+      // rules.bioSource "official": the intro comes from the act's own website (the official link the festival lists).
+      if (ev.rules?.bioSource === 'official') {
+        const site = host(officialSite(name) || '');
+        if (!site) err(`${at}: 這組沒有官方網站，規則是只從官方網站寫簡介，改成留空`);
+        else if (!sources.length || sources.some((u) => host(u) !== site)) err(`${at}: 簡介的來源要是這組的官方網站（${site}）`);
+      }
+      if (counted.size < minSources) err(`${at}: 簡介至少要 ${minSources} 個不同網站的來源（現在 ${counted.size} 個）`);
+      const minChars = ev.rules?.minBioChars ?? 40;
+      if ([...a.bio].length < minChars) warn(`${at}: 簡介不到 ${minChars} 字，規則是改成留空`);
+    }
+    for (const [k, u] of Object.entries(a.links || {})) {
+      if (!LINK_PATTERNS[k]) err(`${at}: 不支援的平台 "${k}"（只收 ${Object.keys(LINK_PATTERNS).join('、')}）`);
+      else if (!LINK_PATTERNS[k].test(u)) err(`${at}: ${k} 連結 ${u} 不是藝人頁格式`);
+    }
+    for (const [k, id] of Object.entries(a.embeds || {})) {
+      if (!EMBED_PATTERNS[k]) err(`${at}: 不支援的內嵌平台 "${k}"（只收 ${Object.keys(EMBED_PATTERNS).join('、')}）`);
+      else if (!EMBED_PATTERNS[k].test(id)) err(`${at}: ${k} 的 ID "${id}" 格式不對`);
+    }
+    // One player per platform: a whole-artist player and a single song would show two tabs with the same name.
+    if (a.embeds?.spotify && a.embeds?.spotifyTrack) err(`${at}: Spotify 只能放一個播放器（spotify 或 spotifyTrack 擇一）`);
+    if (a.embeds?.appleMusic && a.embeds?.appleMusicSong) err(`${at}: Apple Music 只能放一個播放器（appleMusic 或 appleMusicSong 擇一）`);
+    // Recommended songs (rules.picks): each player says which song, why it represents the artist, and where that comes from.
+    const picks = a.picks || {};
+    for (const k of Object.keys(picks)) if (!a.embeds?.[k]) err(`${at}: picks 裡的 "${k}" 沒有對應的播放器`);
+    if (ev.rules?.picks) {
+      for (const k of Object.keys(a.embeds || {})) {
+        const p = picks[k];
+        if (!p || !p.title || !p.why || !Array.isArray(p.sources) || !p.sources.length || !p.sources.every((u) => /^https:\/\//.test(u))) {
+          err(`${at}: ${k} 要有推薦的歌名、理由和來源（picks.${k} 的 title、why、sources）`);
+        }
+      }
+      // A different song on each platform; a live take or MV of the same song is the same song.
+      const song = (t) => String(t).toLowerCase().replace(/[(（\[【「][^)）\]】」]*[)）\]】」]/g, '').replace(/[\s\p{P}\p{S}]/gu, '');
+      const seen = new Map();
+      for (const [k, p] of Object.entries(picks)) {
+        if (!p?.title) continue;
+        const key = song(p.title);
+        if (seen.has(key)) err(`${at}: 「${seen.get(key).title}」放在兩個平台（${seen.get(key).k}、${k}），每個平台要不同首`);
+        else seen.set(key, { k, title: p.title });
+      }
+    }
+    for (const m of a.members || []) if (!artists[m]) err(`${at}: members 裡的 "${m}" 在 artists.json 找不到`);
+    if (!performers.has(name)) warn(`${at}: ${unknown}`);
+  }
+}
+
+export function validate({ slug, dir, event: ev, schedule, artists, venue, lineup = [] }) {
   const errors = [];
   const warnings = [];
   const notes = [];
@@ -74,13 +137,41 @@ export function validate({ slug, dir, event: ev, schedule, artists, venue }) {
     if (other !== slug && (other.startsWith(slug) || slug.startsWith(other))) err(`活動代號 "${slug}" 和 "${other}" 開頭相同，網址會互相蓋到，換一個代號`);
   }
   // Announced by name only: one page that says the details are on the way (see CLAUDE.md, "status": "tba").
-  if (ev.status !== undefined && ev.status !== 'tba') err(`event.json: status 只能是 "tba"（還沒公布日期與時間表），或不寫`);
+  if (ev.status !== undefined && !['tba', 'lineup'].includes(ev.status)) err(`event.json: status 只能是 "tba"（還沒公布陣容與時間表）、"lineup"（陣容公布了、時間表還沒），或不寫`);
   if (ev.status === 'tba') {
     for (const k of ['name', 'shortName', 'lang', 'notice']) if (!ev[k]) err(`event.json: 缺少 ${k}（status tba 的頁面要用）`);
     if (ev.ticketNote !== undefined && (typeof ev.ticketNote !== 'string' || !ev.ticketNote.trim())) err('event.json: ticketNote（首頁票券上的副標）要是文字');
     if (!ev.theme?.dark?.bg || !ev.theme?.light?.bg) err('event.json: theme 要有 dark 與 light（至少 bg）');
     if ((schedule || []).length || (ev.days || []).length) err('event.json: 有日期或時間表就不是 tba 了，把 status 拿掉再補完整資料');
     return { errors, warnings, notes: ['待官方資訊公布：只產生一頁說明'] };
+  }
+  // Lineup out, timetable not yet: one page of the acts in the festival's order (see CLAUDE.md, "status": "lineup").
+  if (ev.status === 'lineup') {
+    for (const k of ['name', 'shortName', 'lang', 'dataDate', 'sourceNote']) if (!ev[k]) err(`event.json: 缺少 ${k}（status lineup 的頁面要用）`);
+    if (ev.dataDate && !DATE.test(ev.dataDate)) err(`event.json: dataDate "${ev.dataDate}" 要是 YYYY-MM-DD`);
+    if (!ev.theme?.dark?.bg || !ev.theme?.light?.bg) err('event.json: theme 要有 dark 與 light（至少 bg）');
+    if (!/^https:\/\/[^/]+\/.+\/$/.test(ev.urls?.site || '') || !ev.urls.site.endsWith(`/${slug}/`)) err(`event.json: urls.site 要是 https 開頭、以 /${slug}/ 結尾的網址`);
+    if (!/^https:\/\//.test(ev.urls?.lineup || '')) err('event.json: urls.lineup 要是官方陣容頁的 https 網址（陣容從那裡更新）');
+    if ((schedule || []).length || (ev.days || []).length) err('event.json: 有日期或時間表就不是 lineup 了，把 status 拿掉再補完整資料');
+    if (!Array.isArray(lineup) || !lineup.length) err('lineup.json: 陣容至少要有一組（lineup 是官方陣容頁上的順序）');
+    const lineupHost = host(ev.urls?.lineup || '');
+    const seen = new Set();
+    (Array.isArray(lineup) ? lineup : []).forEach((a, i) => {
+      const at = `lineup.json [${i}]${a?.name ? ` "${a.name}"` : ''}`;
+      if (!a?.name || typeof a.name !== 'string') { err(`${at}: 缺少 name`); return; }
+      if (seen.has(a.name)) err(`${at}: 名稱重複`);
+      seen.add(a.name);
+      if (a.en !== undefined && (typeof a.en !== 'string' || !a.en.trim())) err(`${at}: en（官方英文名）要是文字，沒有就不寫`);
+      if (!/^https:\/\//.test(a.page || '') || host(a.page) !== lineupHost) err(`${at}: page 要是這組在官網（${lineupHost}）上的頁面`);
+      for (const [k, u] of Object.entries(a.links || {})) {
+        if (!LINEUP_LINKS.includes(k)) err(`${at}: 連結 "${k}" 不是官方頁會列的種類（只收 ${LINEUP_LINKS.join('、')}）`);
+        else if (!/^https:\/\/[^\s]+$/.test(u)) err(`${at}: ${k} 連結 ${u} 要是 https 網址`);
+      }
+    });
+    const official = new Map((Array.isArray(lineup) ? lineup : []).map((a) => [a?.name, a?.links?.official]));
+    checkArtists({ ev, artists, performers: seen, unknown: '不在陣容裡，可能是名字拼法不一致', officialSite: (n) => official.get(n), err, warn });
+    const withBio = [...seen].filter((n) => artists?.[n]?.bio).length;
+    return { errors, warnings, notes: [`陣容公布、時間表還沒：${seen.size} 組，${withBio} 組有簡介`] };
   }
   for (const k of ['name', 'shortName', 'lang', 'timezone', 'dataDate', 'sourceNote']) if (!ev[k]) err(`event.json: 缺少 ${k}`);
   if (ev.dataDate && !DATE.test(ev.dataDate)) err(`event.json: dataDate "${ev.dataDate}" 要是 YYYY-MM-DD`);
@@ -189,54 +280,7 @@ export function validate({ slug, dir, event: ev, schedule, artists, venue }) {
       slugs.set(a.slug, name);
     }
   }
-  const minSources = ev.rules?.minBioSources ?? 2;
-  for (const [name, a] of Object.entries(artists || {})) {
-    const at = `artists.json "${name}"`;
-    if (typeof a.bio !== 'string') err(`${at}: bio 要是字串（沒有就寫 ""）`);
-    if (!Array.isArray(a.sources)) err(`${at}: sources 要是陣列`);
-    const sources = a.sources || [];
-    for (const u of sources) if (!/^https:\/\//.test(u)) err(`${at}: 來源 ${u} 要是 https 網址`);
-    const counted = new Set(sources.map(host).filter((h) => h && !NOT_A_SOURCE.test(h)));
-    if (sources.some((u) => NOT_A_SOURCE.test(host(u)))) warn(`${at}: Last.fm 不算來源，只當參考`);
-    if (a.bio) {
-      if (counted.size < minSources) err(`${at}: 簡介至少要 ${minSources} 個不同網站的來源（現在 ${counted.size} 個）`);
-      const minChars = ev.rules?.minBioChars ?? 40;
-      if ([...a.bio].length < minChars) warn(`${at}: 簡介不到 ${minChars} 字，規則是改成留空`);
-    }
-    for (const [k, u] of Object.entries(a.links || {})) {
-      if (!LINK_PATTERNS[k]) err(`${at}: 不支援的平台 "${k}"（只收 ${Object.keys(LINK_PATTERNS).join('、')}）`);
-      else if (!LINK_PATTERNS[k].test(u)) err(`${at}: ${k} 連結 ${u} 不是藝人頁格式`);
-    }
-    for (const [k, id] of Object.entries(a.embeds || {})) {
-      if (!EMBED_PATTERNS[k]) err(`${at}: 不支援的內嵌平台 "${k}"（只收 ${Object.keys(EMBED_PATTERNS).join('、')}）`);
-      else if (!EMBED_PATTERNS[k].test(id)) err(`${at}: ${k} 的 ID "${id}" 格式不對`);
-    }
-    // One player per platform: a whole-artist player and a single song would show two tabs with the same name.
-    if (a.embeds?.spotify && a.embeds?.spotifyTrack) err(`${at}: Spotify 只能放一個播放器（spotify 或 spotifyTrack 擇一）`);
-    if (a.embeds?.appleMusic && a.embeds?.appleMusicSong) err(`${at}: Apple Music 只能放一個播放器（appleMusic 或 appleMusicSong 擇一）`);
-    // Recommended songs (rules.picks): each player says which song, why it represents the artist, and where that comes from.
-    const picks = a.picks || {};
-    for (const k of Object.keys(picks)) if (!a.embeds?.[k]) err(`${at}: picks 裡的 "${k}" 沒有對應的播放器`);
-    if (ev.rules?.picks) {
-      for (const k of Object.keys(a.embeds || {})) {
-        const p = picks[k];
-        if (!p || !p.title || !p.why || !Array.isArray(p.sources) || !p.sources.length || !p.sources.every((u) => /^https:\/\//.test(u))) {
-          err(`${at}: ${k} 要有推薦的歌名、理由和來源（picks.${k} 的 title、why、sources）`);
-        }
-      }
-      // A different song on each platform; a live take or MV of the same song is the same song.
-      const song = (t) => String(t).toLowerCase().replace(/[(（\[【「][^)）\]】」]*[)）\]】」]/g, '').replace(/[\s\p{P}\p{S}]/gu, '');
-      const seen = new Map();
-      for (const [k, p] of Object.entries(picks)) {
-        if (!p?.title) continue;
-        const key = song(p.title);
-        if (seen.has(key)) err(`${at}: 「${seen.get(key).title}」放在兩個平台（${seen.get(key).k}、${k}），每個平台要不同首`);
-        else seen.set(key, { k, title: p.title });
-      }
-    }
-    for (const m of a.members || []) if (!artists[m]) err(`${at}: members 裡的 "${m}" 在 artists.json 找不到`);
-    if (!performers.has(name)) warn(`${at}: 沒有對應的演出，可能是名字拼法不一致`);
-  }
+  checkArtists({ ev, artists, performers, unknown: '沒有對應的演出，可能是名字拼法不一致', officialSite: () => '', err, warn });
   if (ev.lottery?.favorite && !schedule.some((s) => s.name === ev.lottery.favorite)) err(`event.json: lottery.favorite "${ev.lottery.favorite}" 不是任何一場演出的名稱`);
 
   /* ---------- venue.json (map hotspots, coordinates, official images) ---------- */

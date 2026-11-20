@@ -140,9 +140,10 @@ function writeRouting(out) {
   mergeHeaders(out, headerRules, (p) => !SITE_HEADER_PATHS.includes(p));
 }
 
-// "status": "tba": one page in the event's colours saying the details are on the way. No planner, no service
-// worker (nothing to keep offline, and nothing cached to clean up when the real planner replaces it), no artifact.
-function buildTba({ event: ev, dir }, out) {
+// The pages built before the timetable is out ("status" tba or lineup): a fresh folder with the event's icons and
+// fonts, and the <head> lines they share — title, description, canonical, a link preview with the square icon.
+// No service worker (nothing cached to clean up when the real planner replaces the page), no artifact.
+function onePage({ event: ev, dir }, out, { title, description }) {
   const site = path.join(out, ev.slug);
   fs.rmSync(site, { recursive: true, force: true });
   fs.mkdirSync(site, { recursive: true });
@@ -156,13 +157,7 @@ function buildTba({ event: ev, dir }, out) {
     if (f) { fs.mkdirSync(path.join(site, 'fonts'), { recursive: true }); copy(f, fontName(f)); }
   }
   const base = ev.urls?.site || '';
-  const title = `${ev.name} 排團工具（${ev.notice}）`;
-  const description = `${ev.name}排團工具：${ev.notice}。陣容與時間表公布後，這裡會變成排團工具。`;
-  const links = [ev.urls?.official && ['官方網站', ev.urls.official], ev.urls?.instagram && ['官方 Instagram', ev.urls.instagram], ev.urls?.previous && [ev.urls.previousLabel || '上一屆的排團工具', ev.urls.previous]].filter(Boolean);
-  const html = `<!doctype html>
-<html lang="${esc(ev.lang)}">
-<head>
-<meta charset="utf-8">
+  const head = `<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
@@ -170,10 +165,24 @@ function buildTba({ event: ev, dir }, out) {
 ${base ? `<link rel="canonical" href="${esc(base)}">\n<meta property="og:type" content="website">\n<meta property="og:title" content="${esc(title)}">\n<meta property="og:description" content="${esc(description)}">\n<meta property="og:url" content="${esc(base)}">` : ''}
 ${base && icon['512'] ? `<meta property="og:image" content="${esc(base)}icon-512.png">\n<meta property="og:image:width" content="512">\n<meta property="og:image:height" content="512">\n<meta property="og:image:alt" content="${esc(ev.name)} 的圖示">\n<meta name="twitter:card" content="summary">` : ''}
 ${icon.svg ? '<link rel="icon" href="icon.svg" type="image/svg+xml">' : icon['192'] ? '<link rel="icon" href="icon-192.png" sizes="192x192" type="image/png">' : ''}
-${icon['180'] ? '<link rel="apple-touch-icon" href="icon-180.png">' : ''}
+${icon['180'] ? '<link rel="apple-touch-icon" href="icon-180.png">' : ''}`;
+  const css = (file) => `${themeCSS({ ...ev, stages: ev.stages || [] }, fontName)}\n${read(path.join(CORE, file))}${ev.css ? '\n' + read(path.join(dir, ev.css)) : ''}`;
+  return { site, head, css };
+}
+
+// "status": "tba": one page in the event's colours saying the details are on the way.
+function buildTba(loaded, out) {
+  const { event: ev } = loaded;
+  const title = `${ev.name} 排團工具（${ev.notice}）`;
+  const description = `${ev.name}排團工具：${ev.notice}。陣容與時間表公布後，這裡會變成排團工具。`;
+  const { site, head, css } = onePage(loaded, out, { title, description });
+  const links = [ev.urls?.official && ['官方網站', ev.urls.official], ev.urls?.instagram && ['官方 Instagram', ev.urls.instagram], ev.urls?.previous && [ev.urls.previousLabel || '上一屆的排團工具', ev.urls.previous]].filter(Boolean);
+  const html = `<!doctype html>
+<html lang="${esc(ev.lang)}">
+<head>
+${head}
 <style>
-${themeCSS({ ...ev, stages: ev.stages || [] }, fontName)}
-${read(path.join(CORE, 'tba.css'))}${ev.css ? '\n' + read(path.join(dir, ev.css)) : ''}
+${css('tba.css')}
 </style>
 </head>
 <body>
@@ -193,8 +202,89 @@ ${read(path.join(CORE, 'tba.css'))}${ev.css ? '\n' + read(path.join(dir, ev.css)
   return { build: 'tba', site, artifact: null, files: [], report: { warnings: [] } };
 }
 
-export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'dist'), artifactOut = path.join(ROOT, 'dist-artifact') } = {}) {
-  const loaded = loadEvent(slug);
+// The search field at the bottom of the lineup page shows up once the lineup is this long.
+export const LINEUP_SEARCH_MIN = 20;
+// Readers who skim a list want the first names; the rest are on the page.
+const firstNames = (list, n = 8) => `${list.slice(0, n).join('、')}${list.length > n ? ' 等' : ''}`;
+const slashDate = (iso) => iso.split('-').map(Number).join('/');
+
+// "status": "lineup": the acts announced so far, in the festival's order, before the timetable is out. The names are
+// in the HTML (readable without JavaScript); core/lineup.js adds English, the theme switch and the artist card.
+function buildLineup(loaded, out) {
+  const { event: ev, lineup, artists } = loaded;
+  const n = lineup.length;
+  const title = `${ev.name} 陣容・排團工具`;
+  const description = `${ev.name}已公布 ${n} 組陣容：${firstNames(lineup.map((a) => a.name))}（${slashDate(ev.dataDate)} 更新）。時間表公布後，這裡會變成排團工具。`;
+  const { site, head, css } = onePage(loaded, out, { title, description });
+  // The planner's own header (core/index.html), so the two pages look the same and share one definition.
+  const header = /<header class="top"[\s\S]*?<\/header>/.exec(read(path.join(CORE, 'index.html')))[0];
+  const langBtn = (ev.languages || []).includes('en') ? '    <button type="button" class="hdr-btn hdr-lang" id="langBtn">EN</button>' : '';
+  const acts = lineup.map((a) => ({ name: a.name, en: a.en, links: a.links || {}, bio: artists[a.name]?.bio || '', sources: artists[a.name]?.bio ? artists[a.name].sources : [] }));
+  const data = {
+    slug: ev.slug, languages: ev.languages || ['zh'], wordmark: ev.wordmark, subtitleEn: ev.subtitleEn, dataDate: ev.dataDate,
+    sourceNote: ev.sourceNote, sourceNoteEn: ev.sourceNoteEn, acts,
+  };
+  const tiles = acts.map((a, i) => `        <li><button type="button" class="lu-tile" data-i="${i}" aria-haspopup="dialog"><b>${esc(a.name)}</b>${a.en ? `<i>${esc(a.en)}</i>` : ''}</button></li>`).join('\n');
+  const html = `<!doctype html>
+<html lang="${esc(ev.lang)}">
+<head>
+${head}
+<meta name="fp-build" content="${esc(buildId())}">
+<style>
+${css('styles.css')}
+${read(path.join(CORE, 'lineup.css'))}
+</style>
+</head>
+<body class="lu-body">
+<div class="app lu-app${n >= LINEUP_SEARCH_MIN ? ' has-search' : ''}">
+  ${fill(header, { wordmark: esc(ev.wordmark?.text || ev.shortName), wordmarkSub: esc(ev.wordmark?.sub || ''), subtitle: esc(ev.subtitle || ''), langBtn })}
+  <main class="view lu" id="lineup">
+    <div class="lu-in">
+      <div class="lu-head">
+        <h2 class="lu-title" id="luTitle">已公布陣容</h2>
+        <p class="lu-sub" id="luSub">${n} 組・${slashDate(ev.dataDate)} 更新</p>
+        <p class="lu-intro" id="luIntro">時間表公布後，這裡會變成排團工具。</p>
+      </div>
+      <ul class="lu-grid" id="luGrid">
+${tiles}
+      </ul>
+      <p class="lu-empty" id="luEmpty" hidden></p>
+      <footer class="lu-foot">
+        <p id="luSource">${esc(ev.sourceNote)}</p>
+        <p>${ev.urls?.official ? `<a href="${esc(ev.urls.official)}" data-i18n>官方網站</a>` : ''}<a href="/privacy/" data-i18n>隱私說明</a></p>
+      </footer>
+    </div>
+  </main>
+</div>
+${n >= LINEUP_SEARCH_MIN ? `<label class="lu-search">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none"/><path d="M20 20l-4.2-4.2"/></svg>
+  <input id="luSearch" type="search" placeholder="搜尋藝人" aria-label="搜尋藝人" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+</label>
+` : ''}<div class="lp-backdrop" id="lpBackdrop" hidden></div>
+<div class="lp-card" id="lpCard" role="dialog" aria-modal="true" aria-labelledby="lpName" hidden></div>
+<script>window.FP_LINEUP = ${inlineJSON(data)};
+</script>
+<script>
+${read(path.join(CORE, 'i18n.js'))}
+</script>
+<script>
+${read(path.join(CORE, 'lineup.js'))}
+</script>
+</body>
+</html>
+`;
+  fs.writeFileSync(path.join(site, 'index.html'), html);
+  writeRouting(out);
+  return { build: 'lineup', site, artifact: null, files: [], report: { warnings: [] } };
+}
+
+export function build(slug, opts = {}) {
+  return buildEvent(loadEvent(slug), opts);
+}
+
+// The same from data already loaded (tests build variants of an event this way).
+export function buildEvent(loaded, { releaseArtifact = false, out = path.join(ROOT, 'dist'), artifactOut = path.join(ROOT, 'dist-artifact') } = {}) {
+  const { slug } = loaded;
   const report = validate(loaded);
   if (report.errors.length) {
     const e = new Error(`${slug}: 資料有 ${report.errors.length} 個錯誤，先跑 node scripts/validate.mjs ${slug}`);
@@ -202,6 +292,7 @@ export function build(slug, { releaseArtifact = false, out = path.join(ROOT, 'di
     throw e;
   }
   if (loaded.event.status === 'tba') return buildTba(loaded, out);
+  if (loaded.event.status === 'lineup') return buildLineup(loaded, out);
   const { event: ev, schedule, artists, venue, dir } = loaded;
   const build = buildId();
   const template = read(path.join(CORE, 'index.html'));
@@ -356,7 +447,8 @@ const todayIn = (tz) => new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: '
 // Also used by scripts/og.mjs site for the homepage's link-preview picture.
 export function ticket(ev) {
   const d = ev.theme.dark;
-  const tba = ev.status === 'tba';
+  // Before the timetable ("status" tba or lineup) the ticket has no dates or stages yet.
+  const tba = ev.status === 'tba' || ev.status === 'lineup';
   // On the dark page the ticket sits on the event's surface colour, or the next one up when that is too close to
   // the page itself (#1A1617).
   const td = apart(d.surface, '#1A1617') < 24 ? (d['surface-2'] || d.surface) : d.surface;
@@ -379,7 +471,7 @@ export function ticket(ev) {
           ${img ? `<img class="t-icon" src="${img}" alt="" width="56" height="56">` : ''}
           <div class="t-title">
             <p class="t-mark">${esc(ev.wordmark?.text || ev.shortName)}<small>${esc(ev.wordmark?.sub || '')}</small></p>
-            <p class="t-where">${esc(tba ? ev.ticketNote || ev.notice : ev.venue?.name || ev.subtitle || '')}</p>
+            <p class="t-where">${esc(ev.status === 'lineup' ? `已公布 ${ev.lineupCount} 組陣容・每年更新` : tba ? ev.ticketNote || ev.notice : ev.venue?.name || ev.subtitle || '')}</p>
           </div>
         </div>
 ${tba ? '' : `        <dl class="t-days">\n${days.join('\n')}\n        </dl>\n        <ul class="t-stages" aria-label="${stages.length} 個舞台">\n          ${stages.map((st) => `<li style="--s:${esc(st.color.dark)}">${esc(chip(st))}</li>`).join('')}\n        </ul>\n`}      </div>
@@ -400,7 +492,8 @@ export function buildSite({ out = path.join(ROOT, 'dist-site'), config = readSit
     const loaded = loadEvent(slug);
     const report = validate(loaded);
     if (report.errors.length) throw Object.assign(new Error(`${slug} 的資料有錯，首頁不建置`), { report });
-    return loaded.event;
+    // The lineup page's ticket and llms.txt line say how many acts are out.
+    return loaded.event.status === 'lineup' ? { ...loaded.event, lineupCount: loaded.lineup.length } : loaded.event;
   });
   // Coming up first (soonest first), then the ones waiting for dates, then the ones that are over (most recent
   // first). The page re-sorts by the visitor's today; this order is for readers without JavaScript.
@@ -410,7 +503,7 @@ export function buildSite({ out = path.join(ROOT, 'dist-site'), config = readSit
   const repo = events.find((ev) => ev.urls?.repo)?.urls.repo || 'https://github.com/luchichiTW/festival-planner';
   const description = config.description;
   const example = events.find((ev) => ev.slug === config.claudeExample);
-  if (!example || !example.features?.pages || example.status === 'tba' || example.urls?.archive) {
+  if (!example || !example.features?.pages || example.status || example.urls?.archive) {
     throw new Error(`site/site.json: claudeExample "${config.claudeExample}" 要是有 features.pages、還在 chiparashi.tw 上的活動`);
   }
   // What the site is and who runs it. The only account named is the Instagram on the page.
@@ -490,6 +583,7 @@ export function buildSite({ out = path.join(ROOT, 'dist-site'), config = readSit
   };
   const festivals = events.map((ev) => {
     if (ev.status === 'tba') return `- [${ev.name}](${HOST}/${ev.slug}/)：${ev.nameEn ? `${ev.nameEn}，` : ''}日期和陣容待官方公布`;
+    if (ev.status === 'lineup') return `- [${ev.name}](${HOST}/${ev.slug}/)：${[ev.nameEn, ev.subtitle].filter(Boolean).join('，')}，已公布 ${ev.lineupCount} 組陣容（${slashDate(ev.dataDate)}），時間表待公布`;
     const over = state(ev) === 2;
     const facts = [when(ev), ev.venue?.name, !over && ev.stages?.length && `${ev.stages.length} 個舞台`, over && '已結束'].filter(Boolean).join('，');
     return ev.urls?.archive ? `- [${ev.name}（舊版）](${ev.urls.archive})：${facts}` : `- [${ev.name}](${HOST}/${ev.slug}/)：${facts}`;
@@ -537,6 +631,7 @@ function main() {
   try {
     const r = build(slug, { releaseArtifact: args.includes('--release-artifact') });
     if (r.build === 'tba') { console.log(`✓ ${slug}：待官方資訊公布的一頁 → ${path.relative(ROOT, r.site)}/`); return; }
+    if (r.build === 'lineup') { console.log(`✓ ${slug}：陣容公布、時間表還沒的一頁 → ${path.relative(ROOT, r.site)}/`); return; }
     console.log(`✓ ${slug} @ ${r.build}`);
     console.log(`  網站     ${path.relative(ROOT, r.site)}/（${r.files.length} 個檔案進離線快取）`);
     console.log(`  artifact ${path.relative(ROOT, r.artifact)}${args.includes('--release-artifact') ? `，並更新 events/${slug}/artifact/index.html` : ''}`);
