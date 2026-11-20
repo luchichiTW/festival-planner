@@ -3,16 +3,23 @@
    the page becomes, a past event to try), the list with a 想看 button on each act, the row of links in the card, and
    at the bottom the 想看 count and, once the lineup is long, the search field. Sizes follow Apple's type scale
    (17 body, 15 secondary, 13 footnote); every touch target is at least 44 pt. */
-/* The list scrolls out to the screen's edges with the page gutter inside it, like the header: what it clips at is the
-   screen's edge, never a card's border, its focus ring or a pressed card. */
-.lu {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  margin: 0 calc(-1 * max(16px, env(safe-area-inset-right, 0px))) 0 calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
-  padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
-}
+/* An app, not an article: a long press or a drag never picks up text to select or copy. The search field still
+   takes typing. */
+.lu-body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.lu-body input { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+/* The page scrolls as a whole, not inside a box: on a phone the acts run on under Safari's own bars (the address
+   bar, an iPhone Duo's side column) instead of stopping at a straight edge above them, and the header scrolls away
+   with them. No visible scroll bar. While the centred card is open the page stays put. */
+html:has(> body.lu-body) { scrollbar-width: none; }
+html:has(> body.lu-body)::-webkit-scrollbar { display: none; }
+html.lu-locked { overflow: hidden; }
+body.lu-body { height: auto; min-height: 100%; overflow: visible; }
+/* An event's glow behind the page (event.css) spreads once over the whole page, top to bottom, instead of repeating
+   every screen (the page's background is laid out on <html>, which now runs the page's full height). */
+html:has(> body.lu-body) { height: auto; min-height: 100%; }
+body.lu-body { background-repeat: no-repeat; background-size: 100% 100%; }
+.lu-app { height: auto; }
+.lu { flex: none; }
 .lu-in {
   max-width: 920px;
   margin: 0 auto;
@@ -169,6 +176,11 @@
 .lu-a2hs .lp-name, .lu-a2hs-desc, .lu-body .lu-a2hs .a2hs-old { text-wrap: balance; }
 .lu-ok { min-height: 50px; margin-top: 4px; border: 0; border-radius: 25px; background: var(--gold); color: var(--ink); font: 700 22px/1 var(--body); cursor: pointer; }
 .lu-ok:active { opacity: .8; }
+/* A short screen (a phone on its side, an iPhone Duo): the pictures shrink so the whole card fits, 👌 included; if
+   it still can't, 👌 stays at the card's foot while the rest scrolls. The note on old iOS goes first. */
+.lu-a2hs .a2hs-step img { width: auto; max-width: 100%; max-height: max(96px, calc(80dvh - 340px)); margin-inline: auto; }
+.lu-a2hs .lu-ok { position: sticky; bottom: 0; }
+@media (max-height: 640px) { .lu-a2hs .a2hs-old { display: none; } }
 /* Spread evenly across the card, however many there are; a row that wraps spreads evenly too. */
 .lu-links { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 12px 6px; }
 .lu-links a { flex: 1 0 64px; display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--fg); font-size: 12px; line-height: 1.2; text-align: center; text-decoration: none; }

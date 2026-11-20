@@ -9,11 +9,16 @@
   const isMacSafari = !isIOS && /Macintosh/.test(ua) && /Version\/[\d.]+.*Safari/.test(ua) && !/Chrome|Chromium|Edg|Firefox/.test(ua);
   const standalone = navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
   const isSafari = isIOS && !inApp && !/CriOS|FxiOS|EdgiOS|OPiOS|GSA\/|YaBrowser|DuckDuckGo/.test(ua);
+  // iPhone Duo (iOS 27): its Safari opens the share menu from ≡ on the left of the address bar, not ⋯ on the right, so
+  // the iPhone pictures show the wrong first step. Its screen reports 466 × 678 points whichever screen is lit.
+  const isDuo = isIOS && Math.min(screen.width, screen.height) === 466 && Math.max(screen.width, screen.height) === 678;
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   // Safari on iPhone: what to tap, as screenshots (iPhone 17 Pro, iOS 26), one per step (event.json "iosInstallSteps").
+  // On an iPhone Duo, the same steps in words, its first one from the ≡ menu.
   function guide(pictures, t) {
-    const say = [t('點網址列右邊的「⋯」'), t('點「分享」'), t('點「檢視較多」'), t('點「加入主畫面」'), t('點「加入」（網頁 App 保持開著）')];
+    const say = [isDuo ? t('點網址列左邊的「≡」') : t('點網址列右邊的「⋯」'), t('點「分享」'), t('點「檢視較多」'), t('點「加入主畫面」'), t('點「加入」（網頁 App 保持開著）')];
+    if (isDuo) return `<ol class="a2hs-list" aria-label="${esc(t('加到主畫面的 5 個步驟'))}">${say.map((s, i) => `<li><b>${i + 1}</b><span>${esc(s)}</span></li>`).join('')}</ol>`;
     return `<div class="a2hs" role="group" aria-label="${esc(t('加到主畫面的 5 個步驟'))}"><div class="a2hs-track">${pictures.map((src, i) => `<figure class="a2hs-step"><img src="${esc(src)}" alt="" width="360" height="270" decoding="async"><figcaption><b>${i + 1}</b><span>${esc(say[i])}</span></figcaption></figure>`).join('')}</div>
       <div class="a2hs-dots" aria-hidden="true">${pictures.map((_, i) => `<i${i ? '' : ' class="on"'}></i>`).join('')}</div></div>
       <p class="a2hs-old">${t('舊版 iOS 的分享鈕在下方工具列，點它之後往下滑，找「加入主畫面」。')}</p>`;
@@ -47,5 +52,5 @@
   }
   const countShown = (raw) => JSON.stringify({ d: today(), n: shownToday(raw) + 1 });
 
-  window.FP_A2HS = { isIOS, isAndroid, inApp, isMacSafari, standalone, isSafari, phone: isIOS || isAndroid || inApp, guide, shownToday, countShown };
+  window.FP_A2HS = { isIOS, isAndroid, inApp, isMacSafari, standalone, isSafari, isDuo, phone: isIOS || isAndroid || inApp, guide, shownToday, countShown };
 })();

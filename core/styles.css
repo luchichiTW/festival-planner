@@ -22,9 +22,9 @@ html {
   --dock-space: calc(var(--dock-h) + var(--dock-gap) + 10px);
 }
 /* Scroll without visible scrollbars. */
-.board, .mine, .sp-res, .sheet, .lp-card, .lp-tabs, .lu { scrollbar-width: none; }
+.board, .mine, .sp-res, .sheet, .lp-card, .lp-tabs { scrollbar-width: none; }
 .board::-webkit-scrollbar, .mine::-webkit-scrollbar, .sp-res::-webkit-scrollbar,
-.sheet::-webkit-scrollbar, .lp-card::-webkit-scrollbar, .lp-tabs::-webkit-scrollbar, .lu::-webkit-scrollbar { display: none; }
+.sheet::-webkit-scrollbar, .lp-card::-webkit-scrollbar, .lp-tabs::-webkit-scrollbar { display: none; }
 /* iOS 26 home-screen apps drawn under the status bar get a viewport that is short by the status bar height while the
    page is shorter than the screen (WebKit 301108), leaving a strip at the bottom. A page at least as tall as the screen
    gets the full viewport. The min() cap keeps opaque-status-bar installs from scrolling (WebKit 316008). */
@@ -759,7 +759,9 @@ button { font: inherit; color: inherit; }
 .a2hs-step { flex: 0 0 100%; margin: 0; scroll-snap-align: center; display: grid; gap: 10px; cursor: pointer; }
 .a2hs-step img { width: 100%; height: auto; aspect-ratio: 4 / 3; border-radius: 14px; border: 1px solid var(--line-2); display: block; }
 .a2hs-step figcaption { display: flex; gap: 8px; align-items: baseline; justify-content: center; font: 700 15px/1.4 var(--body); color: var(--fg); text-wrap: balance; }
-.a2hs-step figcaption b { flex: none; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 11px; background: var(--accent-text); color: var(--bg); font: 800 13px/1 var(--body); transform: translateY(-1px); }
+.a2hs-list { margin: 0 auto; padding: 0; list-style: none; display: grid; gap: 12px; text-align: left; }
+.a2hs-list li { display: flex; gap: 8px; align-items: baseline; font: 700 15px/1.4 var(--body); color: var(--fg); }
+.a2hs-step figcaption b, .a2hs-list b { flex: none; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 11px; background: var(--accent-text); color: var(--bg); font: 800 13px/1 var(--body); transform: translateY(-1px); }
 .a2hs-dots { display: flex; justify-content: center; gap: 5px; }
 .a2hs-dots i { width: 6px; height: 6px; border-radius: 3px; background: var(--line-2); transition: width .2s, background-color .2s; }
 .a2hs-dots i.on { width: 16px; background: var(--accent-text); }

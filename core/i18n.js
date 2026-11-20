@@ -175,6 +175,7 @@ window.FP_I18N = {
     '在 Safari 排好的團序，到主畫面還要再排一次。照下面 5 步加到主畫面，之後點圖示打開，離線也能用、不蒐集任何資料。': 'Picks made in Safari don’t carry over to the Home Screen app. Add it in these 5 steps, then open it from the icon: it works offline and collects no data.',
     '加到主畫面的 5 個步驟': 'Five steps to add it to the Home Screen',
     '點網址列右邊的「⋯」': 'Tap “⋯” next to the address bar',
+    '點網址列左邊的「≡」': 'Tap “≡” on the left of the address bar',
     '點「分享」': 'Tap “Share”',
     '點「檢視較多」': 'Tap “View More”',
     '點「加入主畫面」': 'Tap “Add to Home Screen”',

@@ -1736,16 +1736,20 @@ test('lineup page: the acts in the festival’s order; a tap or a long press ope
     assert.deepEqual(await page.eval(() => [...document.querySelectorAll('.lu-tile b')].map((b) => b.textContent)), lineup.map((a) => a.name));
     assert.deepEqual(await page.eval(NOJS_CLIPPED), [], `clipped at ${width}px`);
     assert.equal(await page.eval(`document.getElementById('luSearch')`), null, 'a short lineup needs no search');
-    // The list scrolls without a visible bar, and its edges sit out at the screen's: every card, its border and the
-    // focus ring around it (2 px out, 2 px wide) stay inside what the scroller shows.
+    // The page itself scrolls (no box inside it), so on a phone the acts run on under Safari's own bars instead of
+    // stopping at a straight edge above them. No visible bar; every card, its border and its focus ring (2 px out,
+    // 2 px wide) inside the screen.
     const edges = await page.eval(() => {
       const lu = document.getElementById('lineup');
-      const box = lu.getBoundingClientRect();
+      const se = document.scrollingElement;
       const cards = [...document.querySelectorAll('.lu-demo, .lu-tile')].map((c) => c.getBoundingClientRect());
-      return { bar: getComputedStyle(lu).scrollbarWidth, edge: [box.left, innerWidth - box.right], inside: cards.every((r) => r.left - 4 >= box.left && r.right + 4 <= box.right) };
+      return { page: se.scrollHeight > se.clientHeight, box: lu.scrollHeight > lu.clientHeight + 1 || getComputedStyle(lu).overflowY !== 'visible', bar: getComputedStyle(document.documentElement).scrollbarWidth, inside: cards.every((r) => r.left - 4 >= 0 && r.right + 4 <= innerWidth) };
     });
-    assert.deepEqual(edges, { bar: 'none', edge: [0, 0], inside: true }, `scroller at ${width}px`);
+    assert.deepEqual(edges, { page: true, box: false, bar: 'none', inside: true }, `scrolling at ${width}px`);
+    assert.match(await page.eval(() => getComputedStyle(document.body).backgroundRepeat), /^no-repeat(, no-repeat)*$/, 'the glow behind the page spreads once over it, not once a screen');
     assert.equal(await page.eval(`document.getElementById('luDisclaimer').textContent`), '這是非官方的排團工具。');
+    // A long press or a drag never picks up text: nothing on the page can be selected or copied.
+    assert.deepEqual(await page.eval(() => ['.lu-title', '.lu-sub', '.lu-demo-title', '.lu-feats li', '.lu-demo-btn', '.lu-intro', '.lu-tile b', '#luDisclaimer', '#luSource'].map((q) => getComputedStyle(document.querySelector(q)).userSelect)), Array(9).fill('none'));
     // Header buttons: 44 pt touch targets.
     assert.deepEqual(await page.eval(() => [...document.querySelectorAll('.top .hdr-btn')].map((b) => [b.offsetWidth, b.offsetHeight])), [[44, 44], [44, 44]]);
     // A tap: one card with the act's intro, and the links the festival lists as a row of round buttons, in its order.
@@ -1818,6 +1822,7 @@ test('a long lineup gets search at the bottom: Chinese or English names, a line 
   const shown = () => [...document.querySelectorAll('.lu-tile')].filter((li) => !li.hidden).map((li) => li.querySelector('b').textContent);
   const query = (q) => page.eval((v) => { const s = document.getElementById('luSearch'); s.value = v; s.dispatchEvent(new Event('input')); }, q);
   assert.equal((await page.eval(shown)).length, 24);
+  assert.notEqual(await page.eval(() => getComputedStyle(document.getElementById('luSearch')).userSelect), 'none', 'the search field still takes typing');
   await query('oral');
   assert.deepEqual(await page.eval(shown), ['THE ORAL CIGARETTES']);
   await query('Chris');
@@ -1831,7 +1836,7 @@ test('a long lineup gets search at the bottom: Chinese or English names, a line 
   assert.equal((await page.eval(shown)).length, 24);
   assert.equal(await page.eval(`document.getElementById('luEmpty').hidden`), true);
   // Scrolled to the end, the last act sits above the field.
-  const clear = () => { const lu = document.getElementById('lineup'); lu.scrollTop = lu.scrollHeight; const last = [...document.querySelectorAll('.lu-tile')].at(-1).getBoundingClientRect(); const dock = document.getElementById('luDock').getBoundingClientRect(); return last.bottom <= dock.top; };
+  const clear = () => { const se = document.scrollingElement; se.scrollTop = se.scrollHeight; const last = [...document.querySelectorAll('.lu-tile')].at(-1).getBoundingClientRect(); const dock = document.getElementById('luDock').getBoundingClientRect(); return last.bottom <= dock.top; };
   assert.ok(await page.eval(clear), 'last act not under the search field');
   assert.deepEqual(await page.eval(NOJS_CLIPPED), []);
   // A 想看 mark adds its count above the field: both in the thumb's reach, neither over the other, the acts clear of both.
@@ -1882,7 +1887,7 @@ test('想看: a button on each act marks it, the count sits at the bottom, kept 
   });
   assert.deepEqual(hit, [true, true]);
   // Scrolled to the end, the last act sits above the count; nothing cut off at 320 px.
-  assert.ok(await page.eval(() => { const lu = document.getElementById('lineup'); lu.scrollTop = lu.scrollHeight; return [...document.querySelectorAll('.lu-tile')].at(-1).getBoundingClientRect().bottom <= document.getElementById('luBar').getBoundingClientRect().top; }));
+  assert.ok(await page.eval(() => { const se = document.scrollingElement; se.scrollTop = se.scrollHeight; return [...document.querySelectorAll('.lu-tile')].at(-1).getBoundingClientRect().bottom <= document.getElementById('luBar').getBoundingClientRect().top; }));
   assert.deepEqual(await page.eval(NOJS_CLIPPED), []);
   // Kept on this device: a reload shows the same marks; a second tap takes one off; none left, no count.
   await page.reload();
@@ -1896,7 +1901,7 @@ test('想看: a button on each act marks it, the count sits at the bottom, kept 
   await page.until(() => document.getElementById('luBar').hidden);
   // The card on top: the demo event's link, a 44 pt button, and the picture for the theme on screen.
   const shot = () => [...document.querySelectorAll('.lu-demo img')].filter((i) => getComputedStyle(i).display !== 'none').map((i) => [i.className, i.complete && i.naturalWidth > 0]);
-  await page.eval(() => document.getElementById('lineup').scrollTo(0, 0));
+  await page.eval(() => window.scrollTo(0, 0));
   await page.until(() => [...document.querySelectorAll('.lu-demo img')].some((i) => getComputedStyle(i).display !== 'none' && i.complete && i.naturalWidth > 0));
   assert.deepEqual(await page.eval(shot), [['lu-shot-light', true]]);
   const btn = await page.eval(() => { const a = document.getElementById('luDemoBtn'); return [a.getAttribute('href'), a.textContent, a.offsetHeight >= 44]; });
@@ -1972,6 +1977,43 @@ test('想看 on an iPhone in Safari: the day’s first mark asks to add the page
     await closePage(p);
   }
   await main.close();
+});
+
+test('the Home Screen card fits a short screen with 👌 in sight; on an iPhone Duo its first step is Safari’s ≡ menu, in words', { skip: SKIP }, async () => {
+  const fits = () => {
+    const card = document.getElementById('lpCard').getBoundingClientRect();
+    const ok = document.querySelector('#lpCard .lu-ok').getBoundingClientRect();
+    return { card: card.top >= 0 && card.bottom <= innerHeight, ok: ok.top >= card.top && ok.bottom <= card.bottom && ok.bottom <= innerHeight, scroll: document.getElementById('lpCard').scrollHeight <= document.getElementById('lpCard').clientHeight + 1 };
+  };
+  // A short page (Safari's own bars take the rest): the pictures shrink, the whole card fits, 👌 included. A phone on
+  // its side is shorter than the card can get: 👌 stays in sight at its foot and the rest scrolls.
+  for (const [width, height, whole] of [[382, 580, true], [667, 320, false]]) {
+    const srv = await origin();
+    const page = await open(`${srv.base}/megaport2027/`, { ready: LU_READY, ua: UA.iphone, onboard: true, width, height });
+    await page.tap('.lu-tile[data-i="0"] .lu-want');
+    await page.until(() => !document.getElementById('lpCard').hidden);
+    await page.until(() => [...document.querySelectorAll('#lpCard .a2hs-step img')].every((i) => i.complete && i.naturalWidth > 0));
+    assert.deepEqual(await page.eval(fits), { card: true, ok: true, scroll: whole }, `${width}×${height}`);
+    await closePage(page);
+  }
+  // iPhone Duo: its screen reports 466 × 678 points whichever screen is lit, and its Safari opens the share menu from
+  // ≡ on the left of the address bar. The iPhone pictures show ⋯ on the right, so the steps are words instead.
+  const srv = await origin();
+  const duo = await chrome.newPage({ width: 951, height: 537, touch: true });
+  await duo.send('Emulation.setDeviceMetricsOverride', { width: 951, height: 537, deviceScaleFactor: 3, mobile: true, screenWidth: 466, screenHeight: 678 });
+  await duo.send('Emulation.setUserAgentOverride', { userAgent: UA.iphone[0], platform: UA.iphone[1] });
+  await duo.goto(`${srv.base}/megaport2027/`);
+  await duo.until(LU_READY);
+  await duo.tap('.lu-tile[data-i="0"] .lu-want');
+  await duo.until(() => !document.getElementById('lpCard').hidden);
+  const steps = await duo.eval(() => ({
+    pictures: document.querySelectorAll('#lpCard .a2hs-step').length,
+    say: [...document.querySelectorAll('#lpCard .a2hs-list li')].map((li) => li.textContent),
+  }));
+  assert.deepEqual(steps, { pictures: 0, say: ['1點網址列左邊的「≡」', '2點「分享」', '3點「檢視較多」', '4點「加入主畫面」', '5點「加入」（網頁 App 保持開著）'] });
+  assert.deepEqual(await duo.eval(fits), { card: true, ok: true, scroll: true });
+  assert.deepEqual(await duo.eval(NOJS_CLIPPED), []);
+  await closePage(duo);
 });
 
 test('想看 marks join the picks once the timetable is out: once, with a line saying how many', { skip: SKIP }, async () => {

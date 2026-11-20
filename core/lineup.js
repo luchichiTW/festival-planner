@@ -164,6 +164,7 @@
     clearTimeout(lpCloseTimer);
     lpOpener = opener || null;
     lpCard.innerHTML = html;
+    root.classList.add('lu-locked');
     lpBackdrop.classList.remove('out');
     lpCard.classList.remove('out');
     // While the finger that opened the card is still down, its release must not land on a link or the backdrop.
@@ -196,6 +197,7 @@
       lpBackdrop.hidden = true;
       lpCard.hidden = true;
       lpCard.innerHTML = '';
+      root.classList.remove('lu-locked');
       const back = lpOpener;
       if (!back || !document.contains(back)) return;
       if (byPointer) {
