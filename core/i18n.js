@@ -122,7 +122,7 @@ window.FP_I18N = {
     '撞時段': 'Time clash',
     '你選了 {list}': 'you picked {list}',
     '也加入，之後再選': 'Add, decide later',
-    '加入團序': 'Add to picks',
+    '聽這個': 'Catch this',
     '目前是備選，要去的是 {list}': 'Backup — you’re going to {list}',
     '移出團序': 'Remove',
     '撞時段，還沒決定': 'Clashes, undecided',

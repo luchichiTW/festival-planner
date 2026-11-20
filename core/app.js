@@ -1367,7 +1367,7 @@
       html = `<div class="lp-warn"><b>${t('撞時段')}</b>${t('你選了 {list}', { list: names(others) })}</div>
         <div class="lp-btns">${btn('add', t('也加入，之後再選'), 'ghost')}${btn('choose-add', t('改去這團'), 'primary')}</div>`;
     } else if (!on) {
-      html = `<div class="lp-btns">${btn('add', t('加入團序'), 'primary')}</div>`;
+      html = `<div class="lp-btns">${btn('add', t('聽這個'), 'primary')}</div>`;
     } else if (alt) {
       const chosen = [...prefs].map((id) => BYID.get(id)).filter((p) => overlap(p, s));
       html = `<div class="lp-state">${t('目前是備選，要去的是 {list}', { list: names(chosen) })}</div>
