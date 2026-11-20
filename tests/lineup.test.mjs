@@ -101,6 +101,7 @@ test('a lineup event builds one page: every act in the HTML in the festival’s 
   assert.doesNotMatch(html, /<script[^>]+src=|<link[^>]+href="https?:\/\/(?!chiparashi)|<img[^>]+src="https?:/, 'nothing loaded from other sites');
   assert.doesNotMatch(html, /wp-content/, 'no pictures from the festival site');
   assert.ok(html.includes('href="/privacy/"'), 'privacy page');
+  assert.match(html, /<footer class="lu-foot">[\s\S]*<p id="luDisclaimer">這是非官方的排團工具。<\/p>[\s\S]*<\/footer>/, 'the footer says it is not the festival’s own');
   assert.ok(html.includes(`id="lpCard"`), 'the artist card');
   // What the card needs: each act's links, and an intro in our own words where there is one.
   const data = JSON.parse(/window\.FP_LINEUP = (.*);\n/.exec(html)[1]);
@@ -108,6 +109,15 @@ test('a lineup event builds one page: every act in the HTML in the festival’s 
   assert.deepEqual(data.acts.map((a) => a.links), lineup.map((a) => a.links));
   assert.deepEqual(data.acts.map((a) => a.id), lineup.map((a) => lineupId(a.page)), 'each act carries its id for 想看');
   assert.deepEqual(data.demo, { slug: ev.demo, name: demoEv.name, nameEn: demoEv.nameEn });
+  // It can go on the Home Screen as the same app the planner will be (marks made there stay there), and on an iPhone
+  // the card shows Safari's five steps as pictures (core/a2hs.js, shared with the planner's walkthrough).
+  assert.match(html, /<link rel="manifest" href="manifest\.webmanifest">/);
+  assert.match(html, /<meta name="apple-mobile-web-app-capable" content="yes">/);
+  const man = JSON.parse(fs.readFileSync(path.join(site, 'manifest.webmanifest'), 'utf8'));
+  assert.deepEqual([man.id, man.start_url, man.scope, man.display, man.name], ['./', './', './', 'standalone', ev.name], 'the planner’s manifest');
+  assert.deepEqual(data.iosInstallSteps, [1, 2, 3, 4, 5].map((i) => `a2hs/step${i}.webp`));
+  for (const f of data.iosInstallSteps) assert.ok(fs.existsSync(path.join(site, f)), f);
+  assert.match(html, /window\.FP_A2HS = /, 'the shared add-to-Home-Screen helpers are in the page');
   for (const a of data.acts) assert.equal(a.bio || '', artists[a.name]?.bio || '', `${a.name} intro`);
   assert.match(fs.readFileSync(path.join(out, '_redirects'), 'utf8'), new RegExp(`^/${SLUG} /${SLUG}/ 301$`, 'm'));
   assert.equal(fs.existsSync(path.join(out + '-art', SLUG)), false, 'no single-file artifact without a timetable');

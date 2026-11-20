@@ -19,14 +19,9 @@
   const AWAY_MS = 30 * 60 * 1000;
   const t = FP.t;
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const ua = navigator.userAgent;
-  const isIOS = /iP(hone|od|ad)/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const isAndroid = /Android/.test(ua);
-  const inApp = /Instagram|FBAN|FBAV|FB_IAB|Line\/|Barcelona|MicroMessenger|; wv\)/.test(ua); // Instagram, Facebook, LINE, Threads, WeChat, Android web views
-  const isMacSafari = !isIOS && /Macintosh/.test(ua) && /Version\/[\d.]+.*Safari/.test(ua) && !/Chrome|Chromium|Edg|Firefox/.test(ua);
-  const standalone = navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
-  const phone = isIOS || isAndroid || inApp;
-  const isSafari = isIOS && !inApp && !/CriOS|FxiOS|EdgiOS|OPiOS|GSA\/|YaBrowser|DuckDuckGo/.test(ua);
+  // Where the page is open, Safari's steps as pictures and today's count: core/a2hs.js (shared with the lineup page).
+  const A2HS = window.FP_A2HS;
+  const { isIOS, isAndroid, inApp, isMacSafari, standalone, phone, isSafari } = A2HS;
   const pictures = isSafari && (EVT.iosInstallSteps || []).length === 5 ? EVT.iosInstallSteps : null;
   let offer = null; // Chrome / Edge's install prompt (beforeinstallprompt), once the browser makes one
 
@@ -73,40 +68,10 @@
     return `<p class="ob-desc">${desc}${offline}</p>${moved}`;
   }
 
-  // Safari on iPhone: what to tap, as screenshots (iPhone 17 Pro, iOS 26), one per step, swiped sideways.
-  function guide() {
-    const say = [t('點網址列右邊的「⋯」'), t('點「分享」'), t('點「檢視較多」'), t('點「加入主畫面」'), t('點「加入」（網頁 App 保持開著）')];
-    return `<div class="a2hs" role="group" aria-label="${esc(t('加到主畫面的 5 個步驟'))}"><div class="a2hs-track">${pictures.map((src, i) => `<figure class="a2hs-step"><img src="${esc(src)}" alt="" width="360" height="270" decoding="async"><figcaption><b>${i + 1}</b><span>${esc(say[i])}</span></figcaption></figure>`).join('')}</div>
-      <div class="a2hs-dots" aria-hidden="true">${pictures.map((_, i) => `<i${i ? '' : ' class="on"'}></i>`).join('')}</div></div>
-      <p class="a2hs-old">${t('舊版 iOS 的分享鈕在下方工具列，點它之後往下滑，找「加入主畫面」。')}</p>`;
-  }
-  // The dots follow the swipe; tapping a picture goes to the next one (the last one back to the first).
-  const slide = (tr) => tr.clientWidth + (parseFloat(getComputedStyle(tr).columnGap) || 0);
-  document.addEventListener('scroll', (e) => {
-    const tr = e.target;
-    if (!tr.classList || !tr.classList.contains('a2hs-track')) return;
-    const i = Math.round(tr.scrollLeft / slide(tr));
-    tr.parentNode.querySelectorAll('.a2hs-dots i').forEach((d, j) => d.classList.toggle('on', j === i));
-  }, true);
-  document.addEventListener('click', (e) => {
-    const fig = e.target.closest && e.target.closest('.a2hs-step');
-    if (!fig) return;
-    const tr = fig.parentNode;
-    const i = fig.nextElementSibling ? [...tr.children].indexOf(fig) + 1 : 0;
-    tr.scrollTo({ left: i * slide(tr), behavior: 'smooth' });
-  });
+  const guide = () => A2HS.guide(pictures, t);
 
   // Phones: { d: the day, n: times shown that day }. Computers: '1' once seen. (Before 1.6.1, '1' everywhere.)
-  const today = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
-  function shownToday() {
-    try {
-      const v = JSON.parse(store.get(KEY_INSTALL) || 'null');
-      return v && v.d === today() ? v.n || 0 : 0;
-    } catch (err) {
-      console.warn('[fp] install-hint count unreadable, starting over', err);
-      return 0;
-    }
-  }
+  const shownToday = () => A2HS.shownToday(store.get(KEY_INSTALL));
   const due = () => (phone ? shownToday() < PER_DAY : !store.get(KEY_INSTALL));
 
   // On a phone the step stays registered even when today's three are used up: the page may stay open past midnight.
@@ -123,7 +88,7 @@
       cta: () => (offer ? { act: 'ob-install', label: t('安裝') } : null),
       act: (name) => { if (name === 'ob-install') install(); else if (name === 'ob-copy') copyLink(); },
       due,
-      seen: () => store.set(KEY_INSTALL, phone ? JSON.stringify({ d: today(), n: shownToday() + 1 }) : '1'),
+      seen: () => store.set(KEY_INSTALL, phone ? A2HS.countShown(store.get(KEY_INSTALL)) : '1'),
     });
   }
   // Back on the page after half an hour away (Safari keeps the page open between visits): again, if still due.

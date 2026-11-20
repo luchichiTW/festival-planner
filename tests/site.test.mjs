@@ -134,14 +134,23 @@ test('link preview: the homepage and the privacy page share the homepage picture
 });
 
 // The pages describe a tool and cite their sources; whose tool it is, is in the repo's README.
-test('no page calls itself unofficial: not the homepage, privacy page, llms.txt, nor any event page', () => {
+test('no page calls itself unofficial — not the homepage, privacy page, llms.txt, nor any planner — except a lineup page’s footer', () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'fp-noun-'));
   process.env.FP_BUILD = 'copy-check';
   try { for (const s of listEvents()) build(s, { out: tmp, artifactOut: tmp + '-art' }); } finally { delete process.env.FP_BUILD; }
   const files = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? files(path.join(d, e.name)) : /\.(html|md|js|txt|xml|json|webmanifest)$/.test(e.name) ? [path.join(d, e.name)] : []));
-  const hits = [...files(out), ...files(tmp)].filter((f) => /非官方|unofficial/i.test(fs.readFileSync(f, 'utf8')));
+  const said = (f) => fs.readFileSync(f, 'utf8').split('\n').filter((l) => /非官方|unofficial/i.test(l));
+  const hits = [...files(out), ...files(tmp)].filter((f) => said(f).length).map((f) => [path.relative(f.startsWith(out) ? out : tmp, f), said(f)]);
   fs.rmSync(tmp, { recursive: true, force: true }); fs.rmSync(tmp + '-art', { recursive: true, force: true });
-  assert.deepEqual(hits.map((f) => path.relative(f.startsWith(out) ? out : tmp, f)), []);
+  // The one exception (Chi, 2026-11-20): a page of the lineup before the timetable says so in its footer, with the
+  // English in its data.
+  const lineupPages = listEvents().filter((s) => loadEvent(s).event.status === 'lineup').map((s) => `${s}/index.html`);
+  assert.deepEqual(hits.filter(([f]) => !lineupPages.includes(f)).map(([f]) => f), []);
+  for (const [, lines] of hits) {
+    assert.equal(lines.length, 2, lines.join('\n'));
+    assert.match(lines[0], /^\s*<p id="luDisclaimer">這是非官方的排團工具。<\/p>$/);
+    assert.match(lines[1], /^<script>window\.FP_LINEUP = .*"disclaimerEn":"This is an unofficial planner\."/);
+  }
 });
 
 test('contact and footer', () => {

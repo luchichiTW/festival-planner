@@ -45,6 +45,7 @@
       document.querySelectorAll('.lu-demo img').forEach((img) => { img.alt = t('{name} 排團工具的時間表畫面', { name: L.demo.nameEn || L.demo.name }); });
     }
     $('luSource').textContent = L.sourceNoteEn || L.sourceNote;
+    $('luDisclaimer').textContent = L.disclaimerEn;
     document.querySelectorAll('[data-i18n]').forEach((n) => { n.textContent = t(n.textContent); });
     const search = $('luSearch');
     if (search) { search.placeholder = t('搜尋藝人'); search.setAttribute('aria-label', t('搜尋藝人')); }
@@ -112,6 +113,7 @@
     else want.push(id);
     store.set(KEY_WANT, JSON.stringify({ v: 1, ids: want, t: Date.now() }));
     renderWant();
+    if (at < 0) askHomeScreen(b);
   });
   renderWant();
 
@@ -144,20 +146,24 @@
   function openArtist(i, opener, holding) {
     const a = L.acts[i];
     if (!a) return;
-    clearTimeout(lpCloseTimer);
-    lpOpener = opener || null;
     // In the order the festival's page lists them (lineup.json keeps that order).
     const links = Object.keys(a.links || {}).filter((k) => LINKS[k]).map((k) => {
       const [label, paths] = LINKS[k];
       return `<a href="${esc(a.links[k])}" target="_blank" rel="noopener"><span class="lu-ico">${glyph(paths)}</span><span>${esc(k === 'official' ? t(label) : label)}</span></a>`;
     }).join('');
-    lpCard.innerHTML = `
+    showCard(`
       <span class="lu-tba">${t('舞台和時間待公布')}</span>
       <button type="button" class="sr-only" data-lp="close">${t('關閉')}</button>
       <h2 class="lp-name" id="lpName">${esc(nameOf(a))}</h2>
       ${altOf(a) ? `<p class="lp-note">${esc(altOf(a))}</p>` : ''}
       ${bioHtml(a)}
-      ${links ? `<nav class="lu-links" aria-label="${t('官方連結')}">${links}</nav>` : ''}`;
+      ${links ? `<nav class="lu-links" aria-label="${t('官方連結')}">${links}</nav>` : ''}`, opener, holding);
+  }
+  // The centred card: an act, or the Home Screen steps. Focus goes back to what opened it when it closes.
+  function showCard(html, opener, holding) {
+    clearTimeout(lpCloseTimer);
+    lpOpener = opener || null;
+    lpCard.innerHTML = html;
     lpBackdrop.classList.remove('out');
     lpCard.classList.remove('out');
     // While the finger that opened the card is still down, its release must not land on a link or the backdrop.
@@ -204,6 +210,24 @@
     lpCloseTimer = setTimeout(done, 200);
   }
   lpBackdrop.addEventListener('click', closeArtist);
+
+  /* ---------- on an iPhone, the day's first 想看 asks to add the page to the Home Screen first ---------- */
+  // Safari and the Home Screen app keep separate storage, so marks made in Safari never reach the app (and the
+  // planner it becomes). Once a day (the planner's count, fp:<slug>:install-hint); not in the app itself, nor in an
+  // app's built-in browser, which can't add to the Home Screen. Computers and Android keep one storage: no card.
+  const A2HS = window.FP_A2HS;
+  const KEY_INSTALL = key('install-hint');
+  function askHomeScreen(opener) {
+    if (!A2HS || !A2HS.isIOS || A2HS.standalone || A2HS.inApp) return;
+    if (A2HS.shownToday(store.get(KEY_INSTALL)) >= 1) return;
+    store.set(KEY_INSTALL, A2HS.countShown(store.get(KEY_INSTALL)));
+    const pictures = A2HS.isSafari && (L.iosInstallSteps || []).length === 5 ? L.iosInstallSteps : null;
+    showCard(`<div class="lu-a2hs">
+      <h2 class="lp-name" id="lpName">${t('先加主畫面再標想看！')}</h2>
+      <p class="lu-a2hs-desc">${pictures ? t('在 Safari 標的想看，到主畫面不會跟過去。照下面 5 步加到主畫面，之後點圖示打開再標。') : t('記得先點「分享」→「加入主畫面」，從圖示打開再標想看；在瀏覽器標的，到主畫面不會跟過去。')}</p>
+      ${pictures ? A2HS.guide(pictures, t) : ''}
+      <button type="button" class="lu-ok" data-lp="close" aria-label="${esc(t('知道了'))}">👌</button></div>`, opener, false);
+  }
   lpCard.addEventListener('click', (e) => { if (e.target.closest('[data-lp="close"]')) closeArtist(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeArtist(); });
 

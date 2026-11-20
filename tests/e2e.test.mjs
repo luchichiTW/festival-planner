@@ -55,7 +55,7 @@ async function open(url, { time = PRE_FESTIVAL, timezone = 'Asia/Taipei', safeAr
   if (theme) await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: theme }] });
   if (ua) await page.send('Emulation.setUserAgentOverride', { userAgent: ua[0], platform: ua[1] });
   const t = Date.parse(time);
-  const stored = { ...(onboard ? {} : Object.fromEntries(['vagabond2026', 'megaport2026'].flatMap((s) => [[`fp:${s}:onboard`, '1'], [`fp:${s}:install-hint`, FULL]]))), ...seed };
+  const stored = { ...(onboard ? {} : Object.fromEntries(['vagabond2026', 'megaport2026', 'megaport2027', 'lineuplong'].flatMap((s) => [[`fp:${s}:onboard`, '1'], [`fp:${s}:install-hint`, FULL]]))), ...seed };
   await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
     // Headless Chrome offers to install the local site by itself; only a test's own offer (__fake) gets through.
     window.addEventListener('beforeinstallprompt', (e) => { if (!e.__fake) e.stopImmediatePropagation(); }, true);
@@ -1736,6 +1736,16 @@ test('lineup page: the acts in the festival’s order; a tap or a long press ope
     assert.deepEqual(await page.eval(() => [...document.querySelectorAll('.lu-tile b')].map((b) => b.textContent)), lineup.map((a) => a.name));
     assert.deepEqual(await page.eval(NOJS_CLIPPED), [], `clipped at ${width}px`);
     assert.equal(await page.eval(`document.getElementById('luSearch')`), null, 'a short lineup needs no search');
+    // The list scrolls without a visible bar, and its edges sit out at the screen's: every card, its border and the
+    // focus ring around it (2 px out, 2 px wide) stay inside what the scroller shows.
+    const edges = await page.eval(() => {
+      const lu = document.getElementById('lineup');
+      const box = lu.getBoundingClientRect();
+      const cards = [...document.querySelectorAll('.lu-demo, .lu-tile')].map((c) => c.getBoundingClientRect());
+      return { bar: getComputedStyle(lu).scrollbarWidth, edge: [box.left, innerWidth - box.right], inside: cards.every((r) => r.left - 4 >= box.left && r.right + 4 <= box.right) };
+    });
+    assert.deepEqual(edges, { bar: 'none', edge: [0, 0], inside: true }, `scroller at ${width}px`);
+    assert.equal(await page.eval(`document.getElementById('luDisclaimer').textContent`), '這是非官方的排團工具。');
     // Header buttons: 44 pt touch targets.
     assert.deepEqual(await page.eval(() => [...document.querySelectorAll('.top .hdr-btn')].map((b) => [b.offsetWidth, b.offsetHeight])), [[44, 44], [44, 44]]);
     // A tap: one card with the act's intro, and the links the festival lists as a row of round buttons, in its order.
@@ -1904,17 +1914,63 @@ test('想看: a button on each act marks it, the count sits at the bottom, kept 
     want: document.querySelector('.lu-tile[data-i="0"] .lu-want').textContent,
     label: document.querySelector('.lu-tile[data-i="0"] .lu-want').getAttribute('aria-label'),
     alt: document.querySelector('.lu-demo img').alt,
+    disclaimer: document.getElementById('luDisclaimer').textContent,
   }));
   assert.deepEqual(words, {
     title: 'What it does once the timetable is out', btn: `Try it with ${demoEv.nameEn}`,
     intro: 'Mark the acts you want to see. They go into your picks when the timetable is out.',
     want: 'Want', label: `Want to see ${lineup[0].en || lineup[0].name}`, alt: `The ${demoEv.nameEn} planner’s timetable`,
+    disclaimer: 'This is an unofficial planner.',
   });
   await en.tap('.lu-tile[data-i="0"] .lu-want');
   await en.until(() => !document.getElementById('luBar').hidden);
   assert.equal(await en.eval(`document.getElementById('luBar').textContent`), '1 markedThey go into your picks when the timetable is out');
   assert.deepEqual(await en.eval(NOJS_CLIPPED), []);
   await closePage(en);
+  await main.close();
+});
+
+test('想看 on an iPhone in Safari: the day’s first mark asks to add the page to the Home Screen first; not on a computer or in the app', { skip: SKIP }, async () => {
+  const main = await origin();
+  // onboard: true leaves today's add-to-Home-Screen count empty (other tests start with it used up).
+  const page = await open(`${main.base}/megaport2027/`, { ready: LU_READY, ua: UA.iphone, onboard: true });
+  await page.tap('.lu-tile[data-i="0"] .lu-want');
+  await page.until(() => !document.getElementById('lpCard').hidden);
+  const card = await page.eval(() => ({
+    title: document.getElementById('lpName').textContent,
+    steps: document.querySelectorAll('#lpCard .a2hs-step img').length,
+    marked: document.querySelector('.lu-tile[data-i="0"] .lu-want').getAttribute('aria-pressed'),
+    ok: [document.querySelector('#lpCard .lu-ok').textContent, document.querySelector('#lpCard .lu-ok').getAttribute('aria-label')],
+  }));
+  assert.deepEqual(card, { title: '先加主畫面再標想看！', steps: 5, marked: 'true', ok: ['👌', '知道了'] });
+  // Centred, like the planner's walkthrough card.
+  assert.deepEqual(await page.eval(() => ['#lpName', '.lu-a2hs-desc', '.a2hs-old'].map((s) => getComputedStyle(document.querySelector(`#lpCard ${s}`)).textAlign)), ['center', 'center', 'center']);
+  await page.until(() => [...document.querySelectorAll('#lpCard .a2hs-step img')].every((i) => i.complete && i.naturalWidth > 0));
+  assert.ok(await page.eval(() => { const r = document.getElementById('lpCard').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; }), 'the card fits on the screen');
+  // Safari's steps scroll sideways inside the card (the next pictures wait off to the right on purpose): the first
+  // fits, and with the row set aside nothing else is cut off.
+  assert.ok(await page.eval(() => { const c = document.getElementById('lpCard').getBoundingClientRect(); const f = document.querySelector('#lpCard .a2hs-step').getBoundingClientRect(); return f.left >= c.left && f.right <= c.right; }), 'the first step fits');
+  await page.eval(() => { document.querySelector('#lpCard .a2hs-track').hidden = true; });
+  assert.deepEqual(await page.eval(NOJS_CLIPPED), []);
+  await page.eval(() => { document.querySelector('#lpCard .a2hs-track').hidden = false; });
+  await page.tap('#lpCard .lu-ok');
+  await page.until(() => document.getElementById('lpCard').hidden);
+  // Once a day: the next mark only marks.
+  await page.tap('.lu-tile[data-i="1"] .lu-want');
+  await page.until(() => /2/.test(document.getElementById('luBar').textContent));
+  await sleep(300);
+  assert.equal(await page.eval(`document.getElementById('lpCard').hidden`), true, 'not twice in a day');
+  await closePage(page);
+  // A computer and the Home Screen app keep their marks where they'll be used: no card.
+  for (const opts of [{ mobile: false, onboard: true }, { ua: UA.iphone, standalone: true, onboard: true }]) {
+    const other = await origin();
+    const p = await open(`${other.base}/megaport2027/`, { ready: LU_READY, ...opts });
+    await p.tap('.lu-tile[data-i="0"] .lu-want');
+    await p.until(() => !document.getElementById('luBar').hidden);
+    await sleep(300);
+    assert.equal(await p.eval(`document.getElementById('lpCard').hidden`), true, JSON.stringify(opts));
+    await closePage(p);
+  }
   await main.close();
 });
 

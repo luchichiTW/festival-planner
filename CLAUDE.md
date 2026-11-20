@@ -37,6 +37,7 @@ node scripts/lineup.mjs <slug> [--write] # "status": "lineup" 的活動：跟官
 | `core/map.js` | 場地圖與官方圖：縮放、拖曳、舞台熱區（接下來的演出、步行導航） |
 | `core/glass.js` | 液態玻璃的動作，所有分頁列共用：選中分頁的玻璃泡（滑動、按住放大、可拖曳），底部列往下捲時縮小 |
 | `core/pwa.js` | 只在網站版：service worker 註冊、安靜更新、導覽最後一步「加到主畫面」（依 iPhone、Android、電腦、App 內建瀏覽器顯示不同做法） |
+| `core/a2hs.js` | 加到主畫面共用：判斷在哪裡打開（iPhone、Safari、App 內建瀏覽器、已在主畫面）、Safari 的 5 張步驟圖、今天提醒過幾次。排團工具（pwa.js）和陣容頁（lineup.js）都用它 |
 | `core/sw.template.js` | service worker 樣板，build 填入版本與檔案清單 |
 | `core/cloud.js` | 只在 artifact 版：用 Claude 帳號同步團序（db＋user 能力） |
 | `events/<slug>/event.json` | 名稱、日期、時區、舞台與顏色、主題 tokens、字型、圖示、網址 |
@@ -114,6 +115,8 @@ node scripts/lineup.mjs <slug> [--write] # "status": "lineup" 的活動：跟官
 - 點一下或長按一組：打開一張卡片（「舞台和時間待公布」、名稱、簡介和來源），最下面一排圓形按鈕是官方頁列出的連結（Facebook、Instagram、YouTube、X、官方網站，各用自己的字樣圖示）。
 - 每組一顆「想看」：存在這台裝置（`fp:<slug>:want`），用這組的 id（`page` 網址最後一段，官方改團名寫法也對得上）記。底部浮動條寫已標幾組。時間表公布後，排團工具第一次打開時把想看的組的場次加進團序（只做一次，`fp:<slug>:want-moved`），並跳一行「已把 N 組想看排進團序」。
 - 陣容到 20 組（`LINEUP_SEARCH_MIN`）才在底部加搜尋；想看數在搜尋框上面，打字時只留搜尋框。
+- 可以加到主畫面：跟排團工具同一份 manifest 和 App 標籤，加到主畫面的就是之後的排團工具。iPhone 上 Safari 和主畫面 App 的資料分開存，所以在 iPhone 每天第一次標想看時跳一張「先加主畫面再標想看！」卡片（Safari 顯示 `iosInstallSteps` 的 5 張步驟圖，跟排團工具共用今天的提醒次數）；電腦、Android、已在主畫面、App 內建瀏覽器都不跳。
+- 頁尾寫「這是非官方的排團工具。」。
 - 首頁票券寫「已公布 N 組陣容・每年更新」，llms.txt 寫已公布幾組、時間表待公布。
 - 沒有 service worker、沒有單一檔案、沒有結構化資料（日期還沒有官方文字）。
 

@@ -22,9 +22,9 @@ html {
   --dock-space: calc(var(--dock-h) + var(--dock-gap) + 10px);
 }
 /* Scroll without visible scrollbars. */
-.board, .mine, .sp-res, .sheet, .lp-card, .lp-tabs { scrollbar-width: none; }
+.board, .mine, .sp-res, .sheet, .lp-card, .lp-tabs, .lu { scrollbar-width: none; }
 .board::-webkit-scrollbar, .mine::-webkit-scrollbar, .sp-res::-webkit-scrollbar,
-.sheet::-webkit-scrollbar, .lp-card::-webkit-scrollbar, .lp-tabs::-webkit-scrollbar { display: none; }
+.sheet::-webkit-scrollbar, .lp-card::-webkit-scrollbar, .lp-tabs::-webkit-scrollbar, .lu::-webkit-scrollbar { display: none; }
 /* iOS 26 home-screen apps drawn under the status bar get a viewport that is short by the status bar height while the
    page is shorter than the screen (WebKit 301108), leaving a strip at the bottom. A page at least as tall as the screen
    gets the full viewport. The min() cap keeps opaque-status-bar installs from scrolling (WebKit 316008). */

@@ -141,6 +141,32 @@ function writeRouting(out) {
   mergeHeaders(out, headerRules, (p) => !SITE_HEADER_PATHS.includes(p));
 }
 
+// On the Home Screen: the app tags and the manifest, the same for the planner and the lineup page before it, so the
+// app someone adds while only the lineup is out is the planner once the timetable is.
+function appHead(ev) {
+  return [
+    '<meta name="mobile-web-app-capable" content="yes">',
+    '<meta name="apple-mobile-web-app-capable" content="yes">',
+    // The page draws under the status bar (white text); the theme's --status-bar keeps it readable.
+    '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">',
+    `<meta name="apple-mobile-web-app-title" content="${esc(ev.shortName)}">`,
+    '<link rel="manifest" href="manifest.webmanifest">',
+  ];
+}
+function writeManifest(site, ev, icon, themeColor) {
+  fs.writeFileSync(path.join(site, 'manifest.webmanifest'), JSON.stringify({
+    name: ev.name, short_name: ev.shortName, description: ev.description || ev.name, lang: ev.lang,
+    id: './', start_url: './', scope: './', display: 'standalone',
+    background_color: themeColor, theme_color: themeColor,
+    icons: [
+      icon.svg && { src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+      icon['192'] && { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      icon['512'] && { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      icon.maskable && { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+    ].filter(Boolean),
+  }, null, 2) + '\n');
+}
+
 // The pages built before the timetable is out ("status" tba or lineup): a fresh folder with the event's icons and
 // fonts, and the <head> lines they share — title, description, canonical, a link preview with the square icon.
 // No service worker (nothing cached to clean up when the real planner replaces the page), no artifact.
@@ -168,7 +194,7 @@ ${base && icon['512'] ? `<meta property="og:image" content="${esc(base)}icon-512
 ${icon.svg ? '<link rel="icon" href="icon.svg" type="image/svg+xml">' : icon['192'] ? '<link rel="icon" href="icon-192.png" sizes="192x192" type="image/png">' : ''}
 ${icon['180'] ? '<link rel="apple-touch-icon" href="icon-180.png">' : ''}`;
   const css = (file) => `${themeCSS({ ...ev, stages: ev.stages || [] }, fontName)}\n${read(path.join(CORE, file))}${ev.css ? '\n' + read(path.join(dir, ev.css)) : ''}`;
-  return { site, head, css };
+  return { site, head, css, icon };
 }
 
 // "status": "tba": one page in the event's colours saying the details are on the way.
@@ -221,6 +247,9 @@ function webpSize(buf) {
 }
 // Chinese beside Latin letters or digits gets a space: 用浪人祭 2026 試玩.
 const spaced = (s) => (/[A-Za-z0-9]$/.test(s) ? `${s} ` : s);
+// The lineup page's footer line (Chi, 2026-11-20). Only this page says it: the planner and the homepage don't
+// (tests/site.test.mjs), so its English travels in the page's data, not in core/i18n.js, which every page ships.
+const UNOFFICIAL = { zh: '這是非官方的排團工具。', en: 'This is an unofficial planner.' };
 // 想看 (core/lineup.js): a plus that becomes a check.
 const WANT_ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="lu-plus" d="M8 3.5v9M3.5 8h9"/><path class="lu-check" d="M3.5 8.5l3 3 6-7"/></svg>';
 
@@ -229,7 +258,13 @@ function buildLineup(loaded, out) {
   const n = lineup.length;
   const title = `${ev.name} 陣容・排團工具`;
   const description = `${ev.name}已公布 ${n} 組陣容：${firstNames(lineup.map((a) => a.name))}（${slashDate(ev.dataDate)} 更新）。時間表公布後，這裡會變成排團工具。`;
-  const { site, head, css } = onePage(loaded, out, { title, description });
+  const { site, head, css, icon } = onePage(loaded, out, { title, description });
+  // It can go on the Home Screen as the planner it will become; on an iPhone the 想看 card shows Safari's steps.
+  writeManifest(site, ev, icon, ev.icons?.themeColor || ev.theme.dark.bg);
+  for (const rel of ev.iosInstallSteps || []) {
+    fs.mkdirSync(path.join(site, 'a2hs'), { recursive: true });
+    fs.copyFileSync(path.join(loaded.dir, rel), path.join(site, a2hsName(rel)));
+  }
   // The planner's own header (core/index.html), so the two pages look the same and share one definition.
   const header = /<header class="top"[\s\S]*?<\/header>/.exec(read(path.join(CORE, 'index.html')))[0];
   const langBtn = (ev.languages || []).includes('en') ? '    <button type="button" class="hdr-btn hdr-lang" id="langBtn">EN</button>' : '';
@@ -241,6 +276,8 @@ function buildLineup(loaded, out) {
     slug: ev.slug, languages: ev.languages || ['zh'], wordmark: ev.wordmark, subtitleEn: ev.subtitleEn, dataDate: ev.dataDate,
     sourceNote: ev.sourceNote, sourceNoteEn: ev.sourceNoteEn, acts,
     demo: demoEv ? { slug: ev.demo, name: demoEv.name, nameEn: demoEv.nameEn } : undefined,
+    iosInstallSteps: (ev.iosInstallSteps || []).map(a2hsName),
+    disclaimerEn: UNOFFICIAL.en,
   };
   // Each act: its name opens the card; 想看 (shown by the script: without JavaScript there is nothing to mark) keeps it
   // on this phone for the planner, by the act's id.
@@ -274,6 +311,7 @@ function buildLineup(loaded, out) {
 <html lang="${esc(ev.lang)}">
 <head>
 ${head}
+${appHead(ev).join('\n')}
 <meta name="fp-build" content="${esc(buildId())}">
 <style>
 ${css('styles.css')}
@@ -295,6 +333,7 @@ ${tiles}
       </ul>
       <p class="lu-empty" id="luEmpty" hidden></p>
       <footer class="lu-foot">
+        <p id="luDisclaimer">${UNOFFICIAL.zh}</p>
         <p id="luSource">${esc(ev.sourceNote)}</p>
         <p>${ev.urls?.official ? `<a href="${esc(ev.urls.official)}" data-i18n>官方網站</a>` : ''}<a href="/privacy/" data-i18n>隱私說明</a></p>
       </footer>
@@ -311,6 +350,9 @@ ${tiles}
 </script>
 <script>
 ${read(path.join(CORE, 'i18n.js'))}
+</script>
+<script>
+${read(path.join(CORE, 'a2hs.js'))}
 </script>
 <script>
 ${read(path.join(CORE, 'lineup.js'))}
@@ -381,7 +423,7 @@ export function buildEvent(loaded, { releaseArtifact = false, out = path.join(RO
   const site = path.join(out, slug);
   fs.rmSync(site, { recursive: true, force: true });
   fs.mkdirSync(site, { recursive: true });
-  const CORE_JS = ['i18n.js', 'app.js', 'embed.js', 'map.js', 'pwa.js', 'glass.js'];
+  const CORE_JS = ['i18n.js', 'app.js', 'embed.js', 'map.js', 'a2hs.js', 'pwa.js', 'glass.js'];
   const files = ['./', 'styles.css', 'data.js', ...CORE_JS, 'manifest.webmanifest'];
   const copy = (rel, name) => {
     fs.mkdirSync(path.dirname(path.join(site, name)), { recursive: true });
@@ -400,12 +442,7 @@ export function buildEvent(loaded, { releaseArtifact = false, out = path.join(RO
   const themeColor = ev.icons?.themeColor || ev.theme.dark.bg;
   const head = [
     `<meta name="theme-color" content="${esc(themeColor)}">`,
-    '<meta name="mobile-web-app-capable" content="yes">',
-    '<meta name="apple-mobile-web-app-capable" content="yes">',
-    // The page draws under the status bar (white text); the theme's --status-bar keeps it readable.
-    '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">',
-    `<meta name="apple-mobile-web-app-title" content="${esc(ev.shortName)}">`,
-    '<link rel="manifest" href="manifest.webmanifest">',
+    ...appHead(ev),
     icon.svg && '<link rel="icon" href="icon.svg" type="image/svg+xml">',
     !icon.svg && icon['192'] && '<link rel="icon" href="icon-192.png" sizes="192x192" type="image/png">',
     icon['180'] && '<link rel="apple-touch-icon" href="icon-180.png">',
@@ -432,17 +469,7 @@ export function buildEvent(loaded, { releaseArtifact = false, out = path.join(RO
   fs.writeFileSync(path.join(site, 'data.js'), dataJS('web', imgName));
   fs.writeFileSync(path.join(site, 'app.js'), app);
   for (const f of CORE_JS) if (f !== 'app.js') fs.copyFileSync(path.join(CORE, f), path.join(site, f));
-  fs.writeFileSync(path.join(site, 'manifest.webmanifest'), JSON.stringify({
-    name: ev.name, short_name: ev.shortName, description: ev.description || ev.name, lang: ev.lang,
-    id: './', start_url: './', scope: './', display: 'standalone',
-    background_color: themeColor, theme_color: themeColor,
-    icons: [
-      icon.svg && { src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
-      icon['192'] && { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-      icon['512'] && { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-      icon.maskable && { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-    ].filter(Boolean),
-  }, null, 2) + '\n');
+  writeManifest(site, ev, icon, themeColor);
   fs.writeFileSync(path.join(site, 'sw.js'), read(path.join(CORE, 'sw.template.js'))
     .replace("'__VERSION__'", JSON.stringify(build))
     .replace("'__CACHE__'", JSON.stringify(`fp-${slug}-${build}`))
