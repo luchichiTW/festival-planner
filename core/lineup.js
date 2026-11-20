@@ -223,7 +223,7 @@
     if (!A2HS || !A2HS.isIOS || A2HS.standalone || A2HS.inApp) return;
     if (A2HS.shownToday(store.get(KEY_INSTALL)) >= 1) return;
     store.set(KEY_INSTALL, A2HS.countShown(store.get(KEY_INSTALL)));
-    const pictures = A2HS.isSafari && (L.iosInstallSteps || []).length === 5 ? L.iosInstallSteps : null;
+    const pictures = A2HS.pictures(L.iosInstallSteps, L.iosInstallStepsBefore27);
     showCard(`<div class="lu-a2hs">
       <h2 class="lp-name" id="lpName">${t('先加主畫面再標想看！')}</h2>
       <p class="lu-a2hs-desc">${pictures ? t('在 Safari 標的想看，到主畫面不會跟過去。照下面 5 步加到主畫面，之後點圖示打開再標。') : t('記得先點「分享」→「加入主畫面」，從圖示打開再標想看；在瀏覽器標的，到主畫面不會跟過去。')}</p>

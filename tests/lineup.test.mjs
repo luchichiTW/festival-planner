@@ -50,7 +50,7 @@ test('a lineup event validates with its acts and no timetable', () => {
   assert.ok(validate(stray).warnings.some((w) => /Nobody/.test(w)), 'an intro for an act not in the lineup');
 });
 
-test('a lineup event builds one page: every act in the HTML in the festival’s order, no service worker, no single file', () => {
+test('a lineup event builds one page: every act in the HTML in the festival’s order, offline like the planner, no single file', () => {
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'fp-lineup-'));
   process.env.FP_BUILD = 'lineup-test';
   try { build(SLUG, { out, artifactOut: out + '-art' }); } finally { delete process.env.FP_BUILD; }
@@ -94,9 +94,18 @@ test('a lineup event builds one page: every act in the HTML in the festival’s 
   assert.ok(desc.includes(lineup[0].name), 'names the first acts');
   assert.match(html, new RegExp(`<link rel="canonical" href="${ev.urls.site}">`));
   assert.match(html, /<html lang="zh-Hant-TW"/);
-  // No offline install yet, no event data until the dates are official, nothing from other sites.
-  assert.doesNotMatch(html, /sw\.js|serviceWorker/);
-  assert.equal(fs.existsSync(path.join(site, 'sw.js')), false);
+  // Offline like the planner: the same service worker, its own cache, every file the page shows (the planner that
+  // replaces the page later takes over the same sw.js and clears this cache). No event data until the dates are
+  // official, nothing from other sites.
+  assert.match(html, /\.register\('sw\.js'\)/);
+  const sw = fs.readFileSync(path.join(site, 'sw.js'), 'utf8');
+  assert.match(sw, /const VERSION = "lineup-test";/);
+  assert.match(sw, /const CACHE = "fp-megaport2027-lineup-test";/);
+  assert.match(sw, /const PREFIX = "fp-megaport2027-";/);
+  const files = JSON.parse(/const FILES = (.*);\n/.exec(sw)[1]);
+  const shown = fs.readdirSync(site, { recursive: true }).filter((f) => fs.statSync(path.join(site, f)).isFile() && f !== 'index.html' && f !== 'sw.js');
+  assert.deepEqual(files.filter((f) => f !== './').sort(), shown.map((f) => f.split(path.sep).join('/')).sort(), 'every file of the page is cached');
+  assert.ok(files.includes('./'));
   assert.doesNotMatch(html, /application\/ld\+json/, 'no structured data until the dates are official');
   assert.doesNotMatch(html, /<script[^>]+src=|<link[^>]+href="https?:\/\/(?!chiparashi)|<img[^>]+src="https?:/, 'nothing loaded from other sites');
   assert.doesNotMatch(html, /wp-content/, 'no pictures from the festival site');
@@ -116,7 +125,8 @@ test('a lineup event builds one page: every act in the HTML in the festival’s 
   const man = JSON.parse(fs.readFileSync(path.join(site, 'manifest.webmanifest'), 'utf8'));
   assert.deepEqual([man.id, man.start_url, man.scope, man.display, man.name], ['./', './', './', 'standalone', ev.name], 'the planner’s manifest');
   assert.deepEqual(data.iosInstallSteps, [1, 2, 3, 4, 5].map((i) => `a2hs/step${i}.webp`));
-  for (const f of data.iosInstallSteps) assert.ok(fs.existsSync(path.join(site, f)), f);
+  assert.deepEqual(data.iosInstallStepsBefore27, [1, 2, 3, 4, 5].map((i) => `a2hs/step${i}-ios26.webp`));
+  for (const f of [...data.iosInstallSteps, ...data.iosInstallStepsBefore27]) assert.ok(fs.existsSync(path.join(site, f)), f);
   assert.match(html, /window\.FP_A2HS = /, 'the shared add-to-Home-Screen helpers are in the page');
   for (const a of data.acts) assert.equal(a.bio || '', artists[a.name]?.bio || '', `${a.name} intro`);
   assert.match(fs.readFileSync(path.join(out, '_redirects'), 'utf8'), new RegExp(`^/${SLUG} /${SLUG}/ 301$`, 'm'));

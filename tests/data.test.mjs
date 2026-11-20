@@ -49,6 +49,8 @@ test('validate checks the two-line header and the Safari step pictures', () => {
     ['header without place', (ev) => { ev.event.header = { date: '2026.11.07–08' }; }, /header 要有 date 和 place/],
     ['four step pictures', (ev) => { ev.event.iosInstallSteps = ev.event.iosInstallSteps.slice(0, 4); }, /iosInstallSteps 要是 5 張圖/],
     ['missing picture', (ev) => { ev.event.iosInstallSteps[2] = 'assets/a2hs/nope.webp'; }, /iosInstallSteps 找不到圖片 assets\/a2hs\/nope\.webp/],
+    ['four pictures before iOS 27', (ev) => { ev.event.iosInstallStepsBefore27 = ev.event.iosInstallStepsBefore27.slice(0, 4); }, /iosInstallStepsBefore27 要是 5 張圖/],
+    ['missing picture before iOS 27', (ev) => { ev.event.iosInstallStepsBefore27[0] = 'assets/a2hs/nope.webp'; }, /iosInstallStepsBefore27 找不到圖片 assets\/a2hs\/nope\.webp/],
   ];
   for (const [name, breakIt, expected] of cases) {
     const ev = fresh();
@@ -59,8 +61,9 @@ test('validate checks the two-line header and the Safari step pictures', () => {
   // The pictures ship next to the page, go into the offline cache, and stay out of the single file.
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'fp-a2hs-'));
   build('vagabond2026', { out, artifactOut: out + '-art' });
-  for (let i = 1; i <= 5; i++) assert.ok(fs.existsSync(path.join(out, 'vagabond2026', 'a2hs', `step${i}.webp`)));
+  for (let i = 1; i <= 5; i++) for (const f of [`step${i}.webp`, `step${i}-ios26.webp`]) assert.ok(fs.existsSync(path.join(out, 'vagabond2026', 'a2hs', f)), f);
   assert.match(fs.readFileSync(path.join(out, 'vagabond2026', 'sw.js'), 'utf8'), /"a2hs\/step5\.webp"/);
+  assert.match(fs.readFileSync(path.join(out, 'vagabond2026', 'sw.js'), 'utf8'), /"a2hs\/step5-ios26\.webp"/);
   // The venue map, the official timetables and the info pictures behind the button too, so they open offline.
   for (const f of ['map', 'day_1', 'day_2', 'info_hours', 'info_entry', 'info_wristband', 'info_rules', 'info_water', 'info_tableware', 'info_luggage', 'info_watch']) assert.match(fs.readFileSync(path.join(out, 'vagabond2026', 'sw.js'), 'utf8'), new RegExp(`"img/vagabond_festival_2026_${f}\\.webp"`));
   assert.doesNotMatch(fs.readFileSync(path.join(out + '-art', 'vagabond2026', 'index.html'), 'utf8'), /a2hs\//);

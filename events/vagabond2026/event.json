@@ -9,6 +9,7 @@
   "languages": ["zh", "en"],
   "onboardExample": "d2-c-holly",
   "iosInstallSteps": ["assets/a2hs/step1.webp", "assets/a2hs/step2.webp", "assets/a2hs/step3.webp", "assets/a2hs/step4.webp", "assets/a2hs/step5.webp"],
+  "iosInstallStepsBefore27": ["assets/a2hs/step1-ios26.webp", "assets/a2hs/step2-ios26.webp", "assets/a2hs/step3-ios26.webp", "assets/a2hs/step4-ios26.webp", "assets/a2hs/step5-ios26.webp"],
   "wordmark": { "text": "浪人祭", "sub": "2026" },
   "header": { "date": "2026.11.07–08", "place": "臺南觀夕平臺大草皮" },
   "subtitle": "11.07–08 臺南觀夕平臺大草皮",

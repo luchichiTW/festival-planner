@@ -36,9 +36,10 @@ node scripts/lineup.mjs <slug> [--write] # "status": "lineup" 的活動：跟官
 | `core/embed.js` | 卡片內試聽（Spotify、Apple Music、YouTube、Podcast、街聲），打開卡片才載入、離線不顯示 |
 | `core/map.js` | 場地圖與官方圖：縮放、拖曳、舞台熱區（接下來的演出、步行導航） |
 | `core/glass.js` | 液態玻璃的動作，所有分頁列共用：選中分頁的玻璃泡（滑動、按住放大、可拖曳），底部列往下捲時縮小 |
-| `core/pwa.js` | 只在網站版：service worker 註冊、安靜更新、導覽最後一步「加到主畫面」（依 iPhone、Android、電腦、App 內建瀏覽器顯示不同做法） |
-| `core/a2hs.js` | 加到主畫面共用：判斷在哪裡打開（iPhone、Safari、App 內建瀏覽器、已在主畫面）、Safari 的 5 張步驟圖（iPhone Duo 的 Safari 從網址列左邊的「≡」開分享，圖不對，改用文字步驟；用 `screen` 466×678 判斷）、今天提醒過幾次。排團工具（pwa.js）和陣容頁（lineup.js）都用它 |
-| `core/sw.template.js` | service worker 樣板，build 填入版本與檔案清單 |
+| `core/pwa.js` | 只在網站版：導覽最後一步「加到主畫面」（依 iPhone、Android、電腦、App 內建瀏覽器顯示不同做法） |
+| `core/offline.js` | 只在網站版，排團工具和陣容頁共用：service worker 註冊、安靜更新（新版本背景下載，剛打開還沒碰畫面或切到背景時才換上） |
+| `core/a2hs.js` | 加到主畫面共用：判斷在哪裡打開（iPhone、Safari、App 內建瀏覽器、已在主畫面）、Safari 的 5 張步驟圖，依 Safari 的 `Version/` 分兩套：iOS 27 起網址列沒有「⋯」，第一步是長按網址（`event.json` 的 `iosInstallSteps`）；27 以前第一步點網址列右邊的「⋯」（`iosInstallStepsBefore27`），下面多一行舊版 iOS 的做法。iOS 26 起 UA 的系統版本固定寫 18_x，看 `Version/` 才準；讀不到就用 iOS 27 那套。iPhone Duo 的畫面比例放不下這些圖，改用文字步驟（用 `screen` 466×678 判斷，一律當 iOS 27）、今天提醒過幾次。排團工具（pwa.js）和陣容頁（lineup.js）都用它 |
+| `core/sw.template.js` | service worker 樣板，build 填入版本與檔案清單。排團工具和陣容頁共用 |
 | `core/cloud.js` | 只在 artifact 版：用 Claude 帳號同步團序（db＋user 能力） |
 | `events/<slug>/event.json` | 名稱、日期、時區、舞台與顏色、主題 tokens、字型、圖示、網址 |
 | `events/<slug>/data/schedule.json` | 一筆一場演出 |
@@ -119,7 +120,8 @@ node scripts/lineup.mjs <slug> [--write] # "status": "lineup" 的活動：跟官
 - 頁尾寫「這是非官方的排團工具。」。
 - 整頁捲動（不像排團工具在內層框裡捲），陣容延伸到 Safari 的工具列底下；字不能被選取、複製（搜尋框除外）。
 - 首頁票券寫「已公布 N 組陣容・每年更新」，llms.txt 寫已公布幾組、時間表待公布。
-- 沒有 service worker、沒有單一檔案、沒有結構化資料（日期還沒有官方文字）。
+- 跟排團工具一樣可以離線：同一份 service worker（`sw.js`、快取 `fp-<slug>-<版本>`），存頁面和旁邊的每個檔案，`core/offline.js` 負責安靜更新。時間表公布後排團工具接手同一個 `sw.js`，會清掉陣容頁的快取。
+- 沒有單一檔案、沒有結構化資料（日期還沒有官方文字）。
 
 `event.json` 要有 `dataDate`、`sourceNote`、`urls.lineup`（官方陣容頁）。`rules.bioSource: "official"` 時，簡介的來源只能是那一組在官方頁上的官方網站，沒有官網就不寫簡介。
 
@@ -145,7 +147,7 @@ service worker 只把工具頁本身當 App；其他頁面直接走網路，不�
 
 - 每個活動自己的 service worker，scope `/<slug>/`，快取名稱 `fp-<slug>-<版本>`，只清自己的舊快取。
 - 版本號是 git commit（有未提交的修改時加 `-dev`），寫進 `sw.js`、頁面的 `<meta name="fp-build">` 與「關於」畫面。不用手動改版本。
-- 新版本在背景整包下載，App 切到背景或剛打開時才換上，不跳提示（「關於」裡看得到版本和時間表日期）。頁面網路優先（約 3 秒），但只用同一版本的頁面，新舊檔案不會混用。
+- 打開時直接用手機上這一版的頁面，不等網路：同一版本的頁面不會變，網路給不了更新的東西。有沒有新版每次打開時在背景檢查（`sw.js` 變了就是新版），新版本整包下載，App 切到背景或剛打開還沒碰畫面時才換上，不跳提示（「關於」裡看得到版本和時間表日期）。新舊檔案不會混用。
 - 團序存在 `localStorage` 的 `fp:<slug>:picks`。**改這個格式一定要寫遷移**，更新不能讓任何人的團序消失。
 - **改到資料流向就同一次更新說明**：儲存位置、對外請求、cookie、流量統計、第三方嵌入有任何改變時，同一次修改要更新 `scripts/lib/copy.mjs`（時間表下方的特色與常見問題、FAQPage 結構化資料）、`core/i18n.js` 的英文、`site/privacy.html`（隱私說明頁）和 `site/llms.txt` 的「特色」。這些文字每一句都要跟程式實際的行為一致。
 - 頁面只能載入自己網域的檔案：不放任何第三方字型、分析碼或 CDN。例外：Cloudflare Web Analytics（`static.cloudflareinsights.com` 的 beacon 與它送回資料的請求）。那是 Cloudflare 在邊緣加進頁面的，repo 裡不放這段程式；Cloudflare 同網域的 `/cdn-cgi/` 也允許。

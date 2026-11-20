@@ -1,7 +1,4 @@
-/* Website only: offline service worker, quiet updates, and the walkthrough's 「加到主畫面」 step.
-   Update rule: a new version downloads in the background (sw.js), and is switched in only when nobody is using
-   the page — when the app goes to the background, or right as it is opened again, without a word (the 關於 sheet
-   shows the version and the timetable date). Picks are in localStorage and are never touched by an update. */
+/* Website only: the walkthrough's 「加到主畫面」 step. The offline service worker and quiet updates: core/offline.js. */
 (() => {
   const EVT = window.FP_EVENT;
   const FP = window.FP;
@@ -21,8 +18,8 @@
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   // Where the page is open, Safari's steps as pictures and today's count: core/a2hs.js (shared with the lineup page).
   const A2HS = window.FP_A2HS;
-  const { isIOS, isAndroid, inApp, isMacSafari, standalone, phone, isSafari } = A2HS;
-  const pictures = isSafari && (EVT.iosInstallSteps || []).length === 5 ? EVT.iosInstallSteps : null;
+  const { isIOS, isAndroid, inApp, isMacSafari, standalone, phone } = A2HS;
+  const pictures = A2HS.pictures(EVT.iosInstallSteps, EVT.iosInstallStepsBefore27);
   let offer = null; // Chrome / Edge's install prompt (beforeinstallprompt), once the browser makes one
 
   async function install() {
@@ -60,7 +57,7 @@
     }
     const moved = isIOS && FP.snapshot().picks.length ? `<p class="ob-desc">${t('已經排好的團序，到「我的團序」按「複製備份連結」，再到主畫面版的「我的團序」選「從備份連結還原」。')}</p>` : '';
     if (pictures) return `<p class="ob-desc">${t('在 Safari 排好的團序，到主畫面還要再排一次。照下面 5 步加到主畫面，之後點圖示打開，離線也能用、不蒐集任何資料。')}</p>${guide()}${moved}`;
-    if (isIOS) desc = t('記得先點「分享」→「加入主畫面」再開始排團，不然在 Safari 排好的團序，到主畫面還要再排一次喔！（新版 Safari 的「分享」在網址列旁的「⋯」裡）');
+    if (isIOS) desc = t('記得先點「分享」→「加入主畫面」再開始排團，不然在 Safari 排好的團序，到主畫面還要再排一次喔！（新版 Safari 長按網址就有「分享」）');
     else if (offer) desc = phone ? t('點下面的「安裝」，就會加到主畫面，之後從圖示打開。') : t('點下面的「安裝」，就會裝到電腦上，之後從圖示打開。');
     else if (isAndroid) desc = t('點瀏覽器右上角的三個點（⋮），選「加到主畫面」或「安裝應用程式」，之後從主畫面的圖示打開。');
     else if (isMacSafari) desc = t('在選單列點「檔案」→「加入 Dock」，之後從 Dock 打開。');
@@ -100,62 +97,4 @@
       hiddenAt = 0;
     });
   }
-
-  /* ---------- service worker ---------- */
-  if (!('serviceWorker' in navigator)) return;
-  const sw = navigator.serviceWorker;
-  const hadController = !!sw.controller;
-  let reg = null;
-  let pendingReload = false;
-  // "Just opened": visible for under 4 s with no tap or key yet — switching versions now interrupts nothing.
-  let visibleSince = performance.now();
-  let touched = false;
-  const justOpened = () => document.visibilityState === 'visible' && !touched && performance.now() - visibleSince < 4000;
-  ['pointerdown', 'keydown'].forEach((t) => addEventListener(t, () => { touched = true; }, { capture: true, passive: true }));
-
-  const reload = () => { pendingReload = false; location.reload(); };
-  const apply = () => { if (reg && reg.waiting && sw.controller) reg.waiting.postMessage({ type: 'SKIP_WAITING' }); };
-  const check = () => { if (reg) reg.update().catch((e) => console.warn('[fp] update check failed, will retry', e)); };
-
-  sw.addEventListener('controllerchange', () => {
-    if (!hadController) return; // first install: this page already is the newest version
-    pendingReload = true;
-    if (document.visibilityState === 'hidden' || justOpened()) reload();
-  });
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-      if (pendingReload) reload();
-      else apply();
-    } else {
-      visibleSince = performance.now();
-      touched = false;
-      if (pendingReload) reload();
-      else if (reg && reg.waiting) apply();
-      else check();
-    }
-  });
-  setInterval(() => { if (document.visibilityState === 'visible') check(); }, 30 * 60 * 1000);
-
-  // A new version finishing its download while the page was just opened takes over at once — once the page has
-  // loaded and gone quiet. Chrome stops the old worker the moment the switch is asked for; a request reaching it
-  // right then (the browser fetches the favicon and manifest icons just after a load) restarts it, and the switch
-  // then waits out the restarted worker's 30 s idle timeout, long after "just opened".
-  const settled = new Promise((r) => {
-    if (document.readyState === 'complete') r();
-    else addEventListener('load', () => r(), { once: true });
-  }).then(() => new Promise((r) => setTimeout(r, 1000)));
-  const applyIfJustOpened = () => settled.then(() => { if (justOpened()) apply(); });
-  const watch = (nw) => {
-    if (!nw) return;
-    nw.addEventListener('statechange', () => {
-      if (nw.state === 'installed' && sw.controller && justOpened()) applyIfJustOpened();
-    });
-  };
-  sw.register('sw.js').then((r) => {
-    reg = r;
-    if (r.waiting && justOpened()) applyIfJustOpened();
-    watch(r.installing); // the page load itself may already have started an update
-    r.addEventListener('updatefound', () => watch(r.installing));
-  }).catch((e) => console.warn('[fp] service worker not registered; the page still works online', e));
 })();

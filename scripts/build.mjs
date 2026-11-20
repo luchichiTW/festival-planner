@@ -88,6 +88,8 @@ function privacyBody() {
 }
 
 const a2hsName = (rel) => `a2hs/${path.basename(rel)}`;
+// Both sets of Safari's step pictures (iOS 27, and before it), each file once.
+const a2hsFiles = (ev) => [...new Set([...(ev.iosInstallSteps || []), ...(ev.iosInstallStepsBefore27 || [])])];
 
 // What the page needs at run time: event.json minus the build-only parts, plus the build id.
 function clientConfig(ev, build, mode) {
@@ -99,6 +101,7 @@ function clientConfig(ev, build, mode) {
     features: ev.features || {}, lottery: ev.lottery, urls: ev.urls || {}, onboardExample: ev.onboardExample, build, mode,
     // Safari's 加入主畫面 steps as pictures, next to the page (website only: the single file never asks to install).
     iosInstallSteps: mode === 'artifact' || !ev.iosInstallSteps ? undefined : ev.iosInstallSteps.map(a2hsName),
+    iosInstallStepsBefore27: mode === 'artifact' || !ev.iosInstallStepsBefore27 ? undefined : ev.iosInstallStepsBefore27.map(a2hsName),
     // Offline use, personal data and the questions, for the 關於 sheet, and the privacy page's text for the 隱私說明
     // sheet (so it opens inside the app, offline too): website only (scripts/lib/copy.mjs, site/privacy.html).
     about: mode === 'artifact' ? null : { ...aboutForPage(), privacyHtml: privacyBody() },
@@ -167,9 +170,20 @@ function writeManifest(site, ev, icon, themeColor) {
   }, null, 2) + '\n');
 }
 
+// The offline service worker (core/sw.template.js), shared by the planner and the lineup page: this build's files in
+// their own cache, fp-<slug>-<build>. The same file name and cache prefix for both, so the planner that replaces the
+// lineup page takes over on the phone and clears the lineup page's cache.
+function writeServiceWorker(site, slug, build, files) {
+  fs.writeFileSync(path.join(site, 'sw.js'), read(path.join(CORE, 'sw.template.js'))
+    .replace("'__VERSION__'", JSON.stringify(build))
+    .replace("'__CACHE__'", JSON.stringify(`fp-${slug}-${build}`))
+    .replace("'__PREFIX__'", JSON.stringify(`fp-${slug}-`))
+    .replace('__FILES__', JSON.stringify(files)));
+}
+
 // The pages built before the timetable is out ("status" tba or lineup): a fresh folder with the event's icons and
 // fonts, and the <head> lines they share — title, description, canonical, a link preview with the square icon.
-// No service worker (nothing cached to clean up when the real planner replaces the page), no artifact.
+// No artifact. The tba page has no service worker; the lineup page adds the planner's (buildLineup).
 function onePage({ event: ev, dir }, out, { title, description }) {
   const site = path.join(out, ev.slug);
   fs.rmSync(site, { recursive: true, force: true });
@@ -259,9 +273,10 @@ function buildLineup(loaded, out) {
   const title = `${ev.name} 陣容・排團工具`;
   const description = `${ev.name}已公布 ${n} 組陣容：${firstNames(lineup.map((a) => a.name))}（${slashDate(ev.dataDate)} 更新）。時間表公布後，這裡會變成排團工具。`;
   const { site, head, css, icon } = onePage(loaded, out, { title, description });
+  const build = buildId(); // once: the page and its service worker carry the same version
   // It can go on the Home Screen as the planner it will become; on an iPhone the 想看 card shows Safari's steps.
   writeManifest(site, ev, icon, ev.icons?.themeColor || ev.theme.dark.bg);
-  for (const rel of ev.iosInstallSteps || []) {
+  for (const rel of a2hsFiles(ev)) {
     fs.mkdirSync(path.join(site, 'a2hs'), { recursive: true });
     fs.copyFileSync(path.join(loaded.dir, rel), path.join(site, a2hsName(rel)));
   }
@@ -277,6 +292,7 @@ function buildLineup(loaded, out) {
     sourceNote: ev.sourceNote, sourceNoteEn: ev.sourceNoteEn, acts,
     demo: demoEv ? { slug: ev.demo, name: demoEv.name, nameEn: demoEv.nameEn } : undefined,
     iosInstallSteps: (ev.iosInstallSteps || []).map(a2hsName),
+    iosInstallStepsBefore27: (ev.iosInstallStepsBefore27 || []).map(a2hsName),
     disclaimerEn: UNOFFICIAL.en,
   };
   // Each act: its name opens the card; 想看 (shown by the script: without JavaScript there is nothing to mark) keeps it
@@ -312,7 +328,7 @@ function buildLineup(loaded, out) {
 <head>
 ${head}
 ${appHead(ev).join('\n')}
-<meta name="fp-build" content="${esc(buildId())}">
+<meta name="fp-build" content="${esc(build)}">
 <style>
 ${css('styles.css')}
 ${read(path.join(CORE, 'lineup.css'))}
@@ -357,10 +373,16 @@ ${read(path.join(CORE, 'a2hs.js'))}
 <script>
 ${read(path.join(CORE, 'lineup.js'))}
 </script>
+<script>
+${read(path.join(CORE, 'offline.js'))}
+</script>
 </body>
 </html>
 `;
   fs.writeFileSync(path.join(site, 'index.html'), html);
+  // Offline like the planner: the page and every file next to it (icons, manifest, pictures).
+  const files = fs.readdirSync(site, { recursive: true }).map((f) => f.split(path.sep).join('/')).filter((f) => fs.statSync(path.join(site, f)).isFile() && f !== 'index.html').sort();
+  writeServiceWorker(site, ev.slug, build, ['./', ...files]);
   writeRouting(out);
   return { build: 'lineup', site, artifact: null, files: [], report: { warnings: [] } };
 }
@@ -423,7 +445,7 @@ export function buildEvent(loaded, { releaseArtifact = false, out = path.join(RO
   const site = path.join(out, slug);
   fs.rmSync(site, { recursive: true, force: true });
   fs.mkdirSync(site, { recursive: true });
-  const CORE_JS = ['i18n.js', 'app.js', 'embed.js', 'map.js', 'a2hs.js', 'pwa.js', 'glass.js'];
+  const CORE_JS = ['i18n.js', 'app.js', 'embed.js', 'map.js', 'a2hs.js', 'pwa.js', 'offline.js', 'glass.js'];
   const files = ['./', 'styles.css', 'data.js', ...CORE_JS, 'manifest.webmanifest'];
   const copy = (rel, name) => {
     fs.mkdirSync(path.dirname(path.join(site, name)), { recursive: true });
@@ -437,7 +459,7 @@ export function buildEvent(loaded, { releaseArtifact = false, out = path.join(RO
   if (ev.icons?.svg) icon.svg = copy(ev.icons.svg, 'icon.svg');
   for (const [size, rel] of Object.entries(ev.icons?.png || {})) icon[size] = copy(rel, `icon-${size}.png`);
   if (ev.icons?.maskable) icon.maskable = copy(ev.icons.maskable, 'icon-maskable-512.png');
-  for (const rel of ev.iosInstallSteps || []) copy(rel, a2hsName(rel)); // in the offline cache too
+  for (const rel of a2hsFiles(ev)) copy(rel, a2hsName(rel)); // in the offline cache too
 
   const themeColor = ev.icons?.themeColor || ev.theme.dark.bg;
   const head = [
@@ -470,11 +492,7 @@ export function buildEvent(loaded, { releaseArtifact = false, out = path.join(RO
   fs.writeFileSync(path.join(site, 'app.js'), app);
   for (const f of CORE_JS) if (f !== 'app.js') fs.copyFileSync(path.join(CORE, f), path.join(site, f));
   writeManifest(site, ev, icon, themeColor);
-  fs.writeFileSync(path.join(site, 'sw.js'), read(path.join(CORE, 'sw.template.js'))
-    .replace("'__VERSION__'", JSON.stringify(build))
-    .replace("'__CACHE__'", JSON.stringify(`fp-${slug}-${build}`))
-    .replace("'__PREFIX__'", JSON.stringify(`fp-${slug}-`))
-    .replace('__FILES__', JSON.stringify(files)));
+  writeServiceWorker(site, slug, build, files);
 
   writeRouting(out);
 

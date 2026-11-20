@@ -4,6 +4,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { ROOT, loadEvent, lineupId } from '../scripts/validate.mjs';
@@ -436,8 +437,50 @@ test('AC-07 a new deploy switches in only when nobody is using the page, and kee
   }
 });
 
+// The lineup page is ready (its acts are drawn). LU_READY, defined further down, is the same.
+const LU_READY_EARLY = () => document.querySelectorAll('.lu-tile').length > 0;
+// A network that connects but never answers (a packed festival ground, a train): the site's port is taken over by a
+// server that accepts and stays silent.
+async function silentNetwork(port) {
+  const socks = new Set();
+  const s = net.createServer((c) => { socks.add(c); c.on('close', () => socks.delete(c)); });
+  await new Promise((resolve, reject) => { s.once('error', reject); s.listen(port, '127.0.0.1', resolve); });
+  return { close: () => new Promise((r) => { for (const c of socks) c.destroy(); s.close(() => r()); }) };
+}
+// How long opening the page takes to show it, from a blank tab (as when tapping the home screen icon).
+async function timeToShow(page, url, shown, ms = 8000) {
+  await page.goto('about:blank');
+  const t0 = Date.now();
+  page.send('Page.navigate', { url }).catch(() => { /* a navigation that never ends is the point: measured below */ });
+  await page.until(shown, { ms, every: 50 });
+  return Date.now() - t0;
+}
+
+test('reopening the planner on a network that never answers shows it at once, from the phone’s copy', { skip: SKIP }, async () => {
+  const root = site('silent', 'e2e-silent');
+  const srv = await serve({ root, port: 0 });
+  servers.push(srv); // closed after the tests even if this one fails before going offline
+  const base = `http://127.0.0.1:${srv.port}`;
+  const page = await open(`${base}/${SLUG}/`);
+  await page.until(() => navigator.serviceWorker.controller !== null);
+  await page.until(async () => (await caches.keys()).includes('fp-vagabond2026-e2e-silent'));
+  await page.tap('.block[data-id="d1-nell"]');
+  await srv.close();
+  const air = await silentNetwork(srv.port);
+  try {
+    const ms = await timeToShow(page, `${base}/${SLUG}/`, () => location.pathname === '/vagabond2026/' && document.querySelectorAll('#grid .block').length > 0);
+    assert.ok(ms < 1500, `the planner took ${ms} ms to show`);
+    assert.deepEqual(await page.eval(`[FP_EVENT.build, FP.snapshot().picks]`), ['e2e-silent', ['d1-nell']]);
+  } finally {
+    await air.close();
+    await closePage(page);
+  }
+});
+
 const UA = {
-  iphone: ['Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1', 'iPhone'],
+  iphone:['Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1', 'iPhone'],
+  // iOS 27's Safari: the OS part of the user agent stays at 18_7 (frozen since iOS 26); Version/ is the real one.
+  iphone27: ['Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1', 'iPhone'],
   android: ['Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36', 'Linux armv8l'],
   instagram: ['Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 350.0.0.0.0 (iPhone15,2; iOS 18_0; zh_TW; zh-Hant; scale=3.00; 1179x2556; 0)', 'iPhone'],
 };
@@ -526,6 +569,29 @@ test('first visit on an iPhone: the 大港撞團 cards — long-press, 我的團
   await closePage(again);
 });
 
+test('Safari on iOS 27: no ⋯ next to the address, so the steps start from pressing and holding it, with iOS 27 pictures', { skip: SKIP }, async () => {
+  for (const [where, at, ready, opener] of [
+    ['planner', `/${SLUG}/`, undefined, null],
+    ['lineup page', '/megaport2027/', LU_READY_EARLY, '.lu-tile[data-i="0"] .lu-want'],
+  ]) {
+    const srv = await origin();
+    const page = await open(`${srv.base}${at}`, { onboard: true, ua: UA.iphone27, seed: { [`fp:${SLUG}:onboard`]: '1' }, ...(ready ? { ready } : {}) });
+    const box = opener ? '#lpCard' : '#sheet';
+    if (opener) { await page.tap(opener); await page.until(() => !document.getElementById('lpCard').hidden); } else await onStep(page, IOS_INSTALL);
+    const g = await page.eval((b) => ({
+      src: [...document.querySelectorAll(`${b} .a2hs-step img`)].map((i) => i.getAttribute('src')),
+      say: [...document.querySelectorAll(`${b} .a2hs-step figcaption`)].map((f) => f.textContent),
+      old: !!document.querySelector(`${b} .a2hs-old`),
+    }), box);
+    assert.deepEqual(g, {
+      src: [1, 2, 3, 4, 5].map((i) => `a2hs/step${i}.webp`),
+      say: ['1長按網址', '2點「分享」', '3點「檢視較多」', '4點「加入主畫面」', '5點「加入」（網頁 App 保持開著）'],
+      old: false,
+    }, where);
+    await closePage(page);
+  }
+});
+
 test("Safari on an iPhone: the five steps as pictures; the card comes back up to three times a day, also on returning after half an hour", { skip: SKIP }, async () => {
   const srv = await origin();
   const url = `${srv.base}/${SLUG}/`;
@@ -538,8 +604,11 @@ test("Safari on an iPhone: the five steps as pictures; the card comes back up to
     say: [...document.querySelectorAll('#sheet .a2hs-step figcaption')].map((f) => f.textContent),
     dots: [...document.querySelectorAll('#sheet .a2hs-dots i')].map((d) => d.classList.contains('on')),
   }));
-  assert.deepEqual(g.src, [1, 2, 3, 4, 5].map((i) => `a2hs/step${i}.webp`));
+  // Before iOS 27 (this one says Version/18.0): Share is under ⋯ on the right of the address bar, and the line below
+  // says where it is on even older iOS.
+  assert.deepEqual(g.src, [1, 2, 3, 4, 5].map((i) => `a2hs/step${i}-ios26.webp`));
   assert.deepEqual(g.say, ['1點網址列右邊的「⋯」', '2點「分享」', '3點「檢視較多」', '4點「加入主畫面」', '5點「加入」（網頁 App 保持開著）']);
+  assert.equal(await page.eval(`!!document.querySelector('#sheet .a2hs-old')`), true);
   assert.deepEqual(g.dots, [true, false, false, false, false]);
   // A tap on the picture goes to the next one; the dots follow.
   await page.tap('#sheet .a2hs-step img');
@@ -1929,7 +1998,8 @@ test('lineup page: the acts in the festival’s order; a tap or a long press ope
     await page.until(cardOpen);
     assert.equal(await page.eval(`document.getElementById('lpName').textContent`), lineup[j].name);
     assert.match(await page.eval(`document.getElementById('lpCard').textContent`), /目前沒有找到可靠的介紹資料/);
-    assert.equal(await page.eval('navigator.serviceWorker.controller'), null);
+    // Offline like the planner: the page registers the same service worker.
+    await page.until(() => navigator.serviceWorker.getRegistration().then((r) => !!r && /\/megaport2027\/sw\.js$/.test((r.active || r.waiting || r.installing).scriptURL)));
     assert.deepEqual(foreignOf(urls, main.base), []);
     await closePage(page);
   }
@@ -2120,7 +2190,7 @@ test('想看 on an iPhone in Safari: the day’s first mark asks to add the page
   await main.close();
 });
 
-test('the Home Screen card fits a short screen with 👌 in sight; on an iPhone Duo its first step is Safari’s ≡ menu, in words', { skip: SKIP }, async () => {
+test('the Home Screen card fits a short screen with 👌 in sight; on an iPhone Duo the steps are in words, starting from pressing and holding the address', { skip: SKIP }, async () => {
   const fits = () => {
     const card = document.getElementById('lpCard').getBoundingClientRect();
     const ok = document.querySelector('#lpCard .lu-ok').getBoundingClientRect();
@@ -2137,8 +2207,8 @@ test('the Home Screen card fits a short screen with 👌 in sight; on an iPhone 
     assert.deepEqual(await page.eval(fits), { card: true, ok: true, scroll: whole }, `${width}×${height}`);
     await closePage(page);
   }
-  // iPhone Duo: its screen reports 466 × 678 points whichever screen is lit, and its Safari opens the share menu from
-  // ≡ on the left of the address bar. The iPhone pictures show ⋯ on the right, so the steps are words instead.
+  // iPhone Duo: its screen reports 466 × 678 points whichever screen is lit. The iPhone-shaped pictures don't fit it,
+  // so the steps are words instead, the first one the same as on every iPhone: press and hold the address.
   const srv = await origin();
   const duo = await chrome.newPage({ width: 951, height: 537, touch: true });
   await duo.send('Emulation.setDeviceMetricsOverride', { width: 951, height: 537, deviceScaleFactor: 3, mobile: true, screenWidth: 466, screenHeight: 678 });
@@ -2151,7 +2221,7 @@ test('the Home Screen card fits a short screen with 👌 in sight; on an iPhone 
     pictures: document.querySelectorAll('#lpCard .a2hs-step').length,
     say: [...document.querySelectorAll('#lpCard .a2hs-list li')].map((li) => li.textContent),
   }));
-  assert.deepEqual(steps, { pictures: 0, say: ['1點網址列左邊的「≡」', '2點「分享」', '3點「檢視較多」', '4點「加入主畫面」', '5點「加入」（網頁 App 保持開著）'] });
+  assert.deepEqual(steps, { pictures: 0, say: ['1長按網址', '2點「分享」', '3點「檢視較多」', '4點「加入主畫面」', '5點「加入」（網頁 App 保持開著）'] });
   assert.deepEqual(await duo.eval(fits), { card: true, ok: true, scroll: true });
   assert.deepEqual(await duo.eval(NOJS_CLIPPED), []);
   await closePage(duo);
@@ -2177,6 +2247,60 @@ test('想看 marks join the picks once the timetable is out: once, with a line s
   assert.deepEqual(await page.eval(picks), [ids.fire]);
   await closePage(page);
   await main.close();
+});
+
+test('lineup page: offline after the first visit, at once on a network that never answers, the 想看 marks kept', { skip: SKIP }, async () => {
+  const root = path.join(tmp, 'lu-offline');
+  process.env.FP_BUILD = 'e2e-lu1';
+  try { build('megaport2027', { out: root, artifactOut: path.join(tmp, 'lu-offline-art') }); } finally { delete process.env.FP_BUILD; }
+  const srv = await serve({ root, port: 0 });
+  servers.push(srv); // closed after the tests even if this one fails before going offline
+  const base = `http://127.0.0.1:${srv.port}`;
+  const want = JSON.stringify({ v: 1, ids: ['fire-ex'] });
+  const page = await open(`${base}/megaport2027/`, { ready: LU_READY, seed: { 'fp:megaport2027:want': want } });
+  await page.until(() => navigator.serviceWorker.controller !== null, { ms: 10000 });
+  await page.until(async () => (await caches.keys()).includes('fp-megaport2027-e2e-lu1'));
+  await srv.close(); // the network is gone
+  await page.reload();
+  await page.until(LU_READY);
+  const kept = () => ({ build: document.querySelector('meta[name="fp-build"]').content, want: localStorage.getItem('fp:megaport2027:want') });
+  assert.deepEqual(await page.eval(kept), { build: 'e2e-lu1', want });
+  // The pictures on the page and in the add-to-home-screen card come from the phone too.
+  assert.deepEqual(await page.eval(() => Promise.all(['demo-light.webp', 'demo-dark.webp', 'a2hs/step1.webp', 'a2hs/step5.webp', 'icon-192.png', 'manifest.webmanifest'].map((u) => fetch(u).then((r) => r.ok, () => false)))), [true, true, true, true, true, true]);
+  const air = await silentNetwork(srv.port);
+  try {
+    const ms = await timeToShow(page, `${base}/megaport2027/`, () => location.pathname === '/megaport2027/' && document.querySelectorAll('.lu-tile').length > 0);
+    assert.ok(ms < 1500, `the lineup page took ${ms} ms to show`);
+  } finally {
+    await air.close();
+    await closePage(page);
+  }
+});
+
+test('the planner replacing the lineup page takes over on the phone by itself and clears the lineup page’s offline copy', { skip: SKIP }, async () => {
+  const slug = 'swapexample';
+  const lineupEv = longLineup(slug);
+  const { e: plannerEv } = plannerWithLineup(slug);
+  const root = path.join(tmp, 'swap');
+  const art = path.join(tmp, 'swap-art');
+  const as = (buildId, ev) => { process.env.FP_BUILD = buildId; try { buildEvent(ev, { out: root, artifactOut: art }); } finally { delete process.env.FP_BUILD; } };
+  as('e2e-lu', lineupEv);
+  const srv = await serve({ root, port: 0 });
+  const base = `http://127.0.0.1:${srv.port}`;
+  try {
+    const page = await open(`${base}/${slug}/`, { ready: LU_READY, seed: { [`fp:${slug}:onboard`]: '1', [`fp:${slug}:install-hint`]: FULL } });
+    await page.until(() => navigator.serviceWorker.controller !== null, { ms: 10000 });
+    await page.until(async (s) => (await caches.keys()).includes(`fp-${s}-e2e-lu`), { args: [slug] });
+    // The timetable is out: the same address becomes the planner. Opening it again shows the phone's lineup page
+    // first, the planner downloads, and since nothing was touched it switches in at once.
+    as('e2e-pl', plannerEv);
+    await page.reload();
+    await page.until(() => document.querySelectorAll('#grid .block').length > 0 && FP_EVENT.build === 'e2e-pl', { ms: 15000 });
+    assert.equal(await page.eval((s) => caches.keys().then((k) => k.filter((x) => x.startsWith(`fp-${s}-`)).join()), slug), `fp-${slug}-e2e-pl`, 'the lineup page’s copy is gone');
+    await closePage(page);
+  } finally {
+    await srv.close();
+  }
 });
 
 test('the 浪人祭 wordmark is two-tone in both themes: gold over 鯤鯓 red in dark, 鯤鯓 red over sunset gold in light', { skip: SKIP }, async () => {

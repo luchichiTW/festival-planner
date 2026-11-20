@@ -246,10 +246,12 @@ export function validate({ slug, dir, event: ev, schedule, artists, venue, lineu
   }
   // The two lines right of the wordmark (date over place); the year then leaves the wordmark.
   if (ev.header !== undefined && (!ev.header?.date || !ev.header?.place)) err('event.json: header 要有 date 和 place（標題右邊的兩行）');
-  // iPhone Safari's 加入主畫面 steps as pictures, in order: ⋯, 分享, 檢視較多, 加入主畫面, 加入 (core/pwa.js).
-  if (ev.iosInstallSteps !== undefined) {
-    if (!Array.isArray(ev.iosInstallSteps) || ev.iosInstallSteps.length !== 5) err('event.json: iosInstallSteps 要是 5 張圖，照順序：⋯、分享、檢視較多、加入主畫面、加入');
-    else for (const f of ev.iosInstallSteps) if (!/\.(webp|png|jpe?g)$/i.test(f) || !fs.existsSync(path.join(dir, f))) err(`event.json: iosInstallSteps 找不到圖片 ${f}`);
+  // iPhone Safari's 加入主畫面 steps as pictures (core/a2hs.js), in order. iOS 27: 長按網址, 分享, 檢視較多, 加入主畫面,
+  // 加入. Before iOS 27 (iosInstallStepsBefore27): ⋯ on the right of the address bar first, then the same four.
+  for (const [k, first] of [['iosInstallSteps', '長按網址'], ['iosInstallStepsBefore27', '⋯']]) {
+    if (ev[k] === undefined) continue;
+    if (!Array.isArray(ev[k]) || ev[k].length !== 5) err(`event.json: ${k} 要是 5 張圖，照順序：${first}、分享、檢視較多、加入主畫面、加入`);
+    else for (const f of ev[k]) if (!/\.(webp|png|jpe?g)$/i.test(f) || !fs.existsSync(path.join(dir, f))) err(`event.json: ${k} 找不到圖片 ${f}`);
   }
   for (const f of [ev.css, ev.fonts?.display?.file, ev.fonts?.mono?.file, ev.icons?.svg, ev.icons?.maskable, ...Object.values(ev.icons?.png || {})]) {
     if (f && !fs.existsSync(path.join(dir, f))) err(`event.json: 找不到檔案 ${f}`);
