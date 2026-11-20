@@ -1118,6 +1118,147 @@ test('a phone on its side: no header, the timetable from the top edge, the dock 
   await main.close();
 });
 
+// An app, not an article: a long press or a drag on the planner never picks up text to select or copy (an iPhone Duo
+// selected 「DAY 1」 and showed its loupe on the stage names). Text boxes still take typing and copying.
+test('nothing on the planner selects on a long press; the search box and text boxes still do', { skip: SKIP }, async () => {
+  const main = await origin();
+  const page = await open(`${main.base}/${SLUG}/`, { width: 402, height: 874 });
+  const none = (sels) => page.eval((list) => list.map((q) => [q, getComputedStyle(document.querySelector(q)).userSelect]).filter(([, v]) => v !== 'none').map(([q]) => q), sels);
+  assert.deepEqual(await none(['.wordmark', '.top-sub', '#grid .sh b', '#grid .hl', '#grid .block .nm', '#day1', '.dock .tab']), [], 'the board, header and dock');
+  await page.longPress('.block[data-id="d1-ano"]');
+  await page.until(() => !document.getElementById('lpCard').hidden && document.querySelector('#lpBio p'));
+  assert.deepEqual(await none(['#lpName', '.lp-time', '#lpBio p']), [], 'the artist card');
+  await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+  await page.until(() => document.getElementById('lpCard').hidden);
+  await page.tap('#tabMine');
+  await page.until(() => document.getElementById('aboutBtn'));
+  await page.tap('#aboutBtn');
+  await page.until(() => document.querySelector('.about-p'));
+  assert.deepEqual(await none(['#sheetTitle', '.about-p', '.about-feats li', '.about-meta']), [], '關於');
+  assert.notEqual(await page.eval(() => getComputedStyle(document.getElementById('spInput')).userSelect), 'none', 'the search box takes typing');
+  const box = await page.eval(() => {
+    const t = document.createElement('textarea');
+    document.body.append(t);
+    const v = getComputedStyle(t).userSelect;
+    t.remove();
+    return v;
+  });
+  assert.notEqual(box, 'none', 'a text box (backup link) can be selected and copied');
+  await closePage(page);
+  await main.close();
+});
+
+// iPhone Duo, closed: Safari leaves the page 382 × 580 points. A short upright screen gets a one-line header (the date
+// beside the wordmark; the place moves to 關於) with smaller buttons that still take a 44-point tap, so the timetable
+// shows more. A tall phone keeps the two lines.
+test('a short upright screen: a one-line header (date only, place in 關於) with smaller buttons; a tall phone keeps two lines', { skip: SKIP }, async () => {
+  const main = await origin();
+  const look = () => {
+    const top = document.getElementById('top').getBoundingClientRect();
+    const lines = [...document.querySelectorAll('#topSub .ts-l')].filter((l) => getComputedStyle(l).display !== 'none');
+    const btn = document.getElementById('themeBtn').getBoundingClientRect();
+    const hit = (x, y) => document.elementFromPoint(x, y)?.closest('#themeBtn') != null;
+    return {
+      header: Math.round(top.height),
+      lines: lines.map((l) => l.textContent),
+      board: Math.round(document.querySelector('.board').getBoundingClientRect().top),
+      // A 44-point target: a finger just outside the drawn button still hits it.
+      tap: Math.round(btn.width) < 44 ? [hit(btn.left + btn.width / 2, btn.bottom + 5), hit(btn.right + 5, btn.top + btn.height / 2)] : [true, true],
+    };
+  };
+  const closed = await open(`${main.base}/${SLUG}/`, { width: 382, height: 580 });
+  await closed.eval('document.fonts.ready');
+  const short = await closed.eval(look);
+  assert.ok(short.header <= 40, `header ${short.header}px`);
+  assert.deepEqual(short.lines, ['2026.11.07–08'], 'the date only');
+  assert.equal(short.board, short.header, 'the board right under it');
+  assert.deepEqual(short.tap, [true, true], 'the smaller buttons still take a 44-point tap');
+  assert.deepEqual(await closed.eval(CLIPPED), [], 'nothing clipped');
+  await closed.tap('#tabMine');
+  await closed.until(() => document.getElementById('aboutBtn'));
+  await closed.tap('#aboutBtn');
+  await closed.until(() => document.querySelector('.about-when'));
+  assert.equal(await closed.eval(`document.querySelector('.about-when').textContent`), '2026.11.07–08・臺南觀夕平臺大草皮', 'the place is in 關於');
+  await closePage(closed);
+  const tall = await open(`${main.base}/${SLUG}/`, { width: 402, height: 874 });
+  const t = await tall.eval(look);
+  assert.deepEqual([t.header, t.lines], [64, ['2026.11.07–08', '臺南觀夕平臺大草皮']], 'a tall phone keeps both lines');
+  await closePage(tall);
+  await main.close();
+});
+
+// iPhone Duo, open: 951 × 537 points in Safari (951 × 669 as a Home Screen app) — wide, but short. Like a phone on its
+// side, the board runs edge to edge without its frame, under a one-line header (date and place side by side) that
+// stays, so 繁中/EN and the theme are still there. An iPad and a computer keep the framed board.
+test('wide and short (iPhone Duo open): the board edge to edge under a one-line header; an iPad and a computer keep the frame', { skip: SKIP }, async () => {
+  const main = await origin();
+  const look = () => {
+    const b = document.querySelector('.board');
+    const r = b.getBoundingClientRect();
+    const top = document.getElementById('top').getBoundingClientRect();
+    const lines = [...document.querySelectorAll('#topSub .ts-l')].map((l) => l.getBoundingClientRect());
+    return {
+      board: [Math.round(r.left), Math.round(r.right)],
+      frame: [parseFloat(getComputedStyle(b).borderLeftWidth), parseFloat(getComputedStyle(b).borderTopLeftRadius)],
+      header: Math.round(top.height),
+      under: Math.round(r.top) === Math.round(top.bottom),
+      oneLine: lines.every((l) => Math.abs(l.top - lines[0].top) < 2),
+      allStages: b.scrollWidth <= b.clientWidth,
+    };
+  };
+  for (const [width, height] of [[951, 537], [951, 669]]) {
+    const page = await open(`${main.base}/${SLUG}/`, { width, height });
+    await page.eval('document.fonts.ready');
+    const v = await page.eval(look);
+    assert.ok(v.header <= 40, `${width}×${height}: header ${v.header}px`);
+    assert.deepEqual({ ...v, header: true }, { board: [0, width], frame: [0, 0], header: true, under: true, oneLine: true, allStages: true }, `${width}×${height}`);
+    assert.deepEqual(await page.eval(CLIPPED), [], `${width}×${height}: nothing clipped`);
+    await closePage(page);
+  }
+  for (const [width, height, mobile, what] of [[1180, 820, true, 'iPad on its side'], [1280, 700, false, 'a computer']]) {
+    const page = await open(`${main.base}/${SLUG}/`, { width, height, mobile });
+    const v = await page.eval(look);
+    assert.deepEqual([v.frame[1], v.header, v.oneLine], [14, 64, false], what);
+    await closePage(page);
+  }
+  await main.close();
+});
+
+// The artist card on a wide, short screen: side by side — the stage, time, name, buttons and players on the left, the
+// intro and its sources on the right — so the card doesn't scroll on an open iPhone Duo. Upright phones keep the tall card.
+test('the artist card on a wide, short screen sits side by side and does not scroll; upright it stays one column', { skip: SKIP }, async () => {
+  const main = await origin();
+  const look = () => {
+    const card = document.getElementById('lpCard');
+    const m = card.querySelector('.lp-main').getBoundingClientRect();
+    const bio = document.getElementById('lpBio').getBoundingClientRect();
+    const sc = (el) => el.scrollHeight > el.clientHeight + 1;
+    return {
+      sideBySide: bio.left >= m.right - 1 && Math.abs(bio.top - m.top) < 2,
+      cardScrolls: sc(card),
+      leftScrolls: sc(card.querySelector('.lp-main')),
+      width: Math.round(card.getBoundingClientRect().width),
+    };
+  };
+  const openCard = async (page) => {
+    await page.send('Network.setBlockedURLs', { urls: ['*open.spotify.com*', '*embed.music.apple.com*', '*youtube-nocookie.com*'] });
+    await page.longPress('.block[data-id="d1-ano"]');
+    await page.until(() => !document.getElementById('lpCard').hidden && document.querySelector('#lpBio p'));
+    await page.eval('new Promise((r) => setTimeout(r, 450))'); // the pop-in animation
+  };
+  const duo = await open(`${main.base}/${SLUG}/`, { width: 951, height: 537 });
+  await openCard(duo);
+  const d = await duo.eval(look);
+  assert.deepEqual({ ...d, width: d.width >= 640 }, { sideBySide: true, cardScrolls: false, leftScrolls: false, width: true }, 'iPhone Duo open');
+  await closePage(duo);
+  const phone = await open(`${main.base}/${SLUG}/`, { width: 402, height: 874 });
+  await openCard(phone);
+  const p = await phone.eval(look);
+  assert.deepEqual([p.sideBySide, p.width], [false, 340], 'an upright phone keeps the tall card');
+  await closePage(phone);
+  await main.close();
+});
+
 test('Liquid Glass: one lens per tab bar (dock and map page) follows the chosen tab and a dragging finger; the dock shrinks scrolling down, comes back scrolling up', { skip: SKIP }, async () => {
   const main = await origin();
   const page = await open(`${main.base}/${SLUG}/`, { width: 402, height: 874 });

@@ -22,9 +22,9 @@ html {
   --dock-space: calc(var(--dock-h) + var(--dock-gap) + 10px);
 }
 /* Scroll without visible scrollbars. */
-.board, .mine, .sp-res, .sheet, .lp-card, .lp-tabs { scrollbar-width: none; }
-.board::-webkit-scrollbar, .mine::-webkit-scrollbar, .sp-res::-webkit-scrollbar,
-.sheet::-webkit-scrollbar, .lp-card::-webkit-scrollbar, .lp-tabs::-webkit-scrollbar { display: none; }
+.board, .mine, .sp-res, .sheet, .lp-card, .lp-main, .lp-bio, .lp-tabs { scrollbar-width: none; }
+.board::-webkit-scrollbar, .mine::-webkit-scrollbar, .sp-res::-webkit-scrollbar, .sheet::-webkit-scrollbar,
+.lp-card::-webkit-scrollbar, .lp-main::-webkit-scrollbar, .lp-bio::-webkit-scrollbar, .lp-tabs::-webkit-scrollbar { display: none; }
 /* iOS 26 home-screen apps drawn under the status bar get a viewport that is short by the status bar height while the
    page is shorter than the screen (WebKit 301108), leaving a strip at the bottom. A page at least as tall as the screen
    gets the full viewport. The min() cap keeps opaque-status-bar installs from scrolling (WebKit 316008). */
@@ -47,6 +47,10 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 button { font: inherit; color: inherit; }
+/* An app, not an article: a long press or a drag never picks up text to select or copy (the planner and the lineup
+   page alike). Text boxes still take typing and copying, and so does the address to copy in the walkthrough. */
+body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+input, textarea { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
 :focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
 
 .app {
@@ -237,9 +241,6 @@ button { font: inherit; color: inherit; }
   text-align: center;
   cursor: pointer;
   overflow: hidden;
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
   touch-action: manipulation;
   transition: opacity .16s, background-color .16s, transform .1s;
 }
@@ -333,8 +334,9 @@ button { font: inherit; color: inherit; }
 }
 
 @media (min-width: 701px) { .board { margin-top: 12px; } }
-/* Phones, upright or on their side: the board runs edge to edge. */
-@media (max-width: 700px), (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+/* Phones, upright or on their side, and wide but short touch screens (an iPhone Duo open, 951 × 537 in Safari,
+   951 × 669 as a Home Screen app): the board runs edge to edge, without its frame. An iPad on its side is taller. */
+@media (max-width: 700px), (orientation: landscape) and (max-height: 700px) and (pointer: coarse) {
   .board {
     margin-left: calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
     margin-right: calc(-1 * max(16px, env(safe-area-inset-right, 0px)));
@@ -383,6 +385,24 @@ button { font: inherit; color: inherit; }
     background: inherit;
   }
   .sh:has(+ .times)::after { bottom: -1px; border-bottom: inherit; }
+}
+
+/* Short screens (an iPhone Duo closed, 382 × 580 in Safari, or open; a small iPhone in Safari): the header is one line
+   with smaller buttons, so the timetable shows more. The buttons still take a 44-point tap. Upright, the header shows
+   the date only (the place is in 關於); wide but short, the date and the place side by side. */
+@media (max-width: 700px) and (max-height: 680px), (orientation: landscape) and (min-height: 501px) and (max-height: 700px) and (pointer: coarse) {
+  .app:not(.lu-app) > .top { gap: 12px; padding-top: calc(4px + env(safe-area-inset-top, 0px)); padding-bottom: 4px; }
+  .app:not(.lu-app) > .top .hdr-btn { position: relative; width: 32px; height: 32px; }
+  .app:not(.lu-app) > .top .hdr-btn::before { content: ""; position: absolute; inset: -6px; }
+  .app:not(.lu-app) > .top .hdr-btn svg { width: 18px; height: 18px; }
+}
+@media (max-width: 700px) and (max-height: 680px) {
+  .app:not(.lu-app) .top-sub .ts-l + .ts-l { display: none; }
+}
+@media (orientation: landscape) and (min-height: 501px) and (max-height: 700px) and (pointer: coarse) {
+  .board { margin-top: 0; }
+  .app:not(.lu-app) .top-sub .ts-l { display: inline; white-space: nowrap; }
+  .app:not(.lu-app) .top-sub .ts-l + .ts-l { margin-left: .8em; }
 }
 
 /* ---------- my schedule ---------- */
@@ -436,7 +456,7 @@ button { font: inherit; color: inherit; }
 }
 .dur { font: 500 11px var(--mono); color: var(--muted); }
 .item h3 { margin: 0; font: 700 17px/1.3 var(--body); overflow-wrap: anywhere; text-wrap: balance; }
-.item { position: relative; overflow: hidden; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; transition: transform .1s, opacity .2s; }
+.item { position: relative; overflow: hidden; transition: transform .1s, opacity .2s; }
 .item.pressing { transform: scale(.98); }
 .item.playing { border-color: color-mix(in srgb, var(--c) 75%, transparent); }
 .item.ended { opacity: .45; }
@@ -512,9 +532,6 @@ button { font: inherit; color: inherit; }
   border-radius: 12px;
   border: 1px dashed color-mix(in srgb, var(--c) 50%, var(--line-2));
   background: color-mix(in srgb, var(--c) 6%, transparent);
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
 }
 .alt-main {
   flex: 1;
@@ -900,8 +917,6 @@ button { font: inherit; color: inherit; }
   background: var(--surface);
   box-shadow: 0 12px 48px rgb(0 0 0 / .35), 0 2px 8px rgb(0 0 0 / .12);
   transform: translate(-50%, -50%);
-  -webkit-user-select: none;
-  user-select: none;
   animation: lpIn .35s cubic-bezier(.175, .885, .32, 1.275) both;
 }
 .lp-backdrop.out { animation: lpFade .22s ease-in reverse forwards; }
@@ -970,6 +985,22 @@ button { font: inherit; color: inherit; }
 .lp-bio p.lp-none { font-size: 13px; color: var(--muted); }
 .lp-src { font-size: 12px; color: var(--muted); }
 .lp-src a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+/* On a phone the card is one column (.lp-main adds no box of its own). On a wide, short screen (an iPhone Duo open, a
+   phone on its side, a short window) it sits side by side: the stage, time, name, buttons and players on the left, the
+   intro and its sources on the right, each scrolling on its own if it must. */
+.lp-main { display: contents; }
+@media (orientation: landscape) and (max-height: 700px) and (min-width: 640px) {
+  .lp-card:has(> .lp-main) {
+    width: min(calc(100% - 48px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)), 760px);
+    max-height: calc(100% - 32px);
+    flex-direction: row;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  .lp-card > .lp-main { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 10px; overflow: auto; padding: 16px 18px 18px; }
+  .lp-card > .lp-bio { flex: 1 1 0; min-width: 0; overflow: auto; margin: 0; padding: 16px 18px 18px; border-top: 0; border-left: 1px solid var(--line); }
+}
 
 .toast {
   position: fixed;
@@ -1083,7 +1114,7 @@ a.about-link { display: inline-block; }
 .mv { position: fixed; inset: 0; z-index: 35; background: color-mix(in srgb, var(--bg) 92%, black); }
 .mv-stage { position: absolute; inset: 0; padding-top: env(safe-area-inset-top, 0px); overflow: hidden; touch-action: none; }
 .mv-pan { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
-.mv-pan img { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; pointer-events: none; }
+.mv-pan img { display: block; width: 100%; height: 100%; pointer-events: none; }
 .mv-spots { position: absolute; inset: 0; }
 .mv-spots button { position: absolute; appearance: none; padding: 0; border: 0; background: transparent; cursor: pointer; }
 .mv-bar { position: absolute; left: 0; right: 0; bottom: var(--dock-gap); display: flex; gap: 8px; padding-inline: max(12px, env(safe-area-inset-left, 0px)) max(12px, env(safe-area-inset-right, 0px)); justify-content: center; }

@@ -1,12 +1,8 @@
 /* "status": "lineup" page (core/lineup.js): the acts announced so far, in the festival's own order. It sits on
-   styles.css — the header, the theme tokens and the long-press card come from there — and adds the card on top (what
+   styles.css — the header, the theme tokens, the long-press card and the rule that no text selects come from there — and adds the card on top (what
    the page becomes, a past event to try), the list with a 想看 button on each act, the row of links in the card, and
    at the bottom the 想看 count and, once the lineup is long, the search field. Sizes follow Apple's type scale
    (17 body, 15 secondary, 13 footnote); every touch target is at least 44 pt. */
-/* An app, not an article: a long press or a drag never picks up text to select or copy. The search field still
-   takes typing. */
-.lu-body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-.lu-body input { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
 /* The page scrolls as a whole, not inside a box: on a phone the acts run on under Safari's own bars (the address
    bar, an iPhone Duo's side column) instead of stopping at a straight edge above them, and the header scrolls away
    with them. No visible scroll bar. While the centred card is open the page stays put. */
@@ -99,9 +95,6 @@ body.lu-body { background-repeat: no-repeat; background-size: 100% 100%; }
   border-radius: 16px;
   background: var(--surface);
   color: var(--fg);
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
   transition: transform .15s ease;
 }
 /* The name opens the card, and so does the rest of the tile (the button stretches over it), except 想看. */
@@ -119,7 +112,6 @@ body.lu-body { background-repeat: no-repeat; background-size: 100% 100%; }
   flex-direction: column;
   gap: 2px;
   cursor: pointer;
-  -webkit-touch-callout: none;
 }
 .lu-open::after { content: ""; position: absolute; inset: 0; border-radius: 16px; }
 .lu-open:focus-visible { outline: none; }

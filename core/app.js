@@ -1048,6 +1048,7 @@
     ] : [];
     sheet.innerHTML = `<div class="grab"></div>
       <h2 id="sheetTitle">${t('關於・自己做一個')}</h2>
+      ${EVT.header ? `<p class="sub about-when">${esc(EVT.header.date)}・${esc(EVT.header.place)}</p>` : ''}
       <p class="sub">${esc(t('{name} 排團工具。', { name: lang === 'en' && EVT.nameEn ? EVT.nameEn : EVT.name }))}${esc(sourceNote)}</p>
       ${links.length ? `<p class="about-p">${t('程式和資料都公開在 GitHub。照著活動資料夾裡的 CLAUDE.md，就能做出你自己的音樂祭版本。')}</p>
       <div class="about-links">${links.map(([href, label, sub]) => `<a href="${esc(href)}" target="_blank" rel="noopener"><b>${esc(label)}</b><span>${esc(sub)}</span></a>`).join('')}</div>` : ''}
@@ -1341,7 +1342,8 @@
     const tabs = lpArtists.length > 1
       ? `<div class="lp-tabs" role="tablist" aria-label="${t('演出者')}">${lpArtists.map((a, i) => `<button type="button" role="tab" data-lp-tab="${i}" aria-selected="${i === 0}">${esc(a)}</button>`).join('')}</div>`
       : '';
-    lpCard.innerHTML = `
+    // .lp-main holds everything but the intro: one column on a phone, the left of two on a wide, short screen.
+    lpCard.innerHTML = `<div class="lp-main">
       <div class="lp-head" style="--c:${s.stage.c}">
         <span class="pill">${esc(s.stage.short)}</span>
         <span class="lp-time">${fmt(s.start)} – ${fmt(s.end)}</span>
@@ -1352,7 +1354,7 @@
       ${s.note ? `<p class="lp-note">${esc(s.note)}</p>` : ''}
       <div class="lp-act" id="lpAct"></div>
       ${lpArtists.length ? `${tabs}<div class="lp-embed" id="lpEmbed" hidden></div><div class="lp-plat" id="lpPlat"></div>` : ''}
-      <div class="lp-bio" id="lpBio" hidden></div>`;
+      </div><div class="lp-bio" id="lpBio" hidden></div>`;
     lpShowId = s.id;
     renderLpAct();
     if (lpArtists.length) renderPlat(0);
